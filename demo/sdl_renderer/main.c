@@ -95,9 +95,6 @@ int main(int argc, char *argv[]) {
         }
         nk_input_end(ctx);
 
-        /* Update the Nuklear Console state */
-        nuklear_console_demo_update();
-
         /* GUI */
         if (nk_begin(ctx, "nuklear_console", nk_rect(50, 50, WINDOW_WIDTH - 100, WINDOW_HEIGHT - 100),
             NK_WINDOW_BORDER|NK_WINDOW_TITLE))
