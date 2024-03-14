@@ -148,8 +148,21 @@ void nk_console_check_up_down(nk_console* widget) {
         }
         // Back
         else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
-            top->activeParent = (widget->parent == NULL) ? NULL : widget->parent->parent;
-            top->activeWidget = NULL;
+            if (top->activeParent == NULL) {
+                return;
+            }
+
+            if (widget->parent != NULL) {
+                if (widget->parent == top) {
+                    top->activeParent = top;
+                    top->activeWidget = NULL;
+                }
+                else if (widget->parent->parent != NULL) {
+                    top->activeParent = widget->parent->parent;
+                    top->activeWidget = NULL;
+                }
+            }
+
             top->input_processed = nk_true;
         }
     }

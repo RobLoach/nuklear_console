@@ -28,6 +28,16 @@
 
 #include "../common/nuklear_console_demo.c"
 
+SDL_GameController *findController() {
+    for (int i = 0; i < SDL_NumJoysticks(); i++) {
+        if (SDL_IsGameController(i)) {
+            return SDL_GameControllerOpen(i);
+        }
+    }
+
+    return NULL;
+}
+
 int main(int argc, char *argv[]) {
     /* Platform */
     SDL_Window *win;
@@ -41,7 +51,9 @@ int main(int argc, char *argv[]) {
 
     /* SDL setup */
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
-    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
+
+    SDL_GameController *controller = findController();
 
     win = SDL_CreateWindow("nuklear_console_demo",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -92,6 +104,27 @@ int main(int argc, char *argv[]) {
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) goto cleanup;
             if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) running = 0;
+
+            // Mock SDL game controller to nuklear keyboard.
+            if (evt.type == SDL_CONTROLLERBUTTONDOWN || evt.type == SDL_CONTROLLERBUTTONUP) {
+                if (evt.cdevice.which == SDL_JoystickInstanceID(SDL_GameControllerGetJoystick(controller))) {
+                    switch (evt.cbutton.button) {
+                        case SDL_CONTROLLER_BUTTON_DPAD_UP:
+                            nk_input_key(ctx, NK_KEY_UP, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
+                        case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
+                            nk_input_key(ctx, NK_KEY_DOWN, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
+                        case SDL_CONTROLLER_BUTTON_B:
+                            nk_input_key(ctx, NK_KEY_BACKSPACE, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
+                        case SDL_CONTROLLER_BUTTON_A:
+                            nk_input_key(ctx, NK_KEY_ENTER, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
+                    }
+                }
+            }
+
             nk_sdl_handle_event(&evt);
         }
         nk_input_end(ctx);
