@@ -1,11 +1,6 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
-// TODO: Remove these lines
-#ifndef NK_IMPLEMENTATION
-#include "vendor/nuklear/nuklear.h"
-#endif
-
 typedef enum {
     NK_CONSOLE_UNKNOWN,
     NK_CONSOLE_PARENT,
@@ -18,31 +13,28 @@ typedef struct nk_console {
     nk_console_widget_type type;
     const char* text;
     int alignment;
+    nk_bool selectable;
+    nk_bool* value_bool;
+    void (*onclick)(struct nk_console*);
 
     struct nk_console* parent;
     struct nk_context* context;
-
     struct nk_console** children;
-
     struct nk_console* activeParent;
-
-    void (*onclick)(struct nk_console*);
-
     struct nk_console* activeWidget;
-    nk_bool selectable;
-
     nk_bool input_processed;
-
-    nk_bool* value_bool;
 } nk_console;
 
+nk_console* nk_console_get_parent_top(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API void nk_console_free(nk_console* console);
 NK_API void nk_console_render(nk_console* console);
+NK_API nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active);
 NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text);
 NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char* text, void (*onclick)(nk_console*));
 NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text);
+NK_API void nk_console_onclick_back(nk_console* button);
 NK_API nk_console* nk_console_init(struct nk_context* context);
 
 #endif
@@ -120,6 +112,9 @@ int nk_console_get_widget_index(nk_console* widget) {
     return -1;
 }
 
+/**
+ * Allow the user to move up and down between widgets.
+ */
 void nk_console_check_up_down(nk_console* widget) {
     nk_console* top = nk_console_get_parent_top(widget);
 
@@ -173,6 +168,8 @@ void nk_console_check_up_down(nk_console* widget) {
 
 /**
  * Retrieve the first selectable widget from the given parent.
+ *
+ * @internal
  */
 NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
     if (parent == NULL || parent->children == NULL) {
@@ -191,6 +188,22 @@ NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
     return NULL;
 }
 
+/**
+ * A function to check whether or not the mouse moved.
+ */
+NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
+    if (input == NULL) {
+        return nk_false;
+    }
+
+    return input->mouse.delta.x != 0 || input->mouse.delta.y != 0;
+}
+
+/**
+ * Render the given console widget.
+ *
+ * @param console The console widget to display.
+ */
 NK_API void nk_console_render(nk_console* console) {
     if (console == NULL) {
         return;
@@ -217,6 +230,8 @@ NK_API void nk_console_render(nk_console* console) {
     }
 
     nk_console* top = nk_console_get_parent_top(console);
+    struct nk_rect widget_bounds = {0,0,0,0};
+
     switch (console->type) {
         case NK_CONSOLE_PARENT: {
             if (console->children != NULL) {
@@ -229,11 +244,14 @@ NK_API void nk_console_render(nk_console* console) {
         break;
         case NK_CONSOLE_LABEL: {
             nk_layout_row_dynamic(console->context, 0, 1);
+
+            // TODO: Add label options like alignment or text wrapping
             nk_label(console->context, console->text, console->alignment);
         }
         break;
         case NK_CONSOLE_BUTTON: {
             nk_layout_row_dynamic(console->context, 0, 1);
+            widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Check the button state.
             nk_bool selected = nk_false;
@@ -282,6 +300,7 @@ NK_API void nk_console_render(nk_console* console) {
         break;
         case NK_CONSOLE_CHECKBOX: {
             nk_layout_row_dynamic(console->context, 0, 1);
+            widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Allow changing the checkbox value.
             nk_bool active = nk_false;
@@ -336,6 +355,12 @@ NK_API void nk_console_render(nk_console* console) {
                 nk_console_check_up_down(console);
             }
         }
+    }
+
+    // Allow mouse to switch focus between active widgets
+    if (widget_bounds.w > 0 && top->input_processed == nk_false && nk_input_is_mouse_moved(&console->context->input) && nk_input_is_mouse_hovering_rect(&console->context->input, widget_bounds)) {
+        top->activeWidget = console;
+        top->input_processed = nk_true;
     }
 }
 
