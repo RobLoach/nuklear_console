@@ -25,11 +25,10 @@ int main() {
     nk_console_add_button(console, "Load Game");
     nk_console_add_button(console, "Save Game");
 
-    // Update the Nukelar Console
-    nk_console_update(console);
-
-    // Draw it on the screen
-    nk_console_render(console);
+    // Render the console in a window
+    nk_begin();
+        nk_console_render(console);
+    nk_end();
 
     // Clean it up
     nk_console_free(console);

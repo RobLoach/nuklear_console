@@ -1,6 +1,11 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
+// TODO: Remove these lines
+#ifndef NK_IMPLEMENTATION
+#include "vendor/nuklear/nuklear.h"
+#endif
+
 typedef enum {
     NK_CONSOLE_UNKNOWN,
     NK_CONSOLE_PARENT,
@@ -23,9 +28,9 @@ typedef struct nk_console {
     void (*onclick)(struct nk_console*);
 
     struct nk_console* activeWidget;
-    nk_bool selecting;
+    nk_bool selectable;
 
-    void* user_data;
+    nk_bool input_processed;
 } nk_console;
 
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
@@ -36,7 +41,6 @@ NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text);
 NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char* text, void (*onclick)(nk_console*));
 NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text);
 NK_API nk_console* nk_console_init(struct nk_context* context);
-NK_API void nk_console_update(nk_console* console);
 
 #endif
 
@@ -88,57 +92,87 @@ nk_console* nk_console_get_parent_top(nk_console* widget) {
     return parent;
 }
 
-NK_API void nk_console_update(nk_console* console) {
-    if (console == NULL) {
-        return;
+/**
+ * Get the given widget's index from it's parent's children.
+ *
+ * @return The index of the widget, or -1 on error
+ */
+int nk_console_get_widget_index(nk_console* widget) {
+    if (widget == NULL) {
+        return -1;
     }
 
-    struct nk_input* input = &console->context->input;
-
-    if (console->selecting == 1) {
-        console->selecting = 0;
+    nk_console* parent = widget->parent;
+    if (parent == NULL) {
+        return -1;
     }
 
-    if (nk_input_is_key_pressed(input, NK_KEY_ENTER)) {
-        console->selecting = 1;
-    }
-
-    if (console->activeWidget == NULL) {
-        nk_console* activeParent = console->activeParent == NULL ? console : console->activeParent;
-        if (activeParent->children != NULL) {
-            console->activeWidget = activeParent->children[0];
+    size_t i;
+    for (i = 0; i < cvector_size(parent->children); i++) {
+        if (parent->children[i] == widget) {
+            return i;
         }
     }
 
-    if (console->activeWidget != NULL) {
-        nk_console* parent = console->activeParent == NULL ? console : console->activeParent;
-        if (parent->children != NULL) {
-            size_t i;
-            int widgetIndex = -1;
-            for (i = 0; i < cvector_size(parent->children); ++i) {
-                if (parent->children[i] == console->activeWidget) {
-                    widgetIndex = i;
+    return -1;
+}
+
+void nk_console_check_up_down(nk_console* widget) {
+    nk_console* top = nk_console_get_parent_top(widget);
+
+    // Only process an active input once.
+    if (top->input_processed == nk_false) {
+        // Up
+        if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) {
+            int widgetIndex = nk_console_get_widget_index(widget);
+            while (--widgetIndex >= 0) {
+                nk_console* target = widget->parent->children[widgetIndex];
+                if (target != NULL && target->selectable) {
+                    top->activeWidget = target;
                     break;
                 }
             }
-            if (widgetIndex != -1) {
-                if (nk_input_is_key_pressed(input, NK_KEY_DOWN)) {
-                    widgetIndex++;
-                    if (widgetIndex < cvector_size(parent->children)) {
-                        console->activeWidget = parent->children[widgetIndex];
-                        printf("Item: %s\n", console->activeWidget->text);
-                    }
+            top->input_processed = nk_true;
+        }
+        // Down
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN)) {
+            int widgetIndex = nk_console_get_widget_index(widget);
+            while (++widgetIndex < cvector_size(widget->parent->children)) {
+                nk_console* target = widget->parent->children[widgetIndex];
+                if (target != NULL && target->selectable) {
+                    top->activeWidget = target;
+                    break;
                 }
-                else if (nk_input_is_key_pressed(input, NK_KEY_UP)) {
-                    widgetIndex--;
-                    if (widgetIndex >= 0) {
-                        console->activeWidget = parent->children[widgetIndex];
-                        printf("Item: %s\n", console->activeWidget->text);
-                    }
-                }
+            }
+            top->input_processed = nk_true;
+        }
+        // Back
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
+            top->activeParent = (widget->parent == NULL) ? NULL : widget->parent->parent;
+            top->activeWidget = NULL;
+            top->input_processed = nk_true;
+        }
+    }
+}
+
+/**
+ * Retrieve the first selectable widget from the given parent.
+ */
+NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
+    if (parent == NULL || parent->children == NULL) {
+        return NULL;
+    }
+
+    // Iterate through the children to find the first selectable widget.
+    for (size_t i = 0; i < cvector_size(parent->children); i++) {
+        if (parent->children[i] != NULL) {
+            if (parent->children[i]->selectable) {
+                return parent->children[i];
             }
         }
     }
+
+    return NULL;
 }
 
 NK_API void nk_console_render(nk_console* console) {
@@ -146,13 +180,24 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
-    // Render the active parent if required.
-    if (console->activeParent != NULL && console->activeParent->children != NULL) {
-        size_t i;
-        for (i = 0; i < cvector_size(console->activeParent->children); ++i) {
-            nk_console_render(console->activeParent->children[i]);
+    // First run
+    if (console->parent == NULL) {
+        // Reset the input state.
+        console->input_processed = nk_false;
+
+        // Make sure there is an active widget.
+        if (console->activeWidget == NULL) {
+            console->activeWidget = nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console);
         }
-        return;
+
+        // Render the active parent.
+        if (console->activeParent != NULL && console->activeParent->children != NULL) {
+            size_t i;
+            for (i = 0; i < cvector_size(console->activeParent->children); ++i) {
+                nk_console_render(console->activeParent->children[i]);
+            }
+            return;
+        }
     }
 
     nk_console* top = nk_console_get_parent_top(console);
@@ -174,36 +219,48 @@ NK_API void nk_console_render(nk_console* console) {
         case NK_CONSOLE_BUTTON: {
             nk_layout_row_dynamic(console->context, 0, 1);
 
-            nk_bool selected = top->activeWidget == console && top->selecting;
-
-
-            if (top->activeWidget == console) {
-                struct nk_style_item swap = console->context->style.button.hover;
-                console->context->style.button.hover = console->context->style.button.normal;
-                console->context->style.button.normal = swap;
+            // Check the button state.
+            nk_bool selected = nk_false;
+            if (top->activeWidget == console && !top->input_processed && nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
+                selected = nk_true;
             }
 
+            // Apply the style.
+            struct nk_style_item buttonStyle = console->context->style.button.normal;
+            if (top->activeWidget == console) {
+                if (selected) {
+                    console->context->style.button.normal = console->context->style.button.active;
+                }
+                else {
+                    console->context->style.button.normal = console->context->style.button.hover;
+                }
+            }
+
+            // Display the button.
             selected |= nk_button_label(console->context, console->text);
 
-            if (top->activeWidget == console) {
-                struct nk_style_item swap = console->context->style.button.hover;
-                console->context->style.button.hover = console->context->style.button.normal;
-                console->context->style.button.normal = swap;
-            }
+            // Restore the styles
+            console->context->style.button.normal = buttonStyle;
 
+            // Act on the button
             if (selected) {
+                top->input_processed = nk_true;
+
+                // If there's no onclick action and there are children...
                 if (console->onclick == NULL) {
                     if (console->children != NULL) {
-                        nk_console* top = nk_console_get_parent_top(console);
-                        if (top != NULL) {
-                            top->activeParent = console;
-                            top->activeWidget = NULL;
-                        }
+                        top->activeParent = console;
+                        top->activeWidget = NULL;
                     }
                 }
                 else {
                     console->onclick(console);
                 }
+            }
+
+            // Allow switching up/down in widgets
+            if (top->activeWidget == console) {
+                nk_console_check_up_down(console);
             }
         }
         break;
@@ -233,20 +290,26 @@ NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text) {
 }
 
 NK_API void nk_console_onclick_back(nk_console* button) {
+    if (button == NULL) {
+        return;
+    }
+
     nk_console* top = nk_console_get_parent_top(button);
-    if (top != NULL) {
-        nk_console* parent = button->parent;
-        if (parent != NULL) {
-            parent = parent->parent;
-        }
-        if (parent != NULL) {
-            top->activeParent = parent;
-            top->activeWidget = NULL;
-        }
-        else {
-            top->activeParent = NULL;
-            top->activeWidget = NULL;
-        }
+    if (top == NULL) {
+        return;
+    }
+
+    nk_console* parent = button->parent;
+    if (parent != NULL) {
+        parent = parent->parent;
+    }
+    if (parent != NULL) {
+        top->activeParent = parent;
+        top->activeWidget = NULL;
+    }
+    else {
+        top->activeParent = NULL;
+        top->activeWidget = NULL;
     }
 }
 
@@ -254,26 +317,28 @@ NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char*
     nk_console* button = nk_console_add_label(parent, text);
     button->type = NK_CONSOLE_BUTTON;
     button->onclick = onclick;
+    button->selectable = nk_true;
     return button;
 }
 
+/**
+ * Initialize a new nk_console.
+ *
+ * @param context The associated Nuklear context.
+ */
 NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_handle handle;
     nk_console* console = nk_console_malloc(handle, NULL, sizeof(nk_console));
+    nk_zero(console, sizeof(nk_console));
     console->type = NK_CONSOLE_PARENT;
-    console->text = "";
-    console->activeWidget = NULL;
-    console->alignment = 0;
-    console->parent = NULL;
     console->context = context;
-    console->children = NULL;
-    console->activeParent = NULL;
-    console->onclick = NULL;
-    console->selecting = 0;
-    console->user_data = NULL;
+    console->alignment = NK_TEXT_ALIGN_CENTERED;
     return console;
 }
 
+/**
+ * Free the given nk_console's data.
+ */
 NK_API void nk_console_free(nk_console* console) {
     if (console == NULL) {
         return;
