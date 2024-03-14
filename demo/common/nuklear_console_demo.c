@@ -1,9 +1,9 @@
 #include <string.h>
 
-#define NK_CONSOLE_IMPLEMENTATION
 #include "../../nuklear_console.h"
 
 struct nk_console* console;
+static nk_size progressValue = 50;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
@@ -26,9 +26,10 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
     nk_console* options = nk_console_add_button(console, "Options");
     {
         nk_console_add_checkbox(options, "Show Window Title", &showWindowTitle);
+        nk_console_add_progress(options, "Number", &progressValue, 100);
         nk_console_add_button_onclick(options, "Back", nk_console_onclick_back);
     }
-    
+
     nk_console_add_button(console, "Load Game");
     nk_console_add_button(console, "Save Game");
     nk_console_add_button(console, "Quit Game")->onclick = button_clicked;

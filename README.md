@@ -7,7 +7,8 @@ Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/N
 ## Usage
 
 ``` c
-#define NK_CONSOLE_IMPLEMENTATION
+#define NK_IMPLEMENTATION
+#include "nukear.h"
 #include "nuklear_console.h"
 
 int main() {

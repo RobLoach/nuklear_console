@@ -6,7 +6,8 @@ typedef enum {
     NK_CONSOLE_PARENT,
     NK_CONSOLE_LABEL,
     NK_CONSOLE_BUTTON,
-    NK_CONSOLE_CHECKBOX
+    NK_CONSOLE_CHECKBOX,
+    NK_CONSOLE_PROGRESS
 } nk_console_widget_type;
 
 typedef struct nk_console {
@@ -15,7 +16,9 @@ typedef struct nk_console {
     int alignment;
     nk_bool selectable;
     nk_bool* value_bool;
+    nk_size* value_size;
     void (*onclick)(struct nk_console*);
+    nk_size max_size;
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -25,21 +28,22 @@ typedef struct nk_console {
     nk_bool input_processed;
 } nk_console;
 
+NK_API nk_console* nk_console_init(struct nk_context* context);
+NK_API void nk_console_free(nk_console* console);
+NK_API void nk_console_render(nk_console* console);
+NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char* text, void (*onclick)(nk_console*));
+NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text);
+NK_API nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active);
+NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
+NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text);
+NK_API void nk_console_onclick_back(nk_console* button);
 nk_console* nk_console_get_parent_top(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
-NK_API void nk_console_free(nk_console* console);
-NK_API void nk_console_render(nk_console* console);
-NK_API nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active);
-NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text);
-NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char* text, void (*onclick)(nk_console*));
-NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text);
-NK_API void nk_console_onclick_back(nk_console* button);
-NK_API nk_console* nk_console_init(struct nk_context* context);
 
 #endif
 
-#ifdef NK_CONSOLE_IMPLEMENTATION
+#ifdef NK_IMPLEMENTATION
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_IMPLEMENTATION_ONCE
 
@@ -355,10 +359,63 @@ NK_API void nk_console_render(nk_console* console) {
                 nk_console_check_up_down(console);
             }
         }
+        break;
+        case NK_CONSOLE_PROGRESS: {
+            nk_layout_row_dynamic(console->context, 0, 2);
+
+            // Allow changing the value.
+            nk_bool active = nk_false;
+            if (top->activeWidget == console && !top->input_processed) {
+                if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
+                    if (console->value_size != NULL && *console->value_size > 0) {
+                        *console->value_size = *console->value_size - 1;
+                    }
+                    active = nk_true;
+                    top->input_processed = nk_true;
+                }
+                else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
+                    if (console->value_size != NULL && *console->value_size < console->max_size) {
+                        *console->value_size = *console->value_size + 1;
+                    }
+                    active = nk_true;
+                    top->input_processed = nk_true;
+                }
+            }
+
+            // Display the label
+            nk_labelf(console->context, NK_TEXT_LEFT, "%s (%d)", console->text, (int)*console->value_size);
+            widget_bounds = nk_layout_widget_bounds(console->context);
+
+            // Progress
+            struct nk_style_item cursor_normal = console->context->style.progress.cursor_normal;
+            struct nk_style_item cursor_hover = console->context->style.progress.cursor_hover;
+            struct nk_style_item cursor_active = console->context->style.progress.cursor_active;
+            if (top->activeWidget == console) {
+                if (active) {
+                    console->context->style.progress.cursor_normal = cursor_active;
+                }
+                else {
+                    console->context->style.progress.cursor_normal = cursor_active;
+                }
+            }
+
+            // Display the widget
+            nk_progress(console->context, console->value_size, console->max_size, nk_true);
+
+            // Restore the styles
+            console->context->style.progress.cursor_normal = cursor_normal;
+            console->context->style.progress.cursor_hover = cursor_hover;
+            console->context->style.progress.cursor_active = cursor_active;
+
+            // Allow switching up/down in widgets
+            if (top->activeWidget == console) {
+                nk_console_check_up_down(console);
+            }
+        }
     }
 
     // Allow mouse to switch focus between active widgets
-    if (widget_bounds.w > 0 && top->input_processed == nk_false && nk_input_is_mouse_moved(&console->context->input) && nk_input_is_mouse_hovering_rect(&console->context->input, widget_bounds)) {
+    if (top->input_processed == nk_false && widget_bounds.w > 0 && nk_input_is_mouse_moved(&console->context->input) && nk_input_is_mouse_hovering_rect(&console->context->input, widget_bounds)) {
         top->activeWidget = console;
         top->input_processed = nk_true;
     }
@@ -424,6 +481,21 @@ NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char*
     button->onclick = onclick;
     button->selectable = nk_true;
     return button;
+}
+
+NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text, nk_size* current, nk_size max) {
+    nk_console* progress = nk_console_add_label(parent, text);
+    progress->type = NK_CONSOLE_PROGRESS;
+    progress->selectable = nk_true;
+    progress->value_size = current;
+    progress->max_size = max;
+    if (*current < 0) {
+        *current = 0;
+    }
+    else if (*current > max) {
+        *current = max;
+    }
+    return progress;
 }
 
 /**
