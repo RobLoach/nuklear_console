@@ -26,8 +26,6 @@ typedef struct nk_console {
 
     nk_bool selectable;
 
-    nk_bool cursorJustMoved;
-
     void* user_data;
 } nk_console;
 
@@ -159,21 +157,21 @@ NK_API void nk_console_allow_up_down(nk_console* console) {
     struct nk_input* input = &console->context->input;
 
     nk_console* top = nk_console_get_parent_top(console);
-    if (top->cursorJustMoved == nk_false) {
-        if (nk_input_is_key_pressed(input, NK_KEY_UP)) {
-            nk_console_move_cursor(console, -1);
-                    top->cursorJustMoved = nk_true;
-        }
-        else if (nk_input_is_key_pressed(input, NK_KEY_DOWN)) {
-            nk_console_move_cursor(console, 1);
-                    top->cursorJustMoved = nk_true;
-        }
+    if (nk_input_is_key_pressed(input, NK_KEY_UP)) {
+        nk_console_move_cursor(console, -1);
+    }
+    else if (nk_input_is_key_pressed(input, NK_KEY_DOWN)) {
+        nk_console_move_cursor(console, 1);
     }
 }
 
 NK_API void nk_console_render(nk_console* console) {
     if (console == NULL) {
         return;
+    }
+    nk_console* top = nk_console_get_parent_top(console);
+    if (console->parent == NULL && top->activeWidget == NULL) {
+        //nk_console_move_cursor(console, 0);
     }
 
     // Render the active parent if required.
@@ -185,15 +183,6 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
-    nk_console* top = nk_console_get_parent_top(console);
-    if (console->parent == NULL) {
-        top->cursorJustMoved == nk_false;
-        printf("SDATARDSF\n");
-    }
-
-    if (top->activeWidget == NULL) {
-        nk_console_move_cursor(console, 0);
-    }
 
     switch (console->type) {
         case NK_CONSOLE_PARENT: {
@@ -237,7 +226,7 @@ NK_API void nk_console_render(nk_console* console) {
                         nk_console* top = nk_console_get_parent_top(console);
                         if (top != NULL) {
                             top->activeParent = console;
-                            nk_console_move_cursor(console, 0);
+                            top->activeWidget = NULL;
                         }
                     }
                 }
@@ -245,13 +234,11 @@ NK_API void nk_console_render(nk_console* console) {
                     console->onclick(console);
                 }
             }
-            else {
-                if (top->activeWidget == console) {
-                    nk_console_allow_up_down(console);
-                }
-            }
         }
         break;
+    }
+    if (console->parent == NULL) {
+        nk_console_allow_up_down(top->activeWidget);
     }
 }
 
@@ -317,7 +304,6 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->onclick = NULL;
     console->selectable = nk_false;
     console->user_data = NULL;
-    console->cursorJustMoved = nk_false;
     return console;
 }
 
