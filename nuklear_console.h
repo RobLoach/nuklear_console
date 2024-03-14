@@ -7,18 +7,37 @@ typedef enum {
     NK_CONSOLE_LABEL,
     NK_CONSOLE_BUTTON,
     NK_CONSOLE_CHECKBOX,
-    NK_CONSOLE_PROGRESS
+    NK_CONSOLE_PROGRESS,
+    NK_CONSOLE_COMBOBOX
 } nk_console_widget_type;
+
+typedef struct nk_console_combobox_data {
+    const char* label;
+    const char* items_separated_by_separator;
+    int separator;
+    int* selected;
+    int count;
+} nk_console_combobox_data;
+struct nk_console;
+
+typedef struct nk_console_button_data {
+    enum nk_symbol_type symbol;
+    void (*onclick)(struct nk_console*);
+    nk_bool skip_row;
+} nk_console_button_data;
 
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* text;
     int alignment;
+
     nk_bool selectable;
     nk_bool* value_bool;
     nk_size* value_size;
-    void (*onclick)(struct nk_console*);
     nk_size max_size;
+
+    nk_console_combobox_data combobox;
+    nk_console_button_data button;
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -254,7 +273,9 @@ NK_API void nk_console_render(nk_console* console) {
         }
         break;
         case NK_CONSOLE_BUTTON: {
-            nk_layout_row_dynamic(console->context, 0, 1);
+            if (!console->button.skip_row) {
+                nk_layout_row_dynamic(console->context, 0, 1);
+            }
             widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Check the button state.
@@ -275,7 +296,12 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the button.
-            selected |= nk_button_label(console->context, console->text);
+            if (console->button.symbol == NK_SYMBOL_NONE) {
+                selected |= nk_button_label(console->context, console->text);
+            }
+            else {
+                selected |= nk_button_symbol_label(console->context, console->button.symbol, console->text, console->alignment);
+            }
 
             // Restore the styles
             console->context->style.button.normal = buttonStyle;
@@ -285,14 +311,14 @@ NK_API void nk_console_render(nk_console* console) {
                 top->input_processed = nk_true;
 
                 // If there's no onclick action and there are children...
-                if (console->onclick == NULL) {
+                if (console->button.onclick == NULL) {
                     if (console->children != NULL) {
                         top->activeParent = console;
                         top->activeWidget = NULL;
                     }
                 }
                 else {
-                    console->onclick(console);
+                    console->button.onclick(console);
                 }
             }
 
@@ -412,6 +438,64 @@ NK_API void nk_console_render(nk_console* console) {
                 nk_console_check_up_down(console);
             }
         }
+        break;
+        case NK_CONSOLE_COMBOBOX: {
+            nk_layout_row_dynamic(console->context, 0, 2);
+
+            // Allow changing the value.
+            nk_bool active = nk_false;
+            if (top->activeWidget == console && !top->input_processed) {
+                if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
+                    active = !active;
+                    top->input_processed = nk_true;
+                    //console->context->input.mouse.
+                }
+                else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_BACKSPACE)) {
+                    if (active) {
+                        active = nk_false;
+                        top->input_processed = nk_true;
+                    }
+                }
+            }
+
+            // Display the label
+            nk_label(console->context, console->combobox.label, NK_TEXT_LEFT);
+            widget_bounds = nk_layout_widget_bounds(console->context);
+
+            // Display a mocked button
+            console->type = NK_CONSOLE_BUTTON;
+            nk_console_render(console);
+            console->type = NK_CONSOLE_COMBOBOX;
+
+            //nk_combobox_separator(console->context, console->combobox.items_separated_by_separator, console->combobox.separator, console->combobox.selected, console->combobox.count, (int)nk_widget_height(console->context), nk_vec2(nk_widget_width(console->context), 200));
+
+            // Progress
+            // struct nk_style_item cursor_normal = console->context->style.progress.cursor_normal;
+            // struct nk_style_item cursor_hover = console->context->style.progress.cursor_hover;
+            // struct nk_style_item cursor_active = console->context->style.progress.cursor_active;
+            // if (top->activeWidget == console) {
+            //     if (active) {
+            //         console->context->style.progress.cursor_normal = cursor_active;
+            //     }
+            //     else {
+            //         console->context->style.progress.cursor_normal = cursor_active;
+            //     }
+            // }
+
+            // // Display the widget
+            // nk_progress(console->context, console->value_size, console->max_size, nk_true);
+
+            // // Restore the styles
+            // console->context->style.progress.cursor_normal = cursor_normal;
+            // console->context->style.progress.cursor_hover = cursor_hover;
+            // console->context->style.progress.cursor_active = cursor_active;
+
+            // Allow switching up/down in widgets
+            if (top->activeWidget == console) {
+                nk_console_check_up_down(console);
+            }
+        }
+        break;
     }
 
     // Allow mouse to switch focus between active widgets
@@ -478,7 +562,7 @@ NK_API void nk_console_onclick_back(nk_console* button) {
 NK_API nk_console* nk_console_add_button_onclick(nk_console* parent, const char* text, void (*onclick)(struct nk_console*)) {
     nk_console* button = nk_console_add_label(parent, text);
     button->type = NK_CONSOLE_BUTTON;
-    button->onclick = onclick;
+    button->button.onclick = onclick;
     button->selectable = nk_true;
     return button;
 }
@@ -496,6 +580,27 @@ NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text,
         *current = max;
     }
     return progress;
+}
+
+NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
+    nk_console* combobox = nk_console_add_label(parent, label);
+    combobox->type = NK_CONSOLE_COMBOBOX;
+    combobox->selectable = nk_true;
+    combobox->combobox.items_separated_by_separator = items_separated_by_separator;
+    combobox->combobox.separator = separator;
+    combobox->combobox.selected = selected;
+    combobox->combobox.label = label;
+    combobox->button.skip_row = nk_true;
+    combobox->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
+
+    combobox->combobox.count++;
+    for (int i = 0; items_separated_by_separator[i] != 0; i++) {
+        if (items_separated_by_separator[i] == (char)separator) {
+            combobox->combobox.count++;
+        }
+    }
+
+    return combobox;
 }
 
 /**

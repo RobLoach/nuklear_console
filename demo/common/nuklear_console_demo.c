@@ -4,6 +4,7 @@
 
 struct nk_console* console;
 static nk_size progressValue = 50;
+static int weapon = 0;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
@@ -18,6 +19,7 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
     // New Game
     nk_console* newgame = nk_console_add_button(console, "New Game");
     {
+        newgame->button.symbol = NK_SYMBOL_PLUS;
         nk_console_add_label(newgame, "This would start a new game!");
         nk_console_add_button_onclick(newgame, "Back", nk_console_onclick_back);
     }
@@ -27,12 +29,13 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
     {
         nk_console_add_checkbox(options, "Show Window Title", &showWindowTitle);
         nk_console_add_progress(options, "Number", &progressValue, 100);
-        nk_console_add_button_onclick(options, "Back", nk_console_onclick_back);
+        nk_console_add_combobox(options, "Weapon", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon);
+        nk_console_add_button_onclick(options, "Back", nk_console_onclick_back)->button.symbol = NK_SYMBOL_TRIANGLE_LEFT;
     }
 
     nk_console_add_button(console, "Load Game");
     nk_console_add_button(console, "Save Game");
-    nk_console_add_button(console, "Quit Game")->onclick = button_clicked;
+    nk_console_add_button(console, "Quit Game")->button.onclick = button_clicked;
 }
 
 nk_bool nuklear_console_demo_render() {
