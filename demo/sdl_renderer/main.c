@@ -26,6 +26,8 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
+nk_bool showWindowTitle;
+
 #include "../common/nuklear_console_demo.c"
 
 SDL_GameController *findController() {
@@ -45,6 +47,7 @@ int main(int argc, char *argv[]) {
     int running = 1;
     int flags = 0;
     float font_scale = 3;
+    showWindowTitle = nk_true;
 
     /* GUI */
     struct nk_context *ctx;
@@ -115,6 +118,12 @@ int main(int argc, char *argv[]) {
                         case SDL_CONTROLLER_BUTTON_DPAD_DOWN:
                             nk_input_key(ctx, NK_KEY_DOWN, evt.type == SDL_CONTROLLERBUTTONDOWN);
                             break;
+                        case SDL_CONTROLLER_BUTTON_DPAD_LEFT:
+                            nk_input_key(ctx, NK_KEY_LEFT, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
+                        case SDL_CONTROLLER_BUTTON_DPAD_RIGHT:
+                            nk_input_key(ctx, NK_KEY_RIGHT, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
                         case SDL_CONTROLLER_BUTTON_B:
                             nk_input_key(ctx, NK_KEY_BACKSPACE, evt.type == SDL_CONTROLLERBUTTONDOWN);
                             break;
@@ -129,10 +138,13 @@ int main(int argc, char *argv[]) {
         }
         nk_input_end(ctx);
 
+        int flags = NK_WINDOW_BORDER;
+        if (showWindowTitle) {
+            flags |= NK_WINDOW_TITLE;
+        }
+
         /* GUI */
-        if (nk_begin(ctx, "nuklear_console", nk_rect(50, 50, WINDOW_WIDTH - 100, WINDOW_HEIGHT - 100),
-            NK_WINDOW_BORDER|NK_WINDOW_TITLE))
-        {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(50, 50, WINDOW_WIDTH - 100, WINDOW_HEIGHT - 100), flags)) {
             /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render()) {
                 running = 0;

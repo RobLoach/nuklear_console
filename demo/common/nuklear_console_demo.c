@@ -14,15 +14,16 @@ void button_clicked(struct nk_console* button) {
 
 void nuklear_console_demo_init(struct nk_context* ctx) {
     console = nk_console_init(ctx);
-    nk_console_add_button(console, "New Game");
+
+    nk_console* newgame = nk_console_add_button(console, "New Game");
+    {
+        nk_console_add_label(newgame, "This would start a new game!");
+        nk_console_add_button_onclick(newgame, "Back", nk_console_onclick_back);
+    }
+
     nk_console* options = nk_console_add_button(console, "Options");
     {
-        nk_console* options_2 = nk_console_add_button(options, "Some cool option!");
-        {
-            nk_console_add_label(options_2, "Some cool optins");
-            nk_console_add_button_onclick(options_2, "Back", nk_console_onclick_back);
-        }
-        nk_console_add_button(options, "Option #2");
+        nk_console_add_checkbox(options, "Show Window Title", &showWindowTitle);
         nk_console_add_button_onclick(options, "Back", nk_console_onclick_back);
     }
     nk_console_add_button(console, "Load Game");
