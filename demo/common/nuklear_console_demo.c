@@ -4,7 +4,7 @@
 
 struct nk_console* console;
 static nk_size progressValue = 50;
-static int weapon = 0;
+static int weapon = 1;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
