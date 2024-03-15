@@ -5,6 +5,8 @@
 struct nk_console* console;
 static nk_size progressValue = 50;
 static int weapon = 1;
+static int property_int_test = 20;
+static float property_float_test = 0.4f;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
@@ -28,8 +30,11 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
     nk_console* options = nk_console_add_button(console, "Options");
     {
         nk_console_add_checkbox(options, "Show Window Title", &showWindowTitle);
-        nk_console_add_progress(options, "Number", &progressValue, 100);
-        nk_console_add_combobox(options, "Weapon", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon);
+        nk_console_add_progress(options, "Progress", &progressValue, 100);
+        nk_console_add_combobox(options, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon);
+        nk_console_add_property_int(options, "Property Int", 10, &property_int_test, 30, 1, 1);
+        nk_console_add_property_float(options, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
+
         nk_console_add_button_onclick(options, "Back", nk_console_onclick_back)->button.symbol = NK_SYMBOL_TRIANGLE_LEFT;
     }
 

@@ -49,6 +49,8 @@ nk_console* nk_console_add_button(nk_console* parent, const char* text);
 nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active);
 nk_console* nk_console_add_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected);
 nk_console* nk_console_add_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
+nk_console* nk_console_add_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel);
+nk_console* nk_console_add_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel);
 nk_console* nk_console_add_label(nk_console* parent, const char* text);
 void nk_console_onclick_back(nk_console* button);
 nk_console* nk_console_get_top(nk_console* widget);

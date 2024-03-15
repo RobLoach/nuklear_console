@@ -8,8 +8,12 @@ typedef enum {
     NK_CONSOLE_BUTTON,
     NK_CONSOLE_CHECKBOX,
     NK_CONSOLE_PROGRESS,
-    NK_CONSOLE_COMBOBOX
+    NK_CONSOLE_COMBOBOX,
+    NK_CONSOLE_PROPERTY_INT,
+    NK_CONSOLE_PROPERTY_FLOAT
 } nk_console_widget_type;
+
+struct nk_console;
 
 typedef struct nk_console_combobox_data {
     const char* label;
@@ -19,6 +23,18 @@ typedef struct nk_console_combobox_data {
     int count;
 } nk_console_combobox_data;
 struct nk_console;
+
+typedef struct nk_console_property_data {
+    int min_int;
+    int max_int;
+    int step_int;
+    float min_float;
+    float max_float;
+    float step_float;
+    float inc_per_pixel;
+    int* val_int;
+    float* val_float;
+} nk_console_property_data;
 
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
@@ -39,6 +55,7 @@ typedef struct nk_console {
 
     nk_console_combobox_data combobox;
     nk_console_button_data button;
+    nk_console_property_data property;
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -56,9 +73,11 @@ NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text);
 NK_API nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active);
 NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected);
 NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
+NK_API nk_console* nk_console_add_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel);
+NK_API nk_console* nk_console_add_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel);
 NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text);
 NK_API void nk_console_onclick_back(nk_console* button);
-nk_console* nk_console_get_top(nk_console* widget);
+NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 
@@ -99,7 +118,7 @@ extern "C" {
 /**
  * Get the top parent from a given widget.
  */
-nk_console* nk_console_get_top(nk_console* widget) {
+NK_API nk_console* nk_console_get_top(nk_console* widget) {
     if (widget == NULL) {
         return NULL;
     }
@@ -491,6 +510,81 @@ NK_API void nk_console_render(nk_console* console) {
             }
         }
         break;
+        case NK_CONSOLE_PROPERTY_INT:
+        case NK_CONSOLE_PROPERTY_FLOAT: {
+            nk_layout_row_dynamic(console->context, 0, 2);
+
+            // Allow changing the value with left/right
+            if (top->activeWidget == console && !top->input_processed) {
+                if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
+                    switch (console->type) {
+                        case NK_CONSOLE_PROPERTY_INT:
+                            *console->property.val_int = *console->property.val_int - console->property.step_int;
+                            if (*console->property.val_int < console->property.min_int) {
+                                *console->property.val_int = console->property.min_int;
+                            }
+                            break;
+                        case NK_CONSOLE_PROPERTY_FLOAT:
+                            *console->property.val_float = *console->property.val_float - console->property.step_float;
+                            if (*console->property.val_float < console->property.min_float) {
+                                *console->property.val_float = console->property.min_float;
+                            }
+                            break;
+                    }
+                    top->input_processed = nk_true;
+                }
+                else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
+                    switch (console->type) {
+                        case NK_CONSOLE_PROPERTY_INT:
+                            *console->property.val_int = *console->property.val_int + console->property.step_int;
+                            if (*console->property.val_int > console->property.max_int) {
+                                *console->property.val_int = console->property.max_int;
+                            }
+                            break;
+                        case NK_CONSOLE_PROPERTY_FLOAT:
+                            *console->property.val_float = *console->property.val_float + console->property.step_float;
+                            if (*console->property.val_float > console->property.max_float) {
+                                *console->property.val_float = console->property.max_float;
+                            }
+                            break;
+                    }
+                    top->input_processed = nk_true;
+                }
+            }
+
+            // Style
+            enum nk_symbol_type left = console->context->style.property.sym_left;
+            enum nk_symbol_type right = console->context->style.property.sym_right;
+            if (top->activeWidget != console) {
+                console->context->style.property.sym_left = NK_SYMBOL_NONE;
+                console->context->style.property.sym_right = NK_SYMBOL_NONE;
+            }
+
+            // Display the label
+            nk_label(console->context, console->text, NK_TEXT_LEFT);
+            widget_bounds = nk_layout_widget_bounds(console->context);
+
+            switch (console->type) {
+                case NK_CONSOLE_PROPERTY_INT:
+                    nk_property_int(console->context, "", console->property.min_int, console->property.val_int, console->property.max_int, console->property.step_int, console->property.inc_per_pixel);
+                    break;
+                case NK_CONSOLE_PROPERTY_FLOAT:
+                   nk_property_float(console->context, "", console->property.min_float, console->property.val_float, console->property.max_float, console->property.step_float, console->property.inc_per_pixel);
+                   break;
+            }
+
+            // Style Restoration
+            if (top->activeWidget != console) {
+                console->context->style.property.sym_left = left;
+                console->context->style.property.sym_right = right;
+            }
+
+            // Allow switching up/down in widgets
+            if (top->activeWidget == console && !top->input_processed) {
+                nk_console_check_up_down(console);
+            }
+        }
+        break;
     }
 
     // Allow mouse to switch focus between active widgets
@@ -524,6 +618,44 @@ NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text) {
     label->alignment = NK_TEXT_LEFT;
     cvector_push_back(parent->children, label);
     return label;
+}
+
+NK_API nk_console* nk_console_add_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel) {
+    NK_ASSERT(val);
+    nk_console* widget = nk_console_add_label(parent, label);
+    widget->type = NK_CONSOLE_PROPERTY_INT;
+    widget->selectable = nk_true;
+    widget->property.min_int = min;
+    widget->property.val_int = val;
+    widget->property.max_int = max;
+    widget->property.step_int = step;
+    widget->property.inc_per_pixel = inc_per_pixel;
+    if (*val < min) {
+        *val = min;
+    }
+    else if (*val > max) {
+        *val = max;
+    }
+    return widget;
+}
+
+NK_API nk_console* nk_console_add_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel) {
+    NK_ASSERT(val);
+    nk_console* widget = nk_console_add_label(parent, label);
+    widget->type = NK_CONSOLE_PROPERTY_FLOAT;
+    widget->selectable = nk_true;
+    widget->property.min_float = min;
+    widget->property.val_float = val;
+    widget->property.max_float = max;
+    widget->property.step_float = step;
+    widget->property.inc_per_pixel = inc_per_pixel;
+    if (*val < min) {
+        *val = min;
+    }
+    else if (*val > max) {
+        *val = max;
+    }
+    return widget;
 }
 
 NK_API nk_console* nk_console_add_button(nk_console* parent, const char* text) {
