@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     SDL_Renderer *renderer;
     int running = 1;
     int flags = 0;
-    float font_scale = 2.5;
+    float font_scale = 3;
     showWindowTitle = nk_true;
 
     /* GUI */
@@ -139,6 +139,7 @@ int main(int argc, char *argv[]) {
         nk_input_end(ctx);
 
         int flags = NK_WINDOW_BORDER;
+        flags |= NK_WINDOW_SCROLL_AUTO_HIDE;
         if (showWindowTitle) {
             flags |= NK_WINDOW_TITLE;
         }

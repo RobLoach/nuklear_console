@@ -166,8 +166,21 @@ int nk_console_get_widget_index(nk_console* widget) {
 /**
  * Allow the user to move up and down between widgets.
  */
-void nk_console_check_up_down(nk_console* widget) {
+void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
     nk_console* top = nk_console_get_top(widget);
+
+    // Scroll to the active widget if needed.
+    struct nk_rect content_region = nk_window_get_content_region(widget->context);
+    nk_uint offsetx, offsety;
+    nk_window_get_scroll(widget->context, &offsetx, &offsety);
+    if (bounds.y + bounds.h > content_region.y + content_region.h + offsety) {
+        nk_uint dest = bounds.y + bounds.h - content_region.y - content_region.h;
+        nk_window_set_scroll(widget->context, offsetx, dest);
+    }
+    else if (bounds.y < content_region.y + offsety) {
+        nk_uint dest = bounds.y - content_region.y;
+        nk_window_set_scroll(widget->context, offsetx, dest);
+    }
 
     // Only process an active input once.
     if (top->input_processed == nk_false) {
@@ -362,7 +375,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
-                nk_console_check_up_down(console);
+                nk_console_check_up_down(console, widget_bounds);
             }
         }
         break;
@@ -420,7 +433,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
-                nk_console_check_up_down(console);
+                nk_console_check_up_down(console, widget_bounds);
             }
         }
         break;
@@ -473,7 +486,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
-                nk_console_check_up_down(console);
+                nk_console_check_up_down(console, widget_bounds);
             }
         }
         break;
@@ -513,7 +526,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
-                nk_console_check_up_down(console);
+                nk_console_check_up_down(console, widget_bounds);
             }
         }
         break;
@@ -613,7 +626,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console && !top->input_processed) {
-                nk_console_check_up_down(console);
+                nk_console_check_up_down(console, widget_bounds);
             }
         }
         break;
