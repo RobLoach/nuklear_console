@@ -46,7 +46,7 @@ int main(int argc, char *argv[]) {
     SDL_Renderer *renderer;
     int running = 1;
     int flags = 0;
-    float font_scale = 3;
+    float font_scale = 2.5;
     showWindowTitle = nk_true;
 
     /* GUI */
