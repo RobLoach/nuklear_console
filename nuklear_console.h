@@ -539,6 +539,12 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Display the mocked combobox button
             console->type = NK_CONSOLE_BUTTON;
+            if (top->activeWidget == console) {
+                console->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
+            }
+            else {
+                console->button.symbol = NK_SYMBOL_NONE;
+            }
             nk_console_render(console);
             console->type = NK_CONSOLE_COMBOBOX;
 
