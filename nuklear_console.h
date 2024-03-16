@@ -68,6 +68,8 @@ typedef struct nk_console {
     struct nk_console* activeParent;
     struct nk_console* activeWidget;
     nk_bool input_processed;
+
+    void (*onchange)(struct nk_console*);
 } nk_console;
 
 NK_API nk_console* nk_console_init(struct nk_context* context);
@@ -780,6 +782,11 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
 
     // Update the active widget to the combobox.
     nk_console_get_top(combobox)->activeWidget = combobox;
+
+    // Invoke the onchange callback.
+    if (combobox->onchange != NULL) {
+        combobox->onchange(combobox);
+    }
 }
 
 NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
