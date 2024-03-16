@@ -391,6 +391,9 @@ NK_API void nk_console_render(nk_console* console) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
                     if (console->value_bool != NULL) {
                         *console->value_bool = !*console->value_bool;
+                        if (console->onchange != NULL) {
+                            console->onchange(console);
+                        }
                     }
                     active = nk_true;
                     top->input_processed = nk_true;
@@ -398,6 +401,9 @@ NK_API void nk_console_render(nk_console* console) {
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
                     if (console->value_bool != NULL) {
                         *console->value_bool = nk_false;
+                        if (console->onchange != NULL) {
+                            console->onchange(console);
+                        }
                     }
                     active = nk_true;
                     top->input_processed = nk_true;
@@ -405,6 +411,9 @@ NK_API void nk_console_render(nk_console* console) {
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
                     if (console->value_bool != NULL) {
                         *console->value_bool = nk_true;
+                        if (console->onchange != NULL) {
+                            console->onchange(console);
+                        }
                     }
                     active = nk_true;
                     top->input_processed = nk_true;
@@ -448,6 +457,9 @@ NK_API void nk_console_render(nk_console* console) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
                     if (console->value_size != NULL && *console->value_size > 0) {
                         *console->value_size = *console->value_size - 1;
+                        if (console->onchange != NULL) {
+                            console->onchange(console);
+                        }
                     }
                     active = nk_true;
                     top->input_processed = nk_true;
@@ -455,6 +467,9 @@ NK_API void nk_console_render(nk_console* console) {
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
                     if (console->value_size != NULL && *console->value_size < console->max_size) {
                         *console->value_size = *console->value_size + 1;
+                        if (console->onchange != NULL) {
+                            console->onchange(console);
+                        }
                     }
                     active = nk_true;
                     top->input_processed = nk_true;
@@ -498,22 +513,23 @@ NK_API void nk_console_render(nk_console* console) {
             // Allow changing the value with left/right
             if (top->activeWidget == console && !top->input_processed) {
                 if (console->combobox.selected != NULL && console->children != NULL) {
-                    if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
+                    nk_bool changed = nk_false;
+                    if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) && *console->combobox.selected > 0) {
                         *console->combobox.selected = *console->combobox.selected - 1;
+                        changed = nk_true;
                     }
-                    else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
+                    else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT) && *console->combobox.selected < cvector_size(console->children) - 2) {
                         *console->combobox.selected = *console->combobox.selected + 1;
+                        changed = nk_true;
                     }
 
-                    if (*console->combobox.selected < 0) {
-                        *console->combobox.selected = 0;
+                    if (changed) {
+                        console->text = console->children[*console->combobox.selected + 1]->text;
+                        console->button.text_length = console->children[*console->combobox.selected + 1]->button.text_length;
+                        if (console->onchange != NULL) {
+                            console->onchange(console);
+                        }
                     }
-                    else if (*console->combobox.selected >= cvector_size(console->children) - 1) {
-                        *console->combobox.selected = cvector_size(console->children) - 2;
-                    }
-
-                    console->text = console->children[*console->combobox.selected + 1]->text;
-                    console->button.text_length = console->children[*console->combobox.selected + 1]->button.text_length;
                 }
             }
 
@@ -557,6 +573,9 @@ NK_API void nk_console_render(nk_console* console) {
                             }
                             break;
                     }
+                    if (console->onchange != NULL) {
+                        console->onchange(console);
+                    }
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
@@ -575,6 +594,9 @@ NK_API void nk_console_render(nk_console* console) {
                                 *console->property.val_float = console->property.max_float;
                             }
                             break;
+                    }
+                    if (console->onchange != NULL) {
+                        console->onchange(console);
                     }
                     top->input_processed = nk_true;
                 }
@@ -778,6 +800,7 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
     int selected = nk_console_get_widget_index(button);
     if (selected <= 0 || selected >= cvector_size(combobox->children)) {
         nk_console_onclick_back(button);
+        nk_console_get_top(combobox)->activeWidget = combobox;
         return;
     }
 
@@ -814,7 +837,7 @@ NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label
     combobox->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
 
     // Back button
-    nk_console_add_button_onclick(combobox, label, nk_console_onclick_back)
+    nk_console_add_button_onclick(combobox, label, nk_console_combobox_button_click)
         ->button.symbol = NK_SYMBOL_TRIANGLE_UP;
 
     // Add all the sub-page buttons

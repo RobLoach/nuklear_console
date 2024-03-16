@@ -11,7 +11,7 @@ static int property_int_test = 20;
 static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
-static int theme = 5;
+static int theme = 4;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
