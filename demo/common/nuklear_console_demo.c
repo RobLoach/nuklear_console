@@ -43,13 +43,13 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
         nk_console_add_property_int(options, "Property Int", 10, &property_int_test, 30, 1, 1);
         nk_console_add_property_float(options, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
         nk_console_add_slider_float(options, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f);
-        nk_console_add_slider_int(options, "Slider Int", 0, &slider_int_test, 20, 1);
+        nk_console_add_slider_int(options, "Slider Int", 0, &slider_int_test, 20, 1)->disabled = nk_true;
 
         nk_console_add_button_onclick(options, "Back", nk_console_onclick_back)->button.symbol = NK_SYMBOL_TRIANGLE_LEFT;
     }
     nk_console_add_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme)->onchange = theme_changed;
     set_style(ctx, theme);
-    nk_console_add_button(console, "Save Game");
+    nk_console_add_button(console, "Save Game")->disabled = nk_true;
     nk_console_add_button(console, "Quit Game")->button.onclick = button_clicked;
 }
 

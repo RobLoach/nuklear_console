@@ -54,6 +54,7 @@ typedef struct nk_console {
     int alignment;
 
     nk_bool selectable;
+    nk_bool disabled;
     nk_bool* value_bool;
     nk_size* value_size;
     nk_size max_size;
@@ -191,7 +192,7 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable) {
+                if (target != NULL && target->selectable && !target->disabled) {
                     top->activeWidget = target;
                     break;
                 }
@@ -203,7 +204,7 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable) {
+                if (target != NULL && target->selectable && !target->disabled) {
                     top->activeWidget = target;
                     break;
                 }
@@ -245,7 +246,7 @@ NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
     // Iterate through the children to find the first selectable widget.
     for (size_t i = 0; i < cvector_size(parent->children); i++) {
         if (parent->children[i] != NULL) {
-            if (parent->children[i]->selectable) {
+            if (parent->children[i]->selectable && !parent->children[i]->disabled) {
                 return parent->children[i];
             }
         }
@@ -321,6 +322,10 @@ NK_API void nk_console_render(nk_console* console) {
             }
             widget_bounds = nk_layout_widget_bounds(console->context);
 
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
+
             // Check the button state.
             nk_bool selected = nk_false;
             if (top->activeWidget == console && !top->input_processed && nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
@@ -373,6 +378,10 @@ NK_API void nk_console_render(nk_console* console) {
                 else {
                     console->button.onclick(console);
                 }
+            }
+
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
             }
 
             // Allow switching up/down in widgets
@@ -431,12 +440,20 @@ NK_API void nk_console_render(nk_console* console) {
                 }
             }
 
+            if (console->disabled || top->activeWidget != console) {
+                nk_widget_disable_begin(console->context);
+            }
+
             // Display the checkbox with fixed alignment.
             if (console->alignment == NK_TEXT_LEFT) {
                 nk_checkbox_label_align(console->context, console->text, console->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
             }
             else {
                 nk_checkbox_label(console->context, console->text, console->value_bool);
+            }
+
+            if (console->disabled || top->activeWidget != console) {
+                nk_widget_disable_end(console->context);
             }
 
             // Restore the styles
@@ -477,8 +494,19 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
+            if (top->activeWidget != console) {
+                nk_widget_disable_begin(console->context);
+            }
             nk_label(console->context, console->text, NK_TEXT_LEFT);
+            if (top->activeWidget != console) {
+                nk_widget_disable_end(console->context);
+            }
+
             widget_bounds = nk_layout_widget_bounds(console->context);
+
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
 
             // Progress
             struct nk_style_item cursor_normal = console->context->style.progress.cursor_normal;
@@ -500,6 +528,10 @@ NK_API void nk_console_render(nk_console* console) {
             console->context->style.progress.cursor_normal = cursor_normal;
             console->context->style.progress.cursor_hover = cursor_hover;
             console->context->style.progress.cursor_active = cursor_active;
+
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
+            }
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
@@ -534,8 +566,18 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
+            if (top->activeWidget != console) {
+                nk_widget_disable_begin(console->context);
+            }
             nk_label(console->context, console->combobox.label, NK_TEXT_LEFT);
+            if (top->activeWidget != console) {
+                nk_widget_disable_end(console->context);
+            }
             widget_bounds = nk_layout_widget_bounds(console->context);
+
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
 
             // Display the mocked combobox button
             console->type = NK_CONSOLE_BUTTON;
@@ -547,6 +589,10 @@ NK_API void nk_console_render(nk_console* console) {
             }
             nk_console_render(console);
             console->type = NK_CONSOLE_COMBOBOX;
+
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
+            }
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
@@ -624,8 +670,19 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
+            if (top->activeWidget != console) {
+                nk_widget_disable_begin(console->context);
+            }
             nk_label(console->context, console->text, NK_TEXT_LEFT);
+            if (top->activeWidget != console) {
+                nk_widget_disable_end(console->context);
+            }
+
             widget_bounds = nk_layout_widget_bounds(console->context);
+
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
 
             // Display the widget
             switch (console->type) {
@@ -652,6 +709,10 @@ NK_API void nk_console_render(nk_console* console) {
                 console->context->style.slider.bar_normal = bar_normal;
                 console->context->style.slider.cursor_normal = cursor_normal;
 
+            }
+
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
             }
 
             // Allow switching up/down in widgets
