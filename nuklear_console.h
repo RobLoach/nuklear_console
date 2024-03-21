@@ -477,7 +477,7 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
-            nk_labelf(console->context, NK_TEXT_LEFT, "%s (%d)", console->text, (int)*console->value_size);
+            nk_label(console->context, console->text, NK_TEXT_LEFT);
             widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Progress
@@ -799,6 +799,9 @@ NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text,
     return progress;
 }
 
+/**
+ * Handle the click event for combobox's children items.
+ */
 NK_API void nk_console_combobox_button_click(nk_console* button) {
     nk_console* combobox = button->parent;
 
@@ -829,6 +832,25 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
     if (combobox->onchange != NULL) {
         combobox->onchange(combobox);
     }
+}
+
+/**
+ * Handle the click event for the main button for the combobox.
+ *
+ * @see nk_console_add_combobox
+ * @internal
+ */
+NK_API void nk_console_combobox_button_main_click(nk_console* button) {
+    nk_console* top = nk_console_get_top(button);
+    int selected = button->combobox.selected == NULL ? 0 : *button->combobox.selected;
+    if (button->children != NULL) {
+        if (cvector_size(button->children) > selected + 1) {
+            top->activeWidget = button->children[selected + 1];
+        }
+    }
+
+    // Switch to show all the children.
+    top->activeParent = button;
 }
 
 NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
@@ -874,6 +896,8 @@ NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label
         combobox->text = combobox->children[*selected + 1]->text;
         combobox->button.text_length = combobox->children[*selected + 1]->button.text_length;
     }
+
+    combobox->button.onclick = nk_console_combobox_button_main_click;
 
     return combobox;
 }
