@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
         }
 
         /* GUI */
-        if (nk_begin(ctx, "nuklear_console", nk_rect(50, 50, WINDOW_WIDTH - 100, WINDOW_HEIGHT - 100), flags)) {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(25, 25, WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50), flags)) {
             /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render()) {
                 running = 0;
