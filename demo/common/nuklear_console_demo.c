@@ -12,11 +12,12 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 static int theme = 4;
+nk_bool showWindowTitle = nk_true;
+nk_bool shouldClose = nk_false;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
-        // Leverage the userdata to indicate whether or not we're to quit.
-        button->context->userdata.id = 1;
+        shouldClose = nk_true;
     }
 }
 void theme_changed(struct nk_console* combobox) {
@@ -56,11 +57,7 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
 nk_bool nuklear_console_demo_render() {
     nk_console_render(console);
 
-    if (console->context->userdata.id == 1) {
-        return nk_true;
-    }
-
-    return nk_false;
+    return shouldClose;;
 }
 
 void nuklear_console_demo_free() {

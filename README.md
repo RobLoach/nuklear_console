@@ -2,7 +2,7 @@
 
 Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear).
 
-![nuklear_console](screenshot.png)
+![nuklear_console screenshot](screenshot.gif)
 
 ## Usage
 
