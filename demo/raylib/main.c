@@ -4,15 +4,14 @@
 #include "../common/nuklear_console_demo.c"
 
 int main() {
-    InitWindow(800, 600, "raylib-nuklear example");
+    InitWindow(800, 600, "nuklear_console_demo");
     SetTargetFPS(60);
 
     // Create the Nuklear Context
-    int fontSize = 20;
+    int fontSize = 40;
     int padding = 25;
     struct nk_context *ctx = InitNuklear(fontSize);
-    float scaling = 1.0f;
-    //SetNuklearScaling(ctx, scaling);
+
     nuklear_console_demo_init(ctx);
 
     while (!WindowShouldClose()) {
@@ -47,7 +46,6 @@ int main() {
         }
 
         // Nuklear GUI Code
-        // https://github.com/Immediate-Mode-UI/Nuklear/wiki/Window
         if (nk_begin(ctx, "nuklear_console_demo", nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2), flags)) {
             if (nuklear_console_demo_render()) {
                 break;
