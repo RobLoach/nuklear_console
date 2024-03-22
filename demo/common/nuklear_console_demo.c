@@ -14,6 +14,7 @@ static float slider_float_test = 0.4f;
 static int theme = 4;
 nk_bool showWindowTitle = nk_true;
 nk_bool shouldClose = nk_false;
+char textedit[256] = {0};
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {
@@ -26,6 +27,7 @@ void theme_changed(struct nk_console* combobox) {
 
 void nuklear_console_demo_init(struct nk_context* ctx) {
     console = nk_console_init(ctx);
+    strcpy(textedit, "vurtun");
 
     // New Game
     nk_console* newgame = nk_console_add_button(console, "New Game");
@@ -39,6 +41,7 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
     nk_console* options = nk_console_add_button(console, "Options");
     {
         nk_console_add_checkbox(options, "Show Window Title", &showWindowTitle);
+        nk_console_add_textedit(options, "Name", textedit, 256);
         nk_console_add_progress(options, "Progress", &progressValue, 100);
         nk_console_add_combobox(options, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon);
         nk_console_add_property_int(options, "Property Int", 10, &property_int_test, 30, 1, 1);

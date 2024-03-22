@@ -12,7 +12,9 @@ typedef enum {
     NK_CONSOLE_PROPERTY_INT,
     NK_CONSOLE_PROPERTY_FLOAT,
     NK_CONSOLE_SLIDER_INT,
-    NK_CONSOLE_SLIDER_FLOAT
+    NK_CONSOLE_SLIDER_FLOAT,
+    NK_CONSOLE_TEXTEDIT,
+    NK_CONSOLE_TEXTEDIT_TEXT
 } nk_console_widget_type;
 
 struct nk_console;
@@ -48,6 +50,11 @@ typedef struct nk_console_button_data {
     int text_length;
 } nk_console_button_data;
 
+typedef struct nk_console_textedit_data {
+    int buffer_size;
+    const char* label;
+} nk_console_textedit_data;
+
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* text;
@@ -62,6 +69,7 @@ typedef struct nk_console {
     nk_console_combobox_data combobox;
     nk_console_button_data button;
     nk_console_property_data property;
+    nk_console_textedit_data textedit;
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -69,6 +77,8 @@ typedef struct nk_console {
     struct nk_console* activeParent;
     struct nk_console* activeWidget;
     nk_bool input_processed;
+    void (*onback)(struct nk_console*);
+    nk_bool disable_back;
 
     void (*onchange)(struct nk_console*);
 } nk_console;
@@ -86,11 +96,12 @@ NK_API nk_console* nk_console_add_property_float(nk_console* parent, const char*
 NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text);
 NK_API nk_console* nk_console_add_slider_int(nk_console* parent, const char* label, int min, int* val, int max, int step);
 NK_API nk_console* nk_console_add_slider_float(nk_console* parent, const char* label, float min, float* val, float max, float step);
+NK_API nk_console* nk_console_add_textedit(nk_console* options, const char* label, const char* buffer, int buffer_size);
 NK_API void nk_console_onclick_back(nk_console* button);
 NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
-
+NK_API void nk_console_textedit_back_onclick(nk_console* parent);
 #endif
 
 #ifdef NK_IMPLEMENTATION
@@ -212,7 +223,7 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
             top->input_processed = nk_true;
         }
         // Back
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE) && widget->disable_back == nk_false) {
             if (top->activeParent == NULL) {
                 return;
             }
@@ -221,10 +232,18 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
                 if (widget->parent == top) {
                     top->activeParent = top;
                     top->activeWidget = NULL;
+
+                    if (widget->onback != NULL) {
+                        widget->onback(widget);
+                    }
                 }
                 else if (widget->parent->parent != NULL) {
                     top->activeParent = widget->parent->parent;
                     top->activeWidget = NULL;
+
+                    if (widget->parent->onback != NULL) {
+                        widget->parent->onback(widget);
+                    }
                 }
             }
 
@@ -541,6 +560,7 @@ NK_API void nk_console_render(nk_console* console) {
         break;
         case NK_CONSOLE_COMBOBOX: {
             nk_layout_row_dynamic(console->context, 0, 2);
+            widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Allow changing the value with left/right
             if (top->activeWidget == console && !top->input_processed) {
@@ -573,11 +593,6 @@ NK_API void nk_console_render(nk_console* console) {
             if (top->activeWidget != console) {
                 nk_widget_disable_end(console->context);
             }
-            widget_bounds = nk_layout_widget_bounds(console->context);
-
-            if (console->disabled) {
-                nk_widget_disable_begin(console->context);
-            }
 
             // Display the mocked combobox button
             console->type = NK_CONSOLE_BUTTON;
@@ -589,15 +604,61 @@ NK_API void nk_console_render(nk_console* console) {
             }
             nk_console_render(console);
             console->type = NK_CONSOLE_COMBOBOX;
+        }
+        break;
+        case NK_CONSOLE_TEXTEDIT: {
+            nk_layout_row_dynamic(console->context, 0, 2);
+            widget_bounds = nk_layout_widget_bounds(console->context);
 
-            if (console->disabled) {
+            // Display the label
+            if (top->activeWidget != console) {
+                nk_widget_disable_begin(console->context);
+            }
+            nk_label(console->context, console->textedit.label, NK_TEXT_LEFT);
+            if (top->activeWidget != console) {
                 nk_widget_disable_end(console->context);
             }
+
+            // Display the mocked combobox button
+            console->type = NK_CONSOLE_BUTTON;
+            nk_console_render(console);
+            console->type = NK_CONSOLE_TEXTEDIT;
+        }
+        break;
+        case NK_CONSOLE_TEXTEDIT_TEXT: {
+
+            nk_layout_row_dynamic(console->context, 0, 1);
+            widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Allow switching up/down in widgets
             if (top->activeWidget == console) {
                 nk_console_check_up_down(console, widget_bounds);
             }
+
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
+
+            // Display the text edit
+            if (top->activeWidget == console) {
+                nk_edit_focus(console->context, NK_EDIT_FIELD);
+            }
+            else {
+                nk_edit_unfocus(console->context);
+            }
+            nk_edit_string_zero_terminated(console->context, NK_EDIT_FIELD, (char*)console->text, console->textedit.buffer_size, nk_filter_ascii);
+
+            if (top->activeWidget == console) {
+                if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
+                    top->input_processed = nk_true;
+                    nk_console_textedit_back_onclick(console->parent);
+                }
+            }
+
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
+            }
+            nk_layout_row_dynamic(console->context, 0, 10);
         }
         break;
         case NK_CONSOLE_SLIDER_INT:
@@ -825,6 +886,10 @@ NK_API void nk_console_onclick_back(nk_console* button) {
 
     nk_console* parent = button->parent;
     if (parent != NULL) {
+        if (parent->onback != NULL) {
+            parent->onback(parent);
+        }
+
         parent = parent->parent;
     }
     if (parent != NULL) {
@@ -961,6 +1026,167 @@ NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label
     combobox->button.onclick = nk_console_combobox_button_main_click;
 
     return combobox;
+}
+
+NK_API void nk_console_textedit_back_onclick(nk_console* parent) {
+    nk_console* active = parent;
+    if (parent->children == NULL) {
+        parent = parent->parent;
+    }
+
+    for (int i = 0; i < cvector_size(parent->children); i++) {
+        nk_console_free(parent->children[i]);
+    }
+
+    cvector_free(parent->children);
+    parent->children = NULL;
+
+    if (parent->type == NK_CONSOLE_TEXTEDIT) {
+        nk_console* top = nk_console_get_top(parent);
+        top->activeWidget = parent;
+        top->activeParent = parent->parent;
+    }
+}
+
+NK_API void nk_console_textedit_key_onclick(nk_console* button) {
+    char* buffer = (char*)button->parent->text;
+
+    if (nk_strlen(button->text) == 1) {
+        nk_console* shift = NULL;
+        for (int i = cvector_size(button->parent->children) - 1; i > 0; i--) {
+            if (button->parent->children[i]->button.symbol == NK_SYMBOL_CIRCLE_SOLID) {
+                shift = button->parent->children[i];
+                break;
+            }
+        }
+
+        // TODO: Allow for adding the text at the cursor position.
+        // int cursor = button->context->text_edit.cursor;
+        // if (cursor > 0) {
+        //     buffer[cursor] = button->text[0];
+        // }
+
+        int len = nk_strlen(buffer);
+        if (len < button->textedit.buffer_size - 1) {
+            if (shift != NULL) {
+                buffer[len] = (char)nk_to_upper((int)button->text[0]);
+                shift->button.symbol = NK_SYMBOL_NONE;
+            }
+            else {
+                buffer[len] = button->text[0];
+            }
+            buffer[len + 1] = '\0';
+        }
+
+    }
+    else if (nk_stricmp(button->text, "Backspace") == 0) {
+        int len = nk_strlen(buffer);
+        if (len > 0) {
+            buffer[len - 1] = '\0';
+        }
+    }
+    else if (nk_stricmp(button->text, "Space") == 0) {
+        int len = nk_strlen(buffer);
+        if (len < button->textedit.buffer_size - 1) {
+            buffer[len] = ' ';
+            buffer[len + 1] = '\0';
+        }
+    }
+    else if (nk_stricmp(button->text, "Shift") == 0) {
+        if (button->button.symbol == NK_SYMBOL_CIRCLE_SOLID) {
+            button->button.symbol = NK_SYMBOL_NONE;
+        }
+        else {
+            button->button.symbol = NK_SYMBOL_CIRCLE_SOLID;
+        }
+    }
+}
+
+NK_API void nk_console_textedit_add_key(nk_console* parent, nk_console* textedit, const char* key) {
+    nk_console* button = nk_console_add_button_onclick(parent, key, nk_console_textedit_key_onclick);
+    button->textedit = textedit->textedit;
+    button->button.skip_row = nk_true;
+
+    if (key[0] == 'S' || key[0] == 'B' || key[0] == 'C') {
+        button->button.skip_row = nk_false;
+    }
+}
+
+NK_API void nk_console_textedit_onclick(nk_console* button) {
+    nk_console* top = nk_console_get_top(button);
+
+    // Add the Onscreen keyboard interface
+    nk_console* textedit = nk_console_add_textedit(button, button->textedit.label, button->text, button->textedit.buffer_size);
+    textedit->type = NK_CONSOLE_TEXTEDIT_TEXT;
+    textedit->disable_back = nk_true;
+
+    // TODO: Add all the ASCII characters.
+    nk_console_textedit_add_key(button, textedit, "1");
+    nk_console_textedit_add_key(button, textedit, "2");
+    nk_console_textedit_add_key(button, textedit, "3");
+    nk_console_textedit_add_key(button, textedit, "4");
+    nk_console_textedit_add_key(button, textedit, "5");
+    nk_console_textedit_add_key(button, textedit, "6");
+    nk_console_textedit_add_key(button, textedit, "7");
+    nk_console_textedit_add_key(button, textedit, "8");
+    nk_console_textedit_add_key(button, textedit, "9");
+    nk_console_textedit_add_key(button, textedit, "0");
+    nk_console_textedit_add_key(button, textedit, "q");
+    nk_console_textedit_add_key(button, textedit, "w");
+    nk_console_textedit_add_key(button, textedit, "e");
+    nk_console_textedit_add_key(button, textedit, "r");
+    nk_console_textedit_add_key(button, textedit, "t");
+    nk_console_textedit_add_key(button, textedit, "y");
+    nk_console_textedit_add_key(button, textedit, "u");
+    nk_console_textedit_add_key(button, textedit, "i");
+    nk_console_textedit_add_key(button, textedit, "o");
+    nk_console_textedit_add_key(button, textedit, "p");
+    nk_console_textedit_add_key(button, textedit, "a");
+    nk_console_textedit_add_key(button, textedit, "s");
+    nk_console_textedit_add_key(button, textedit, "d");
+    nk_console_textedit_add_key(button, textedit, "f");
+    nk_console_textedit_add_key(button, textedit, "g");
+    nk_console_textedit_add_key(button, textedit, "h");
+    nk_console_textedit_add_key(button, textedit, "j");
+    nk_console_textedit_add_key(button, textedit, "k");
+    nk_console_textedit_add_key(button, textedit, "l");
+    nk_console_textedit_add_key(button, textedit, "-");
+    nk_console_textedit_add_key(button, textedit, "z");
+    nk_console_textedit_add_key(button, textedit, "x");
+    nk_console_textedit_add_key(button, textedit, "c");
+    nk_console_textedit_add_key(button, textedit, "v");
+    nk_console_textedit_add_key(button, textedit, "b");
+    nk_console_textedit_add_key(button, textedit, "n");
+    nk_console_textedit_add_key(button, textedit, "m");
+    nk_console_textedit_add_key(button, textedit, "_");
+    nk_console_textedit_add_key(button, textedit, "@");
+    nk_console_textedit_add_key(button, textedit, ".");
+    nk_console_textedit_add_key(button, textedit, "Shift");
+    nk_console_textedit_add_key(button, textedit, "Backspace");
+    nk_console_textedit_add_key(button, textedit, "Space");
+
+    nk_console_add_button(button, "Enter")
+        ->button.onclick = nk_console_onclick_back;
+
+    top->activeWidget = NULL;
+    top->activeParent = button;
+}
+
+NK_API nk_console* nk_console_add_textedit(nk_console* parent, const char* label, const char* buffer, int buffer_size) {
+    if (buffer_size <= 0 || buffer == NULL || parent == NULL) {
+        return NULL;
+    }
+
+    nk_console* widget = nk_console_add_button_onclick(parent, label, nk_console_textedit_onclick);
+    widget->type = NK_CONSOLE_TEXTEDIT;
+    widget->button.skip_row = nk_true;
+    widget->selectable = nk_true;
+    widget->text = buffer;
+    widget->textedit.buffer_size = buffer_size;
+    widget->textedit.label = label;
+    widget->onback = nk_console_textedit_back_onclick;
+
+    return widget;
 }
 
 /**
