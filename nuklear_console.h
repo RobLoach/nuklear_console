@@ -103,7 +103,10 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 #ifndef cvector_clib_malloc
 #define cvector_clib_malloc(size) nk_console_malloc((nk_handle) {.ptr = NULL}, NULL, size)
 #endif
-#include "vendor/c-vector/cvector.h"
+#ifndef CVECTOR_H
+#define CVECTOR_H "vendor/c-vector/cvector.h"
+#endif
+#include CVECTOR_H
 
 #ifndef NK_CONSOLE_MALLOC
 #ifdef NK_INCLUDE_DEFAULT_ALLOCATOR
@@ -573,11 +576,6 @@ NK_API void nk_console_render(nk_console* console) {
             if (top->activeWidget != console) {
                 nk_widget_disable_end(console->context);
             }
-            widget_bounds = nk_layout_widget_bounds(console->context);
-
-            if (console->disabled) {
-                nk_widget_disable_begin(console->context);
-            }
 
             // Display the mocked combobox button
             console->type = NK_CONSOLE_BUTTON;
@@ -589,15 +587,6 @@ NK_API void nk_console_render(nk_console* console) {
             }
             nk_console_render(console);
             console->type = NK_CONSOLE_COMBOBOX;
-
-            if (console->disabled) {
-                nk_widget_disable_end(console->context);
-            }
-
-            // Allow switching up/down in widgets
-            if (top->activeWidget == console) {
-                nk_console_check_up_down(console, widget_bounds);
-            }
         }
         break;
         case NK_CONSOLE_SLIDER_INT:
@@ -708,7 +697,6 @@ NK_API void nk_console_render(nk_console* console) {
             else {
                 console->context->style.slider.bar_normal = bar_normal;
                 console->context->style.slider.cursor_normal = cursor_normal;
-
             }
 
             if (console->disabled) {
