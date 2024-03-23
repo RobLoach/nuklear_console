@@ -41,10 +41,18 @@ typedef struct nk_console_property_data {
     float* val_float;
 } nk_console_property_data;
 
+typedef struct nk_console_progress_data {
+    nk_size max_size;
+    nk_size* value_size;
+} nk_console_progress_data;
+
+typedef struct nk_console_checkbox_data {
+    nk_bool* value_bool;
+} nk_console_checkbox_data;
+
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     void (*onclick)(struct nk_console*);
-    nk_bool skip_row;
     int text_length;
 } nk_console_button_data;
 
@@ -53,15 +61,15 @@ typedef struct nk_console {
     const char* text;
     int alignment;
 
-    nk_bool selectable;
-    nk_bool disabled;
-    nk_bool* value_bool;
-    nk_size* value_size;
-    nk_size max_size;
+    nk_bool selectable; /** Whether or not the widget can be selected. */
+    nk_bool disabled; /** Whether or not the widget is currently disabled. */
+    int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
 
     nk_console_combobox_data combobox;
     nk_console_button_data button;
     nk_console_property_data property;
+    nk_console_progress_data progress;
+    nk_console_checkbox_data checkbox;
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -70,7 +78,8 @@ typedef struct nk_console {
     struct nk_console* activeWidget;
     nk_bool input_processed;
 
-    void (*onchange)(struct nk_console*);
+    // Events
+    void (*onchange)(struct nk_console*); /** Invoked when there is a change in the value for the widget. */
 } nk_console;
 
 NK_API nk_console* nk_console_init(struct nk_context* context);
@@ -313,15 +322,17 @@ NK_API void nk_console_render(nk_console* console) {
         }
         break;
         case NK_CONSOLE_LABEL: {
-            nk_layout_row_dynamic(console->context, 0, 1);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // TODO: Add label options like alignment or text wrapping
             nk_label(console->context, console->text, console->alignment);
         }
         break;
         case NK_CONSOLE_BUTTON: {
-            if (!console->button.skip_row) {
-                nk_layout_row_dynamic(console->context, 0, 1);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
             }
             widget_bounds = nk_layout_widget_bounds(console->context);
 
@@ -331,7 +342,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Check the button state.
             nk_bool selected = nk_false;
-            if (top->activeWidget == console && !top->input_processed && nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
+            if (!console->disabled && top->activeWidget == console && !top->input_processed && nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
                 selected = nk_true;
             }
 
@@ -394,15 +405,17 @@ NK_API void nk_console_render(nk_console* console) {
         }
         break;
         case NK_CONSOLE_CHECKBOX: {
-            nk_layout_row_dynamic(console->context, 0, 1);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
             widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Allow changing the checkbox value.
             nk_bool active = nk_false;
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && top->activeWidget == console && !top->input_processed) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
-                    if (console->value_bool != NULL) {
-                        *console->value_bool = !*console->value_bool;
+                    if (console->checkbox.value_bool != NULL) {
+                        *console->checkbox.value_bool = !*console->checkbox.value_bool;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -411,8 +424,8 @@ NK_API void nk_console_render(nk_console* console) {
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
-                    if (console->value_bool != NULL) {
-                        *console->value_bool = nk_false;
+                    if (console->checkbox.value_bool != NULL) {
+                        *console->checkbox.value_bool = nk_false;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -421,8 +434,8 @@ NK_API void nk_console_render(nk_console* console) {
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
-                    if (console->value_bool != NULL) {
-                        *console->value_bool = nk_true;
+                    if (console->checkbox.value_bool != NULL) {
+                        *console->checkbox.value_bool = nk_true;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -448,11 +461,17 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the checkbox with fixed alignment.
+            nk_bool changed = nk_false;
             if (console->alignment == NK_TEXT_LEFT) {
-                nk_checkbox_label_align(console->context, console->text, console->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
+                changed = nk_checkbox_label_align(console->context, console->text, console->checkbox.value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
             }
             else {
-                nk_checkbox_label(console->context, console->text, console->value_bool);
+                changed = nk_checkbox_label(console->context, console->text, console->checkbox.value_bool);
+            }
+
+            // Invoke onchanged event.
+            if (changed && console->onchange != NULL) {
+                console->onchange(console);
             }
 
             if (console->disabled || top->activeWidget != console) {
@@ -469,14 +488,16 @@ NK_API void nk_console_render(nk_console* console) {
         }
         break;
         case NK_CONSOLE_PROGRESS: {
-            nk_layout_row_dynamic(console->context, 0, 2);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // Allow changing the value.
             nk_bool active = nk_false;
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && top->activeWidget == console && !top->input_processed) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
-                    if (console->value_size != NULL && *console->value_size > 0) {
-                        *console->value_size = *console->value_size - 1;
+                    if (console->progress.value_size != NULL && *console->progress.value_size > 0) {
+                        *console->progress.value_size = *console->progress.value_size - 1;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -485,8 +506,8 @@ NK_API void nk_console_render(nk_console* console) {
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
-                    if (console->value_size != NULL && *console->value_size < console->max_size) {
-                        *console->value_size = *console->value_size + 1;
+                    if (console->progress.value_size != NULL && *console->progress.value_size < console->progress.max_size) {
+                        *console->progress.value_size = *console->progress.value_size + 1;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -525,7 +546,11 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the widget
-            nk_progress(console->context, console->value_size, console->max_size, nk_true);
+            if (nk_progress(console->context, console->progress.value_size, console->progress.max_size, nk_true)) {
+                if (console->onchange != NULL) {
+                    console->onchange(console);
+                }
+            }
 
             // Restore the styles
             console->context->style.progress.cursor_normal = cursor_normal;
@@ -543,10 +568,12 @@ NK_API void nk_console_render(nk_console* console) {
         }
         break;
         case NK_CONSOLE_COMBOBOX: {
-            nk_layout_row_dynamic(console->context, 0, 2);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // Allow changing the value with left/right
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && top->activeWidget == console && !top->input_processed) {
                 if (console->combobox.selected != NULL && console->children != NULL) {
                     nk_bool changed = nk_false;
                     if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) && *console->combobox.selected > 0) {
@@ -578,6 +605,8 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the mocked combobox button
+            int swap_columns = console->columns;
+            console->columns = 0;
             console->type = NK_CONSOLE_BUTTON;
             if (top->activeWidget == console) {
                 console->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
@@ -587,16 +616,19 @@ NK_API void nk_console_render(nk_console* console) {
             }
             nk_console_render(console);
             console->type = NK_CONSOLE_COMBOBOX;
+            console->columns = swap_columns;
         }
         break;
         case NK_CONSOLE_SLIDER_INT:
         case NK_CONSOLE_SLIDER_FLOAT:
         case NK_CONSOLE_PROPERTY_INT:
         case NK_CONSOLE_PROPERTY_FLOAT: {
-            nk_layout_row_dynamic(console->context, 0, 2);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // Allow changing the value with left/right
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && top->activeWidget == console && !top->input_processed) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
                     switch (console->type) {
                         case NK_CONSOLE_SLIDER_INT:
@@ -728,7 +760,7 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
 
 NK_API nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active) {
     nk_console* checkbox = nk_console_add_label(parent, text);
-    checkbox->value_bool = active;
+    checkbox->checkbox.value_bool = active;
     checkbox->type = NK_CONSOLE_CHECKBOX;
     checkbox->selectable = nk_true;
     return checkbox;
@@ -740,6 +772,7 @@ NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text) {
     label->text = text;
     label->parent = parent;
     label->alignment = NK_TEXT_LEFT;
+    label->columns = 1;
     cvector_push_back(parent->children, label);
     return label;
 }
@@ -754,6 +787,7 @@ NK_API nk_console* nk_console_add_property_int(nk_console* parent, const char* l
     widget->property.max_int = max;
     widget->property.step_int = step;
     widget->property.inc_per_pixel = inc_per_pixel;
+    widget->columns = 2;
     if (*val < min) {
         *val = min;
     }
@@ -773,6 +807,7 @@ NK_API nk_console* nk_console_add_property_float(nk_console* parent, const char*
     widget->property.max_float = max;
     widget->property.step_float = step;
     widget->property.inc_per_pixel = inc_per_pixel;
+    widget->columns = 2;
     if (*val < min) {
         *val = min;
     }
@@ -837,8 +872,9 @@ NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text,
     nk_console* progress = nk_console_add_label(parent, text);
     progress->type = NK_CONSOLE_PROGRESS;
     progress->selectable = nk_true;
-    progress->value_size = current;
-    progress->max_size = max;
+    progress->progress.value_size = current;
+    progress->progress.max_size = max;
+    progress->columns = 2;
     if (*current < 0) {
         *current = 0;
     }
@@ -910,7 +946,7 @@ NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label
     combobox->combobox.separator = separator;
     combobox->combobox.selected = selected;
     combobox->combobox.label = label;
-    combobox->button.skip_row = nk_true;
+    combobox->columns = 2;
     combobox->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
 
     // Back button
