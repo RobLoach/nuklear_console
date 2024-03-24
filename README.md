@@ -1,8 +1,8 @@
 # nuklear_console
 
-Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear).
+Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) with gamepad, keyboard or mouse support.
 
-![nuklear_console](screenshot.png)
+![nuklear_console screenshot](screenshot.gif)
 
 ## Usage
 
@@ -51,8 +51,9 @@ nk_console* nk_console_add_combobox(nk_console* parent, const char* label, const
 nk_console* nk_console_add_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
 nk_console* nk_console_add_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel);
 nk_console* nk_console_add_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel);
+nk_console* nk_console_add_slider_int(nk_console* parent, const char* label, int min, int* val, int max, int step);
+nk_console* nk_console_add_slider_float(nk_console* parent, const char* label, float min, float* val, float max, float step);
 nk_console* nk_console_add_label(nk_console* parent, const char* text);
-void nk_console_onclick_back(nk_console* button);
 nk_console* nk_console_get_top(nk_console* widget);
 ```
 

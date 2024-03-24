@@ -1,6 +1,8 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
+struct nk_console;
+
 typedef enum {
     NK_CONSOLE_UNKNOWN,
     NK_CONSOLE_PARENT,
@@ -15,8 +17,6 @@ typedef enum {
     NK_CONSOLE_SLIDER_FLOAT
 } nk_console_widget_type;
 
-struct nk_console;
-
 typedef struct nk_console_combobox_data {
     const char* label;
     const char* items_separated_by_separator;
@@ -24,7 +24,6 @@ typedef struct nk_console_combobox_data {
     int* selected;
     int count;
 } nk_console_combobox_data;
-struct nk_console;
 
 /**
  * Property type, also used for slider.
@@ -41,10 +40,18 @@ typedef struct nk_console_property_data {
     float* val_float;
 } nk_console_property_data;
 
+typedef struct nk_console_progress_data {
+    nk_size max_size;
+    nk_size* value_size;
+} nk_console_progress_data;
+
+typedef struct nk_console_checkbox_data {
+    nk_bool* value_bool;
+} nk_console_checkbox_data;
+
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     void (*onclick)(struct nk_console*);
-    nk_bool skip_row;
     int text_length;
 } nk_console_button_data;
 
@@ -53,14 +60,16 @@ typedef struct nk_console {
     const char* text;
     int alignment;
 
-    nk_bool selectable;
-    nk_bool* value_bool;
-    nk_size* value_size;
-    nk_size max_size;
+    nk_bool selectable; /** Whether or not the widget can be selected. */
+    nk_bool disabled; /** Whether or not the widget is currently disabled. */
+    int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
+    const char* tooltip; /** Tooltip */
 
     nk_console_combobox_data combobox;
     nk_console_button_data button;
     nk_console_property_data property;
+    nk_console_progress_data progress;
+    nk_console_checkbox_data checkbox;
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -69,9 +78,8 @@ typedef struct nk_console {
     struct nk_console* activeWidget;
     nk_bool input_processed;
 
-    void (*onchange)(struct nk_console*);
-
-    const char* description;
+    // Events
+    void (*onchange)(struct nk_console*); /** Invoked when there is a change in the value for the widget. */
 } nk_console;
 
 NK_API nk_console* nk_console_init(struct nk_context* context);
@@ -104,7 +112,10 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 #ifndef cvector_clib_malloc
 #define cvector_clib_malloc(size) nk_console_malloc((nk_handle) {.ptr = NULL}, NULL, size)
 #endif
-#include "vendor/c-vector/cvector.h"
+#ifndef CVECTOR_H
+#define CVECTOR_H "vendor/c-vector/cvector.h"
+#endif
+#include CVECTOR_H
 
 #ifndef NK_CONSOLE_MALLOC
 #ifdef NK_INCLUDE_DEFAULT_ALLOCATOR
@@ -125,6 +136,24 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+NK_API void nk_console_set_active_widget(nk_console* widget) {
+    if (widget == NULL) {
+        return;
+    }
+
+    nk_console* parent = widget->parent == NULL ? widget : widget->parent;
+    parent->activeWidget = widget;
+}
+
+NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_false;
+    }
+
+    nk_console* parent = widget->parent == NULL ? widget : widget->parent;
+    return parent->activeWidget == widget;
+}
 
 /**
  * Get the top parent from a given widget.
@@ -193,8 +222,8 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable) {
-                    top->activeWidget = target;
+                if (target != NULL && target->selectable && !target->disabled) {
+                    nk_console_set_active_widget(target);
                     break;
                 }
             }
@@ -205,8 +234,8 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable) {
-                    top->activeWidget = target;
+                if (target != NULL && target->selectable && !target->disabled) {
+                    nk_console_set_active_widget(target);
                     break;
                 }
             }
@@ -221,11 +250,9 @@ void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
             if (widget->parent != NULL) {
                 if (widget->parent == top) {
                     top->activeParent = top;
-                    top->activeWidget = NULL;
                 }
                 else if (widget->parent->parent != NULL) {
                     top->activeParent = widget->parent->parent;
-                    top->activeWidget = NULL;
                 }
             }
 
@@ -247,7 +274,7 @@ NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
     // Iterate through the children to find the first selectable widget.
     for (size_t i = 0; i < cvector_size(parent->children); i++) {
         if (parent->children[i] != NULL) {
-            if (parent->children[i]->selectable) {
+            if (parent->children[i]->selectable && !parent->children[i]->disabled) {
                 return parent->children[i];
             }
         }
@@ -267,19 +294,46 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
     return input->mouse.delta.x != 0 || input->mouse.delta.y != 0;
 }
 
+/**
+ * Display a tooltip with the given text.
+ *
+ * @see nk_tooltip()
+ * @todo Support multiline tooltips with nk_text_calculate_text_bounds()
+ */
+NK_API void nk_console_tooltip_display(struct nk_context *ctx, const char *text) {
+    const struct nk_style *style;
+    struct nk_vec2 padding;
+
+    style = &ctx->style;
+    padding = style->window.padding;
+
+    float text_height = (style->font->height + padding.y);
+    int x = ctx->input.mouse.pos.x;
+    int y = ctx->input.mouse.pos.y;
+
+    // Display the tooltip at the bottom of the window, manipulating the mouse position
+    struct nk_rect windowbounds = nk_window_get_bounds(ctx);
+    ctx->input.mouse.pos.x = windowbounds.x;
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2;
+
+    if (nk_tooltip_begin(ctx, (float)windowbounds.w)) {
+        nk_layout_row_dynamic(ctx, text_height, 1);
+        nk_text_wrap(ctx, text, nk_strlen(text));
+        nk_tooltip_end(ctx);
+    }
+
+    // Restore the mouse x/y positions.
+    ctx->input.mouse.pos.x = x;
+    ctx->input.mouse.pos.y = y;
+}
+
 NK_API void nk_console_tooltip(nk_console* console, struct nk_rect widget_bounds) {
     if (console == NULL) {
         return;
     }
 
-    if (console->description != NULL) {
-        int x = console->context->input.mouse.pos.x;
-        int y = console->context->input.mouse.pos.y;
-        console->context->input.mouse.pos.x = widget_bounds.x;
-        console->context->input.mouse.pos.y = widget_bounds.y + widget_bounds.h;
-        nk_tooltip(console->context, console->description);
-        console->context->input.mouse.pos.x = x;
-        console->context->input.mouse.pos.y = y;
+    if (console->tooltip != NULL) {
+        nk_console_tooltip_display(console->context, console->tooltip);
     }
 }
 
@@ -300,13 +354,30 @@ NK_API void nk_console_render(nk_console* console) {
 
         // Make sure there is an active widget.
         if (console->activeWidget == NULL) {
-            console->activeWidget = nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console);
+            nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console));
         }
 
         // Render the active parent.
         if (console->activeParent != NULL && console->activeParent->children != NULL) {
-            size_t i;
-            for (i = 0; i < cvector_size(console->activeParent->children); ++i) {
+            // Make sure there's an active widget selected.
+            if (console->activeParent->activeWidget == NULL) {
+                nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
+            }
+            else {
+                nk_bool widgetFound = nk_false;
+                for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
+                    if (console->activeParent->children[i] == console->activeParent->activeWidget) {
+                        widgetFound = nk_true;
+                        break;
+                    }
+                }
+                if (widgetFound == nk_false) {
+                    nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
+                }
+            }
+
+            // Render all the children
+            for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
                 nk_console_render(console->activeParent->children[i]);
             }
             return;
@@ -327,27 +398,33 @@ NK_API void nk_console_render(nk_console* console) {
         }
         break;
         case NK_CONSOLE_LABEL: {
-            nk_layout_row_dynamic(console->context, 0, 1);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // TODO: Add label options like alignment or text wrapping
             nk_label(console->context, console->text, console->alignment);
         }
         break;
         case NK_CONSOLE_BUTTON: {
-            if (!console->button.skip_row) {
-                nk_layout_row_dynamic(console->context, 0, 1);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
             }
             widget_bounds = nk_layout_widget_bounds(console->context);
 
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
+
             // Check the button state.
             nk_bool selected = nk_false;
-            if (top->activeWidget == console && !top->input_processed && nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
+            if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed && nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
                 selected = nk_true;
             }
 
             // Apply the style.
             struct nk_style_item buttonStyle = console->context->style.button.normal;
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 if (selected) {
                     console->context->style.button.normal = console->context->style.button.active;
                 }
@@ -385,7 +462,6 @@ NK_API void nk_console_render(nk_console* console) {
                 if (console->button.onclick == NULL) {
                     if (console->children != NULL) {
                         top->activeParent = console;
-                        top->activeWidget = NULL;
                     }
                 }
                 else {
@@ -393,23 +469,29 @@ NK_API void nk_console_render(nk_console* console) {
                 }
             }
 
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
+            }
+
             // Allow switching up/down in widgets
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 nk_console_check_up_down(console, widget_bounds);
                 nk_console_tooltip(console, widget_bounds);
             }
         }
         break;
         case NK_CONSOLE_CHECKBOX: {
-            nk_layout_row_dynamic(console->context, 0, 1);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
             widget_bounds = nk_layout_widget_bounds(console->context);
 
             // Allow changing the checkbox value.
             nk_bool active = nk_false;
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
-                    if (console->value_bool != NULL) {
-                        *console->value_bool = !*console->value_bool;
+                    if (console->checkbox.value_bool != NULL) {
+                        *console->checkbox.value_bool = !*console->checkbox.value_bool;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -418,8 +500,8 @@ NK_API void nk_console_render(nk_console* console) {
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
-                    if (console->value_bool != NULL) {
-                        *console->value_bool = nk_false;
+                    if (console->checkbox.value_bool != NULL) {
+                        *console->checkbox.value_bool = nk_false;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -428,8 +510,8 @@ NK_API void nk_console_render(nk_console* console) {
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
-                    if (console->value_bool != NULL) {
-                        *console->value_bool = nk_true;
+                    if (console->checkbox.value_bool != NULL) {
+                        *console->checkbox.value_bool = nk_true;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -441,7 +523,7 @@ NK_API void nk_console_render(nk_console* console) {
 
             // Style
             struct nk_style_item checkboxStyle = console->context->style.checkbox.normal;
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 if (active) {
                     console->context->style.checkbox.normal = console->context->style.checkbox.active;
                 }
@@ -450,33 +532,49 @@ NK_API void nk_console_render(nk_console* console) {
                 }
             }
 
+            if (console->disabled || !nk_console_is_active_widget(console)) {
+                nk_widget_disable_begin(console->context);
+            }
+
             // Display the checkbox with fixed alignment.
+            nk_bool changed = nk_false;
             if (console->alignment == NK_TEXT_LEFT) {
-                nk_checkbox_label_align(console->context, console->text, console->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
+                changed = nk_checkbox_label_align(console->context, console->text, console->checkbox.value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
             }
             else {
-                nk_checkbox_label(console->context, console->text, console->value_bool);
+                changed = nk_checkbox_label(console->context, console->text, console->checkbox.value_bool);
+            }
+
+            // Invoke onchanged event.
+            if (changed && console->onchange != NULL) {
+                console->onchange(console);
+            }
+
+            if (console->disabled || !nk_console_is_active_widget(console)) {
+                nk_widget_disable_end(console->context);
             }
 
             // Restore the styles
             console->context->style.checkbox.normal = checkboxStyle;
 
             // Allow switching up/down in widgets
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 nk_console_check_up_down(console, widget_bounds);
                 nk_console_tooltip(console, widget_bounds);
             }
         }
         break;
         case NK_CONSOLE_PROGRESS: {
-            nk_layout_row_dynamic(console->context, 0, 2);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // Allow changing the value.
             nk_bool active = nk_false;
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
-                    if (console->value_size != NULL && *console->value_size > 0) {
-                        *console->value_size = *console->value_size - 1;
+                    if (console->progress.value_size != NULL && *console->progress.value_size > 0) {
+                        *console->progress.value_size = *console->progress.value_size - 1;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -485,8 +583,8 @@ NK_API void nk_console_render(nk_console* console) {
                     top->input_processed = nk_true;
                 }
                 else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
-                    if (console->value_size != NULL && *console->value_size < console->max_size) {
-                        *console->value_size = *console->value_size + 1;
+                    if (console->progress.value_size != NULL && *console->progress.value_size < console->progress.max_size) {
+                        *console->progress.value_size = *console->progress.value_size + 1;
                         if (console->onchange != NULL) {
                             console->onchange(console);
                         }
@@ -497,14 +595,25 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
+            if (!nk_console_is_active_widget(console)) {
+                nk_widget_disable_begin(console->context);
+            }
             nk_label(console->context, console->text, NK_TEXT_LEFT);
+            if (!nk_console_is_active_widget(console)) {
+                nk_widget_disable_end(console->context);
+            }
+
             widget_bounds = nk_layout_widget_bounds(console->context);
+
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
 
             // Progress
             struct nk_style_item cursor_normal = console->context->style.progress.cursor_normal;
             struct nk_style_item cursor_hover = console->context->style.progress.cursor_hover;
             struct nk_style_item cursor_active = console->context->style.progress.cursor_active;
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 if (active) {
                     console->context->style.progress.cursor_normal = cursor_active;
                 }
@@ -514,25 +623,35 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the widget
-            nk_progress(console->context, console->value_size, console->max_size, nk_true);
+            if (nk_progress(console->context, console->progress.value_size, console->progress.max_size, nk_true)) {
+                if (console->onchange != NULL) {
+                    console->onchange(console);
+                }
+            }
 
             // Restore the styles
             console->context->style.progress.cursor_normal = cursor_normal;
             console->context->style.progress.cursor_hover = cursor_hover;
             console->context->style.progress.cursor_active = cursor_active;
 
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
+            }
+
             // Allow switching up/down in widgets
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 nk_console_check_up_down(console, widget_bounds);
                 nk_console_tooltip(console, widget_bounds);
             }
         }
         break;
         case NK_CONSOLE_COMBOBOX: {
-            nk_layout_row_dynamic(console->context, 0, 2);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // Allow changing the value with left/right
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
                 if (console->combobox.selected != NULL && console->children != NULL) {
                     nk_bool changed = nk_false;
                     if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) && *console->combobox.selected > 0) {
@@ -555,12 +674,19 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
+            if (!nk_console_is_active_widget(console)) {
+                nk_widget_disable_begin(console->context);
+            }
             nk_label(console->context, console->combobox.label, NK_TEXT_LEFT);
-            widget_bounds = nk_layout_widget_bounds(console->context);
+            if (!nk_console_is_active_widget(console)) {
+                nk_widget_disable_end(console->context);
+            }
 
             // Display the mocked combobox button
+            int swap_columns = console->columns;
+            console->columns = 0;
             console->type = NK_CONSOLE_BUTTON;
-            if (top->activeWidget == console) {
+            if (nk_console_is_active_widget(console)) {
                 console->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
             }
             else {
@@ -568,22 +694,19 @@ NK_API void nk_console_render(nk_console* console) {
             }
             nk_console_render(console);
             console->type = NK_CONSOLE_COMBOBOX;
-
-            // Allow switching up/down in widgets
-            if (top->activeWidget == console) {
-                nk_console_check_up_down(console, widget_bounds);
-                nk_console_tooltip(console, widget_bounds);
-            }
+            console->columns = swap_columns;
         }
         break;
         case NK_CONSOLE_SLIDER_INT:
         case NK_CONSOLE_SLIDER_FLOAT:
         case NK_CONSOLE_PROPERTY_INT:
         case NK_CONSOLE_PROPERTY_FLOAT: {
-            nk_layout_row_dynamic(console->context, 0, 2);
+            if (console->columns > 0) {
+                nk_layout_row_dynamic(console->context, 0, console->columns);
+            }
 
             // Allow changing the value with left/right
-            if (top->activeWidget == console && !top->input_processed) {
+            if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
                 if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
                     switch (console->type) {
                         case NK_CONSOLE_SLIDER_INT:
@@ -636,7 +759,7 @@ NK_API void nk_console_render(nk_console* console) {
             struct nk_color bar_normal = console->context->style.slider.bar_normal;
             struct nk_style_item cursor_normal = console->context->style.slider.cursor_normal;
 
-            if (top->activeWidget != console) {
+            if (!nk_console_is_active_widget(console)) {
                 console->context->style.property.sym_left = NK_SYMBOL_NONE;
                 console->context->style.property.sym_right = NK_SYMBOL_NONE;
             }
@@ -646,8 +769,19 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Display the label
+            if (!nk_console_is_active_widget(console)) {
+                nk_widget_disable_begin(console->context);
+            }
             nk_label(console->context, console->text, NK_TEXT_LEFT);
+            if (!nk_console_is_active_widget(console)) {
+                nk_widget_disable_end(console->context);
+            }
+
             widget_bounds = nk_layout_widget_bounds(console->context);
+
+            if (console->disabled) {
+                nk_widget_disable_begin(console->context);
+            }
 
             // Display the widget
             switch (console->type) {
@@ -666,18 +800,21 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Style Restoration
-            if (top->activeWidget != console) {
+            if (!nk_console_is_active_widget(console)) {
                 console->context->style.property.sym_left = left;
                 console->context->style.property.sym_right = right;
             }
             else {
                 console->context->style.slider.bar_normal = bar_normal;
                 console->context->style.slider.cursor_normal = cursor_normal;
+            }
 
+            if (console->disabled) {
+                nk_widget_disable_end(console->context);
             }
 
             // Allow switching up/down in widgets
-            if (top->activeWidget == console && !top->input_processed) {
+            if (nk_console_is_active_widget(console)) {
                 nk_console_check_up_down(console, widget_bounds);
                 nk_console_tooltip(console, widget_bounds);
             }
@@ -687,7 +824,7 @@ NK_API void nk_console_render(nk_console* console) {
 
     // Allow mouse to switch focus between active widgets
     if (top->input_processed == nk_false && widget_bounds.w > 0 && nk_input_is_mouse_moved(&console->context->input) && nk_input_is_mouse_hovering_rect(&console->context->input, widget_bounds)) {
-        top->activeWidget = console;
+        nk_console_set_active_widget(console);
         top->input_processed = nk_true;
     }
 }
@@ -702,7 +839,7 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
 
 NK_API nk_console* nk_console_add_checkbox(nk_console* parent, const char* text, nk_bool* active) {
     nk_console* checkbox = nk_console_add_label(parent, text);
-    checkbox->value_bool = active;
+    checkbox->checkbox.value_bool = active;
     checkbox->type = NK_CONSOLE_CHECKBOX;
     checkbox->selectable = nk_true;
     return checkbox;
@@ -714,6 +851,7 @@ NK_API nk_console* nk_console_add_label(nk_console* parent, const char* text) {
     label->text = text;
     label->parent = parent;
     label->alignment = NK_TEXT_LEFT;
+    label->columns = 1;
     cvector_push_back(parent->children, label);
     return label;
 }
@@ -728,6 +866,7 @@ NK_API nk_console* nk_console_add_property_int(nk_console* parent, const char* l
     widget->property.max_int = max;
     widget->property.step_int = step;
     widget->property.inc_per_pixel = inc_per_pixel;
+    widget->columns = 2;
     if (*val < min) {
         *val = min;
     }
@@ -747,6 +886,7 @@ NK_API nk_console* nk_console_add_property_float(nk_console* parent, const char*
     widget->property.max_float = max;
     widget->property.step_float = step;
     widget->property.inc_per_pixel = inc_per_pixel;
+    widget->columns = 2;
     if (*val < min) {
         *val = min;
     }
@@ -791,11 +931,9 @@ NK_API void nk_console_onclick_back(nk_console* button) {
     }
     if (parent != NULL) {
         top->activeParent = parent;
-        top->activeWidget = NULL;
     }
     else {
         top->activeParent = NULL;
-        top->activeWidget = NULL;
     }
 }
 
@@ -811,8 +949,9 @@ NK_API nk_console* nk_console_add_progress(nk_console* parent, const char* text,
     nk_console* progress = nk_console_add_label(parent, text);
     progress->type = NK_CONSOLE_PROGRESS;
     progress->selectable = nk_true;
-    progress->value_size = current;
-    progress->max_size = max;
+    progress->progress.value_size = current;
+    progress->progress.max_size = max;
+    progress->columns = 2;
     if (*current < 0) {
         *current = 0;
     }
@@ -832,7 +971,6 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
     int selected = nk_console_get_widget_index(button);
     if (selected <= 0 || selected >= cvector_size(combobox->children)) {
         nk_console_onclick_back(button);
-        nk_console_get_top(combobox)->activeWidget = combobox;
         return;
     }
 
@@ -847,9 +985,6 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
 
     // Go back
     nk_console_onclick_back(button);
-
-    // Update the active widget to the combobox.
-    nk_console_get_top(combobox)->activeWidget = combobox;
 
     // Invoke the onchange callback.
     if (combobox->onchange != NULL) {
@@ -868,7 +1003,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button) {
     int selected = button->combobox.selected == NULL ? 0 : *button->combobox.selected;
     if (button->children != NULL) {
         if (cvector_size(button->children) > selected + 1) {
-            top->activeWidget = button->children[selected + 1];
+            nk_console_set_active_widget(button->children[selected + 1]);
         }
     }
 
@@ -884,7 +1019,7 @@ NK_API nk_console* nk_console_add_combobox(nk_console* parent, const char* label
     combobox->combobox.separator = separator;
     combobox->combobox.selected = selected;
     combobox->combobox.label = label;
-    combobox->button.skip_row = nk_true;
+    combobox->columns = 2;
     combobox->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
 
     // Back button

@@ -26,8 +26,6 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
-nk_bool showWindowTitle;
-
 #include "../common/nuklear_console_demo.c"
 
 SDL_GameController *findController() {
@@ -145,7 +143,7 @@ int main(int argc, char *argv[]) {
         }
 
         /* GUI */
-        if (nk_begin(ctx, "nuklear_console", nk_rect(50, 50, WINDOW_WIDTH - 100, WINDOW_HEIGHT - 100), flags)) {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(25, 25, WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50), flags)) {
             /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render()) {
                 running = 0;
@@ -162,6 +160,7 @@ int main(int argc, char *argv[]) {
     }
 
 cleanup:
+    nuklear_console_demo_free();
     nk_sdl_shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);
