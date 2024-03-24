@@ -8,3 +8,6 @@ demo/sdl_renderer/bin/demo:
 
 clean:
 	rm -rf demo/sdl_renderer/bin
+
+raylib:
+	$(MAKE) -C demo/raylib compile
