@@ -1,6 +1,8 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
+struct nk_console;
+
 typedef enum {
     NK_CONSOLE_UNKNOWN,
     NK_CONSOLE_PARENT,
@@ -15,8 +17,6 @@ typedef enum {
     NK_CONSOLE_SLIDER_FLOAT
 } nk_console_widget_type;
 
-struct nk_console;
-
 typedef struct nk_console_combobox_data {
     const char* label;
     const char* items_separated_by_separator;
@@ -24,7 +24,6 @@ typedef struct nk_console_combobox_data {
     int* selected;
     int count;
 } nk_console_combobox_data;
-struct nk_console;
 
 /**
  * Property type, also used for slider.
