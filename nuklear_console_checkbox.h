@@ -118,7 +118,6 @@ NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_
     return checkbox;
 }
 
-
 #if defined(__cplusplus)
 }
 #endif

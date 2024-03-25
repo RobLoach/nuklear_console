@@ -24,7 +24,6 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button);
 extern "C" {
 #endif
 
-
 /**
  * Handle the click event for combobox's children items.
  */

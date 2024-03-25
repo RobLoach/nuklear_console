@@ -202,7 +202,6 @@ NK_API nk_console* nk_console_slider_float(nk_console* parent, const char* label
     return widget;
 }
 
-
 #if defined(__cplusplus)
 }
 #endif

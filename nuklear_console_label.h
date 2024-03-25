@@ -45,7 +45,6 @@ NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
     return label;
 }
 
-
 #if defined(__cplusplus)
 }
 #endif

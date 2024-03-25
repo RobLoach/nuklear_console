@@ -102,6 +102,9 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     return widget_bounds;
 }
 
+/**
+ * Create a button.
+ */
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text) {
     return nk_console_button_onclick(parent, text, NULL);
 }

@@ -38,6 +38,16 @@ int main() {
 }
 ```
 
+## Widgets
+
+- Button
+- Checkbox
+- Combobox
+- Label
+- Property
+- Slider
+- Tooltip
+
 ## API
 
 ``` c

@@ -8,7 +8,7 @@ int main() {
     SetTargetFPS(60);
 
     // Create the Nuklear Context
-    int fontSize = 40;
+    int fontSize = 32;
     int padding = 25;
     struct nk_context *ctx = InitNuklear(fontSize);
 

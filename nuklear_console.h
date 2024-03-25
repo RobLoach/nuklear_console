@@ -17,6 +17,9 @@ typedef enum {
     NK_CONSOLE_SLIDER_FLOAT
 } nk_console_widget_type;
 
+/**
+ * Data for Combobox widgets.
+ */
 typedef struct nk_console_combobox_data {
     const char* label;
     const char* items_separated_by_separator;
@@ -26,18 +29,18 @@ typedef struct nk_console_combobox_data {
 } nk_console_combobox_data;
 
 /**
- * Property type, also used for slider.
+ * Data for Property and Slider widgets.
  */
 typedef struct nk_console_property_data {
-    int min_int;
-    int max_int;
-    int step_int;
-    float min_float;
-    float max_float;
-    float step_float;
-    float inc_per_pixel;
-    int* val_int;
-    float* val_float;
+    int min_int; /** The minimum value, represented as an integer. */
+    int max_int; /** The maximum value, represented as an integer. */
+    int step_int; /** How much each step should increment. */
+    float min_float; /** The minimum value, represented as a float. */
+    float max_float; /** The maximum value, represented as a float. */
+    float step_float; /** How much each step should increment. */
+    float inc_per_pixel; /** The increment per pixel value as a float. */
+    int* val_int; /** Pointer to the integer value. */
+    float* val_float; /** Pointer to the float value. */
 } nk_console_property_data;
 
 typedef struct nk_console_progress_data {
@@ -106,7 +109,7 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 
-#endif
+#endif  // NK_CONSOLE_H__
 
 #ifdef NK_IMPLEMENTATION
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
