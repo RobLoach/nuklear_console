@@ -72,12 +72,14 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     }
 
     // Display the label
-    if (!nk_console_is_active_widget(console)) {
-        nk_widget_disable_begin(console->context);
-    }
-    nk_label(console->context, console->text, NK_TEXT_LEFT);
-    if (!nk_console_is_active_widget(console)) {
-        nk_widget_disable_end(console->context);
+    if (nk_strlen(console->text) > 0) {
+        if (!nk_console_is_active_widget(console)) {
+            nk_widget_disable_begin(console->context);
+        }
+        nk_label(console->context, console->text, NK_TEXT_LEFT);
+        if (!nk_console_is_active_widget(console)) {
+            nk_widget_disable_end(console->context);
+        }
     }
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);

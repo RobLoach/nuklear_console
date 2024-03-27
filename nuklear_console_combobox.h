@@ -154,12 +154,14 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     }
 
     // Display the label
-    if (!nk_console_is_active_widget(console)) {
-        nk_widget_disable_begin(console->context);
-    }
-    nk_label(console->context, console->combobox.label, NK_TEXT_LEFT);
-    if (!nk_console_is_active_widget(console)) {
-        nk_widget_disable_end(console->context);
+    if (nk_strlen(console->combobox.label) > 0) {
+        if (!nk_console_is_active_widget(console)) {
+            nk_widget_disable_begin(console->context);
+        }
+        nk_label(console->context, console->combobox.label, NK_TEXT_LEFT);
+        if (!nk_console_is_active_widget(console)) {
+            nk_widget_disable_end(console->context);
+        }
     }
 
     // Display the mocked combobox button
