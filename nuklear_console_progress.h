@@ -40,7 +40,8 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
 }
 
 NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
-    if (console->columns > 0) {
+    int desired_columns = nk_strlen(console->text) > 0 ? console->columns : console->columns - 1;
+    if (desired_columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
     }
 

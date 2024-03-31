@@ -126,8 +126,9 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
 
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
-    if (console->columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, console->columns);
+    int desired_columns = nk_strlen(console->combobox.label) > 0 ? console->columns : console->columns - 1;
+    if (desired_columns > 0) {
+        nk_layout_row_dynamic(console->context, 0, desired_columns);
     }
 
     // Allow changing the value with left/right

@@ -38,7 +38,7 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
         nk_console_checkbox(options, "Show Window Title", &showWindowTitle)
             ->tooltip = "Whether or not to show the window title";
         nk_console_progress(options, "Progress", &progressValue, 100);
-        nk_console_combobox(options, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
+        nk_console_combobox(options, "", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
             ->tooltip = "Choose a weapon! The chainsaw is the best!";
         nk_console_property_int(options, "Property Int", 10, &property_int_test, 30, 1, 1);
         nk_console_property_float(options, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);

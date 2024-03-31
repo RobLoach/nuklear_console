@@ -26,7 +26,8 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_property_render(nk_console* console) {
-    if (console->columns > 0) {
+    int desired_columns = nk_strlen(console->text) > 0 ? console->columns : console->columns - 1;
+    if (desired_columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
     }
     nk_console* top = nk_console_get_top(console);
