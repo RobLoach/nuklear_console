@@ -128,6 +128,14 @@ int main(int argc, char *argv[]) {
                         case SDL_CONTROLLER_BUTTON_A:
                             nk_input_key(ctx, NK_KEY_ENTER, evt.type == SDL_CONTROLLERBUTTONDOWN);
                             break;
+                        case SDL_CONTROLLER_BUTTON_LEFTSHOULDER:
+                            nk_input_key(ctx, NK_KEY_UP, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            nk_input_key(ctx, NK_KEY_CTRL, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
+                        case SDL_CONTROLLER_BUTTON_RIGHTSHOULDER:
+                            nk_input_key(ctx, NK_KEY_DOWN, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            nk_input_key(ctx, NK_KEY_CTRL, evt.type == SDL_CONTROLLERBUTTONDOWN);
+                            break;
                     }
                 }
             }

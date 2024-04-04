@@ -247,8 +247,38 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
 
     // Only process an active input once.
     if (top->input_processed == nk_false) {
+        // Page Up
+        if (nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) {
+            int widgetIndex = nk_console_get_widget_index(widget);
+            int count = 0;
+            while (--widgetIndex >= 0) {
+                nk_console* target = widget->parent->children[widgetIndex];
+                if (target != NULL && target->selectable && !target->disabled) {
+                    nk_console_set_active_widget(target);
+                    if (++count > 4) {
+                        break;
+                    }
+                }
+            }
+            top->input_processed = nk_true;
+        }
+        // Page Down
+        else if (nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN)) {
+            int widgetIndex = nk_console_get_widget_index(widget);
+            int count = 0;
+            while (++widgetIndex < cvector_size(widget->parent->children)) {
+                nk_console* target = widget->parent->children[widgetIndex];
+                if (target != NULL && target->selectable && !target->disabled) {
+                    nk_console_set_active_widget(target);
+                    if (++count > 4) {
+                        break;
+                    }
+                }
+            }
+            top->input_processed = nk_true;
+        }
         // Up
-        if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) {
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];

@@ -23,20 +23,28 @@ int main() {
         if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) {
             nk_input_key(ctx, NK_KEY_LEFT, nk_true);
         }
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) {
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) {
             nk_input_key(ctx, NK_KEY_DOWN, nk_true);
         }
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
             nk_input_key(ctx, NK_KEY_RIGHT, nk_true);
         }
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
             nk_input_key(ctx, NK_KEY_UP, nk_true);
         }
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
             nk_input_key(ctx, NK_KEY_ENTER, nk_true);
         }
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
             nk_input_key(ctx, NK_KEY_BACKSPACE, nk_true);
+        }
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) {
+            nk_input_key(ctx, NK_KEY_CTRL, nk_true);
+            nk_input_key(ctx, NK_KEY_UP, nk_true);
+        }
+        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
+            nk_input_key(ctx, NK_KEY_CTRL, nk_true);
+            nk_input_key(ctx, NK_KEY_DOWN, nk_true);
         }
 
         int flags = NK_WINDOW_BORDER;
