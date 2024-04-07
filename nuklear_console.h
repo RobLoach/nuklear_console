@@ -3,6 +3,7 @@
 
 struct nk_console;
 struct nk_gamepads;
+//enum nk_gamepad_button;
 
 typedef enum {
     NK_CONSOLE_UNKNOWN,
@@ -104,6 +105,7 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent);
 NK_API void nk_console_set_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
+NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 
 #include "nuklear_console_button.h"
 #include "nuklear_console_label.h"
@@ -256,7 +258,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     // Only process an active input once.
     if (top->input_processed == nk_false) {
         // Page Up
-        if ((nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_LB)) {
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
             while (--widgetIndex >= 0) {
@@ -271,7 +273,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Page Down
-        else if ((nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN)) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_RB)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
             while (++widgetIndex < cvector_size(widget->parent->children)) {
@@ -286,7 +288,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Up
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_UP)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -298,7 +300,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Down
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_DOWN)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -310,7 +312,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Back
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_B)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (top->activeParent == NULL) {
                 return;
             }
@@ -524,6 +526,37 @@ NK_API void nk_console_free(nk_console* console) {
 
     nk_handle handle;
     nk_console_mfree(handle, console);
+}
+
+NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
+    if (console == NULL) {
+        return nk_false;
+    }
+    if (console->parent != NULL) {
+        console = nk_console_get_top(console);
+    }
+
+    if (nk_gamepad_is_button_pressed(console->gamepads, -1, button)) {
+        return nk_true;
+    }
+
+    enum nk_keys key;
+    switch (button) {
+        case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT);
+        case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER);
+        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->context->input, NK_KEY_BACKSPACE);
+        // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->context->input, NK_KEY_A);
+        // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->context->input, NK_KEY_S);
+        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);
+        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);
+        //case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
+        //case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
+    }
+
+    return nk_false;
 }
 
 #ifdef __cplusplus

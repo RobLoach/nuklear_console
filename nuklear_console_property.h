@@ -34,7 +34,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 
     // Allow changing the value with left/right
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_LEFT)) {
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             switch (console->type) {
                 case NK_CONSOLE_SLIDER_INT:
                 case NK_CONSOLE_PROPERTY_INT:
@@ -56,7 +56,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
             }
             top->input_processed = nk_true;
         }
-        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_RIGHT)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             switch (console->type) {
                 case NK_CONSOLE_SLIDER_INT:
                 case NK_CONSOLE_PROPERTY_INT:
