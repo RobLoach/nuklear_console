@@ -32,7 +32,7 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
 
     // Find which option was selected.
     int selected = nk_console_get_widget_index(button);
-    if (selected <= 0 || selected >= cvector_size(combobox->children)) {
+    if (selected <= 0 || selected >= (int)cvector_size(combobox->children)) {
         nk_console_button_back(button);
         return;
     }
@@ -65,7 +65,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button) {
     nk_console* top = nk_console_get_top(button);
     int selected = button->combobox.selected == NULL ? 0 : *button->combobox.selected;
     if (button->children != NULL) {
-        if (cvector_size(button->children) > selected + 1) {
+        if ((int)cvector_size(button->children) > selected + 1) {
             nk_console_set_active_widget(button->children[selected + 1]);
         }
     }
@@ -111,8 +111,8 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
         if (*selected < 0) {
             *selected = 0;
         }
-        else if (*selected >= cvector_size(combobox->children) - 1) {
-            *selected = cvector_size(combobox->children) - 2;
+        else if (*selected >= (int)cvector_size(combobox->children) - 1) {
+            *selected = (int)cvector_size(combobox->children) - 2;
         }
 
         combobox->text = combobox->children[*selected + 1]->text;
@@ -139,7 +139,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
                 *console->combobox.selected = *console->combobox.selected - 1;
                 changed = nk_true;
             }
-            else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT) && *console->combobox.selected < cvector_size(console->children) - 2) {
+            else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT) && *console->combobox.selected < (int)cvector_size(console->children) - 2) {
                 *console->combobox.selected = *console->combobox.selected + 1;
                 changed = nk_true;
             }

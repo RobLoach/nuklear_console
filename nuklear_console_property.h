@@ -50,6 +50,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         *console->property.val_float = console->property.min_float;
                     }
                     break;
+                default:
+                    // Nothing.
+                    break;
             }
             if (console->onchange != NULL) {
                 console->onchange(console);
@@ -71,6 +74,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                     if (*console->property.val_float > console->property.max_float) {
                         *console->property.val_float = console->property.max_float;
                     }
+                    break;
+                default:
+                    // Nothing
                     break;
             }
             if (console->onchange != NULL) {
@@ -126,6 +132,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         case NK_CONSOLE_SLIDER_FLOAT:
             nk_slider_float(console->context, console->property.min_float, console->property.val_float, console->property.max_float, console->property.step_float);
             break;
+        default:
+            // Nothing
+            break;
     }
 
     // Style Restoration
@@ -145,7 +154,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
         nk_console_check_up_down(console, widget_bounds);
-        nk_console_tooltip(console, widget_bounds);
+        nk_console_tooltip(console);
     }
 
     return widget_bounds;

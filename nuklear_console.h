@@ -3,7 +3,6 @@
 
 struct nk_console;
 struct nk_gamepads;
-//enum nk_gamepad_button;
 
 typedef enum {
     NK_CONSOLE_UNKNOWN,
@@ -98,7 +97,7 @@ NK_API void nk_console_render(nk_console* console);
 // Utilities
 NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API int nk_console_get_widget_index(nk_console* widget);
-NK_API void nk_console_tooltip(nk_console* console, struct nk_rect widget_bounds);
+NK_API void nk_console_tooltip(nk_console* console);
 NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
@@ -276,7 +275,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
-            while (++widgetIndex < cvector_size(widget->parent->children)) {
+            while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
                 if (target != NULL && target->selectable && !target->disabled) {
                     nk_console_set_active_widget(target);
@@ -302,7 +301,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         // Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN)) {
             int widgetIndex = nk_console_get_widget_index(widget);
-            while (++widgetIndex < cvector_size(widget->parent->children)) {
+            while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
                 if (target != NULL && target->selectable && !target->disabled) {
                     nk_console_set_active_widget(target);
@@ -397,7 +396,7 @@ NK_API void nk_console_tooltip_display(struct nk_context *ctx, const char *text)
     ctx->input.mouse.pos.y = y;
 }
 
-NK_API void nk_console_tooltip(nk_console* console, struct nk_rect widget_bounds) {
+NK_API void nk_console_tooltip(nk_console* console) {
     if (console == NULL) {
         return;
     }
@@ -457,22 +456,21 @@ NK_API void nk_console_render(nk_console* console) {
         }
     }
 
-    nk_console* top = nk_console_get_top(console);
+    // Render the widget and get the bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
 
-    switch (console->type) {
-        case NK_CONSOLE_PARENT: {
-            if (console->children != NULL) {
-                size_t i;
-                for (i = 0; i < cvector_size(console->children); ++i) {
-                    nk_console_render(console->children[i]);
-                }
+    // If it's a parent, render all the children manually.
+    if (console->type == NK_CONSOLE_PARENT) {
+        if (console->children != NULL) {
+            size_t i;
+            for (i = 0; i < cvector_size(console->children); ++i) {
+                nk_console_render(console->children[i]);
             }
         }
-        break;
     }
 
     // Allow mouse to switch focus between active widgets
+    nk_console* top = nk_console_get_top(console);
     if (top->input_processed == nk_false && widget_bounds.w > 0 && nk_input_is_mouse_moved(&console->context->input) && nk_input_is_mouse_hovering_rect(&console->context->input, widget_bounds)) {
         nk_console_set_active_widget(console);
         top->input_processed = nk_true;
@@ -540,7 +538,6 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         return nk_true;
     }
 
-    enum nk_keys key;
     switch (button) {
         case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
         case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN);

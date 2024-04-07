@@ -30,10 +30,7 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
     progress->progress.value_size = current;
     progress->progress.max_size = max;
     progress->columns = 2;
-    if (*current < 0) {
-        *current = 0;
-    }
-    else if (*current > max) {
+    if (*current > max) {
         *current = max;
     }
     return progress;
@@ -121,7 +118,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
         nk_console_check_up_down(console, widget_bounds);
-        nk_console_tooltip(console, widget_bounds);
+        nk_console_tooltip(console);
     }
 
     return widget_bounds;

@@ -1,5 +1,5 @@
 # Install
-BIN = demo
+BIN = nuklear_console_demo_sdl
 
 # Flags
 
@@ -25,7 +25,11 @@ else
 	endif
 endif
 
-$(BIN):
-	@mkdir -p bin
-	rm -f bin/$(BIN) $(OBJS)
-	$(CC) $(SRC) $(CFLAGS) -o bin/$(BIN) $(LIBS)
+$(BIN): clean
+	$(CC) $(SRC) $(CFLAGS) -o $(BIN) $(LIBS)
+
+clean:
+	rm -rf $(BIN) $(OBJS)
+
+test: $(BIN)
+	./$(BIN)
