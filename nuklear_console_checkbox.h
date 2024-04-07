@@ -32,7 +32,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     // Allow changing the checkbox value.
     nk_bool active = nk_false;
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER)) {
+        if (nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_A)) {
             if (console->checkbox.value_bool != NULL) {
                 *console->checkbox.value_bool = !*console->checkbox.value_bool;
                 if (console->onchange != NULL) {
@@ -42,7 +42,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
             active = nk_true;
             top->input_processed = nk_true;
         }
-        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
+        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_LEFT)) {
             if (console->checkbox.value_bool != NULL) {
                 *console->checkbox.value_bool = nk_false;
                 if (console->onchange != NULL) {
@@ -52,7 +52,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
             active = nk_true;
             top->input_processed = nk_true;
         }
-        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
+        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (console->checkbox.value_bool != NULL) {
                 *console->checkbox.value_bool = nk_true;
                 if (console->onchange != NULL) {

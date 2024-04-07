@@ -50,7 +50,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     // Allow changing the value.
     nk_bool active = nk_false;
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT)) {
+        if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_LEFT)) {
             if (console->progress.value_size != NULL && *console->progress.value_size > 0) {
                 *console->progress.value_size = *console->progress.value_size - 1;
                 if (console->onchange != NULL) {
@@ -60,7 +60,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
             active = nk_true;
             top->input_processed = nk_true;
         }
-        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT)) {
+        else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (console->progress.value_size != NULL && *console->progress.value_size < console->progress.max_size) {
                 *console->progress.value_size = *console->progress.value_size + 1;
                 if (console->onchange != NULL) {

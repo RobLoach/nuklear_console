@@ -135,11 +135,11 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
         if (console->combobox.selected != NULL && console->children != NULL) {
             nk_bool changed = nk_false;
-            if (nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) && *console->combobox.selected > 0) {
+            if ((nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_LEFT)) && *console->combobox.selected > 0) {
                 *console->combobox.selected = *console->combobox.selected - 1;
                 changed = nk_true;
             }
-            else if (nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT) && *console->combobox.selected < cvector_size(console->children) - 2) {
+            else if ((nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_RIGHT)) && *console->combobox.selected < cvector_size(console->children) - 2) {
                 *console->combobox.selected = *console->combobox.selected + 1;
                 changed = nk_true;
             }

@@ -1,4 +1,5 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
+#define NK_GAMEPAD_RAYLIB
 #include "raylib-nuklear.h"
 #include "../../nuklear_console.h"
 #include "../common/nuklear_console_demo.c"
@@ -18,34 +19,6 @@ int main() {
 
         // Update the Nuklear context, along with input
         UpdateNuklear(ctx);
-
-        // TODO: Add a generic Gamepad Nuklear support?
-        if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_LEFT)) {
-            nk_input_key(ctx, NK_KEY_LEFT, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_DOWN)) {
-            nk_input_key(ctx, NK_KEY_DOWN, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_RIGHT)) {
-            nk_input_key(ctx, NK_KEY_RIGHT, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_FACE_UP)) {
-            nk_input_key(ctx, NK_KEY_UP, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_DOWN)) {
-            nk_input_key(ctx, NK_KEY_ENTER, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_FACE_RIGHT)) {
-            nk_input_key(ctx, NK_KEY_BACKSPACE, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_LEFT_TRIGGER_1)) {
-            nk_input_key(ctx, NK_KEY_CTRL, nk_true);
-            nk_input_key(ctx, NK_KEY_UP, nk_true);
-        }
-        else if (IsGamepadButtonPressed(0, GAMEPAD_BUTTON_RIGHT_TRIGGER_1)) {
-            nk_input_key(ctx, NK_KEY_CTRL, nk_true);
-            nk_input_key(ctx, NK_KEY_DOWN, nk_true);
-        }
 
         int flags = NK_WINDOW_BORDER;
         flags |= NK_WINDOW_SCROLL_AUTO_HIDE;

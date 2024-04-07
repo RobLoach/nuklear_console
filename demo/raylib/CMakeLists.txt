@@ -9,7 +9,7 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 find_package(raylib QUIET)
 if (NOT raylib_FOUND)
     include(FetchContent)
-        FetchContent_Declare(
+    FetchContent_Declare(
         raylib
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
         GIT_TAG 35252fceefdeb7b0920d9c1513efb4b5c05633dc
@@ -25,12 +25,12 @@ if (NOT raylib_FOUND)
     endif()
 endif()
 
-# raylib
+# raylib_nuklear
 find_package(raylib_nuklear QUIET)
 if (NOT raylib_nuklear_FOUND)
     include(FetchContent)
-        FetchContent_Declare(
-            raylib_nuklear
+    FetchContent_Declare(
+        raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
         GIT_TAG beab9326cd632aa452b0f9384534fa05161c018f
         GIT_SHALLOW 1
@@ -43,8 +43,30 @@ if (NOT raylib_nuklear_FOUND)
     endif()
 endif()
 
+# nuklear_gamepad
+find_package(nuklear_gamepad QUIET)
+if (NOT nuklear_gamepad_FOUND)
+    include(FetchContent)
+    FetchContent_Declare(
+        nuklear_gamepad
+        GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
+        GIT_TAG f21610b890011b907bbb502b8313fe5cbc19feca
+        GIT_SHALLOW 1
+    )
+    FetchContent_GetProperties(nuklear_gamepad)
+    if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?
+        set(FETCHCONTENT_QUIET NO)
+        FetchContent_Populate(nuklear_gamepad)
+        add_subdirectory(${nuklear_gamepad_SOURCE_DIR} ${nuklear_gamepad_BINARY_DIR})
+    endif()
+endif()
+
 # Setup the example
 add_executable(${PROJECT_NAME} main.c)
 
-# Link raylib
-target_link_libraries(${PROJECT_NAME} PUBLIC raylib raylib_nuklear)
+# Link dependencies
+target_link_libraries(${PROJECT_NAME} PUBLIC
+    raylib
+    raylib_nuklear
+    nuklear_gamepad
+)

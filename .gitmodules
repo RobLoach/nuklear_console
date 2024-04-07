@@ -2,7 +2,14 @@
 	path = vendor/nuklear
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
 	ignore = dirty
+    branch = master
 [submodule "vendor/c-vector"]
 	path = vendor/c-vector
 	url = https://github.com/eteran/c-vector.git
 	ignore = dirty
+    branch = master
+[submodule "vendor/nuklear_gamepad"]
+	path = vendor/nuklear_gamepad
+	url = https://github.com/RobLoach/nuklear_gamepad.git
+	ignore = dirty
+    branch = master

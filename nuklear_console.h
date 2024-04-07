@@ -2,6 +2,7 @@
 #define NK_CONSOLE_H__
 
 struct nk_console;
+struct nk_gamepads;
 
 typedef enum {
     NK_CONSOLE_UNKNOWN,
@@ -84,6 +85,8 @@ typedef struct nk_console {
     // Events
     void (*onchange)(struct nk_console*); /** Invoked when there is a change in the value for the widget. */
     struct nk_rect (*render)(struct nk_console*); /** Render the widget. */
+
+    struct nk_gamepads* gamepads;
 } nk_console;
 
 // Console
@@ -141,6 +144,11 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 #error "Requires NK_CONSOLE_FREE, or NK_INCLUDE_DEFAULT_ALLOCATOR"
 #endif
 #endif
+
+#ifndef NK_CONSOLE_GAMEPAD_H
+#define NK_CONSOLE_GAMEPAD_H "vendor/nuklear_gamepad/nuklear_gamepad.h"
+#endif
+#include NK_CONSOLE_GAMEPAD_H
 
 #ifdef __cplusplus
 extern "C" {
@@ -248,7 +256,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     // Only process an active input once.
     if (top->input_processed == nk_false) {
         // Page Up
-        if (nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) {
+        if ((nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
             while (--widgetIndex >= 0) {
@@ -263,7 +271,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Page Down
-        else if (nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN)) {
+        else if ((nk_input_is_key_down(&widget->context->input, NK_KEY_CTRL) && nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN)) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_RB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
             while (++widgetIndex < cvector_size(widget->parent->children)) {
@@ -278,7 +286,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Up
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP)) {
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_UP) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_UP)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -290,7 +298,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Down
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN)) {
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_DOWN) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_DOWN)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -302,7 +310,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             top->input_processed = nk_true;
         }
         // Back
-        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
+        else if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE) || nk_gamepad_is_button_pressed(top->gamepads, -1, NK_GAMEPAD_BUTTON_B)) {
             if (top->activeParent == NULL) {
                 return;
             }
@@ -412,6 +420,9 @@ NK_API void nk_console_render(nk_console* console) {
         // Reset the input state.
         console->input_processed = nk_false;
 
+        // Update the gamepad state.
+        nk_gamepad_update(console->gamepads);
+
         // Make sure there is an active widget.
         if (console->activeWidget == NULL) {
             nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console));
@@ -486,6 +497,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->type = NK_CONSOLE_PARENT;
     console->context = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
+    console->gamepads = nk_gamepad_init(context);
     return console;
 }
 
@@ -495,6 +507,10 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 NK_API void nk_console_free(nk_console* console) {
     if (console == NULL) {
         return;
+    }
+
+    if (console->gamepads != NULL) {
+        nk_gamepad_free(console->gamepads);
     }
 
     // Clear all the children

@@ -17,6 +17,7 @@ void button_clicked(struct nk_console* button) {
         shouldClose = nk_true;
     }
 }
+
 void theme_changed(struct nk_console* combobox) {
     set_style(combobox->context, theme);
 }
