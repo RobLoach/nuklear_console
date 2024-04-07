@@ -1,3 +1,4 @@
 bin
 *.o
 build
+nuklear_console_demo_*
