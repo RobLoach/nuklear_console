@@ -534,17 +534,19 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         console = nk_console_get_top(console);
     }
 
+    // Gamepad
     if (nk_gamepad_is_button_pressed(console->gamepads, -1, button)) {
         return nk_true;
     }
 
+    // Keyboard/Mouse
     switch (button) {
         case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
         case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN);
         case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT);
         case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT);
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER);
-        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->context->input, NK_KEY_BACKSPACE);
+        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->context->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->context->input, NK_BUTTON_RIGHT) && nk_window_is_hovered(console->context));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->context->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->context->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);

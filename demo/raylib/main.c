@@ -5,6 +5,7 @@
 #include "../common/nuklear_console_demo.c"
 
 int main() {
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 600, "nuklear_console_demo");
     SetTargetFPS(60);
 
