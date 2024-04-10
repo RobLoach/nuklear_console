@@ -1,13 +1,21 @@
-build: demo/sdl_renderer/bin/demo
+build: glfw raylib sdl
 
-test: clean build
-	./demo/sdl_renderer/bin/demo
-
-demo/sdl_renderer/bin/demo:
-	$(MAKE) -C demo/sdl_renderer
+test: clean test-sdl
 
 clean:
-	rm -rf demo/sdl_renderer/bin
+	$(MAKE) -C demo/sdl_renderer clean
+	$(MAKE) -C demo/raylib clean
+	$(MAKE) -C demo/glfw clean
+	rm -rf build
 
 raylib:
-	$(MAKE) -C demo/raylib compile
+	$(MAKE) -C demo/raylib
+
+glfw:
+	$(MAKE) -C demo/glfw
+
+sdl:
+	$(MAKE) -C demo/sdl
+
+test-sdl:
+	$(MAKE) -C demo/sdl_renderer test

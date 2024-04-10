@@ -12,7 +12,7 @@ if (NOT raylib_FOUND)
     FetchContent_Declare(
         raylib
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
-        GIT_TAG 35252fceefdeb7b0920d9c1513efb4b5c05633dc
+        GIT_TAG 04afba260f64ee2ea9ef0b4a6d2058c9ffdad66d
         GIT_SHALLOW 1
     )
     FetchContent_GetProperties(raylib)
@@ -32,7 +32,7 @@ if (NOT raylib_nuklear_FOUND)
     FetchContent_Declare(
         raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
-        GIT_TAG beab9326cd632aa452b0f9384534fa05161c018f
+        GIT_TAG 33ae426a4c2798e26b0fddf9760669d0aedfb6a0
         GIT_SHALLOW 1
     )
     FetchContent_GetProperties(raylib_nuklear)

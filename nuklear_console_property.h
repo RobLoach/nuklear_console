@@ -119,12 +119,16 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     }
 
     // Display the widget
+    char name[NK_MAX_NUMBER_BUFFER];
+    nk_memcopy(name + 2, console->text, nk_strlen(console->text) + 1);
+    name[0] = '#';
+    name[1] = '#';
     switch (console->type) {
         case NK_CONSOLE_PROPERTY_INT:
-            nk_property_int(console->context, "", console->property.min_int, console->property.val_int, console->property.max_int, console->property.step_int, console->property.inc_per_pixel);
+            nk_property_int(console->context, name, console->property.min_int, console->property.val_int, console->property.max_int, console->property.step_int, console->property.inc_per_pixel);
             break;
         case NK_CONSOLE_PROPERTY_FLOAT:
-            nk_property_float(console->context, "", console->property.min_float, console->property.val_float, console->property.max_float, console->property.step_float, console->property.inc_per_pixel);
+            nk_property_float(console->context, name, console->property.min_float, console->property.val_float, console->property.max_float, console->property.step_float, console->property.inc_per_pixel);
             break;
         case NK_CONSOLE_SLIDER_INT:
             nk_slider_int(console->context, console->property.min_int, console->property.val_int, console->property.max_int, console->property.step_int);

@@ -551,7 +551,7 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->context->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);
         case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);
-        //case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->context->input, NK_KEY_SHIFT);
         //case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
     }
 
