@@ -102,13 +102,14 @@ int main(void)
         /*nk_style_set_font(ctx, &droid->handle);*/
     }
 
-    nuklear_console_demo_init(ctx);
+    nk_console* console = nuklear_console_demo_init(ctx, NULL);
 
     while (!glfwWindowShouldClose(win))
     {
         /* Input */
         glfwPollEvents();
         nk_glfw3_new_frame(&glfw);
+        nk_gamepad_update(console->gamepads);
 
         int flags = NK_WINDOW_BORDER;
         flags |= NK_WINDOW_SCROLL_AUTO_HIDE;

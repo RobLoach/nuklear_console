@@ -22,8 +22,9 @@ void theme_changed(struct nk_console* combobox) {
     set_style(combobox->context, theme);
 }
 
-void nuklear_console_demo_init(struct nk_context* ctx) {
+nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
     console = nk_console_init(ctx);
+    nk_console_set_gamepad(console, nk_gamepad_init(ctx, user_data));
 
     // New Game
     nk_console* newgame = nk_console_button(console, "New Game");
@@ -59,6 +60,8 @@ void nuklear_console_demo_init(struct nk_context* ctx) {
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
     nk_console_button(console, "Quit Game")->button.onclick = button_clicked;
+
+    return console;
 }
 
 nk_bool nuklear_console_demo_render() {
@@ -68,5 +71,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
+    nk_gamepad_free(console->gamepads);
     nk_console_free(console);
 }

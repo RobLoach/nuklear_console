@@ -105,6 +105,7 @@ NK_API void nk_console_set_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
+NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
 
 #include "nuklear_console_button.h"
 #include "nuklear_console_label.h"
@@ -421,9 +422,6 @@ NK_API void nk_console_render(nk_console* console) {
         // Reset the input state.
         console->input_processed = nk_false;
 
-        // Update the gamepad state.
-        nk_gamepad_update(console->gamepads);
-
         // Make sure there is an active widget.
         if (console->activeWidget == NULL) {
             nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console));
@@ -497,7 +495,6 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->type = NK_CONSOLE_PARENT;
     console->context = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
-    console->gamepads = nk_gamepad_init(context);
     return console;
 }
 
@@ -507,10 +504,6 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 NK_API void nk_console_free(nk_console* console) {
     if (console == NULL) {
         return;
-    }
-
-    if (console->gamepads != NULL) {
-        nk_gamepad_free(console->gamepads);
     }
 
     // Clear all the children
@@ -524,6 +517,14 @@ NK_API void nk_console_free(nk_console* console) {
 
     nk_handle handle;
     nk_console_mfree(handle, console);
+}
+
+NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {
+    if (console == NULL) {
+        return;
+    }
+
+    console->gamepads = gamepads;
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {

@@ -84,12 +84,13 @@ int main(int argc, char *argv[]) {
         nk_style_set_font(ctx, &font->handle);
     }
 
-    nuklear_console_demo_init(ctx);
+    nk_console* console = nuklear_console_demo_init(ctx, NULL);
 
     while (running) {
         /* Input */
         SDL_Event evt;
         nk_input_begin(ctx);
+        nk_gamepad_update(console->gamepads);
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) goto cleanup;
             if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) running = 0;

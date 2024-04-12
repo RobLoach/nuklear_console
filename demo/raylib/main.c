@@ -14,12 +14,13 @@ int main() {
     int padding = 25;
     struct nk_context *ctx = InitNuklear(fontSize);
 
-    nuklear_console_demo_init(ctx);
+    nk_console* console = nuklear_console_demo_init(ctx, NULL);
 
     while (!WindowShouldClose()) {
 
         // Update the Nuklear context, along with input
         UpdateNuklear(ctx);
+        nk_gamepad_update(console->gamepads);
 
         int flags = NK_WINDOW_BORDER;
         flags |= NK_WINDOW_SCROLL_AUTO_HIDE;
