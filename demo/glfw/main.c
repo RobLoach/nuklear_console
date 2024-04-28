@@ -22,8 +22,8 @@
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
 #define NK_KEYSTATE_BASED_INPUT
-#include "../../vendor/nuklear/nuklear.h"
-#include "../../vendor/nuklear/demo/glfw_opengl3/nuklear_glfw_gl3.h"
+#include "../../vendor/Nuklear/nuklear.h"
+#include "../../vendor/Nuklear/demo/glfw_opengl3/nuklear_glfw_gl3.h"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600

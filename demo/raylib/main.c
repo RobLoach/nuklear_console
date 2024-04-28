@@ -8,11 +8,13 @@ int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 600, "nuklear_console_demo");
     SetTargetFPS(60);
+    //Font font = LoadFontFromNuklear(26);
 
     // Create the Nuklear Context
     int fontSize = 32;
     int padding = 25;
     struct nk_context *ctx = InitNuklear(fontSize);
+    //struct nk_context *ctx = InitNuklearEx(font, 26);
 
     nk_console* console = nuklear_console_demo_init(ctx, NULL);
 
@@ -49,6 +51,7 @@ int main() {
     // De-initialize the Nuklear GUI
     nuklear_console_demo_free();
     UnloadNuklear(ctx);
+    //UnloadFont(font);
 
     CloseWindow();
     return 0;

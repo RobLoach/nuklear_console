@@ -20,8 +20,8 @@
 #define NK_INCLUDE_COMMAND_USERDATA
 #define NK_IMPLEMENTATION
 #define NK_SDL_RENDERER_IMPLEMENTATION
-#include "../../vendor/nuklear/nuklear.h"
-#include "../../vendor/nuklear/demo/sdl_renderer/nuklear_sdl_renderer.h"
+#include "../../vendor/Nuklear/nuklear.h"
+#include "../../vendor/Nuklear/demo/sdl_renderer/nuklear_sdl_renderer.h"
 
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600

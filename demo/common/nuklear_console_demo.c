@@ -1,5 +1,5 @@
 #include "../../nuklear_console.h"
-#include "../../vendor/nuklear/demo/common/style.c"
+#include "../../vendor/Nuklear/demo/common/style.c"
 
 struct nk_console* console;
 static nk_size progressValue = 50;
