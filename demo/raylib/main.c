@@ -1,4 +1,5 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
+#define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
 #define NK_GAMEPAD_RAYLIB
 #include "raylib-nuklear.h"
 #include "../../nuklear_console.h"
@@ -8,13 +9,13 @@ int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 600, "nuklear_console_demo");
     SetTargetFPS(60);
-    //Font font = LoadFontFromNuklear(26);
 
     // Create the Nuklear Context
-    int fontSize = 32;
+    int fontSize = 13 * 3;
     int padding = 25;
-    struct nk_context *ctx = InitNuklear(fontSize);
-    //struct nk_context *ctx = InitNuklearEx(font, 26);
+    Font font = LoadFontFromNuklear(fontSize);
+    GenTextureMipmaps(&font.texture);
+    struct nk_context *ctx = InitNuklearEx(font, fontSize);
 
     nk_console* console = nuklear_console_demo_init(ctx, NULL);
 
@@ -51,7 +52,7 @@ int main() {
     // De-initialize the Nuklear GUI
     nuklear_console_demo_free();
     UnloadNuklear(ctx);
-    //UnloadFont(font);
+    UnloadFont(font);
 
     CloseWindow();
     return 0;

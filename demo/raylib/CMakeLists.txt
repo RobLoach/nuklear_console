@@ -12,7 +12,7 @@ if (NOT raylib_FOUND)
     FetchContent_Declare(
         raylib
         GIT_REPOSITORY https://github.com/raysan5/raylib.git
-        GIT_TAG 5.0
+        GIT_TAG f2344cd
         GIT_SHALLOW 1
     )
     FetchContent_GetProperties(raylib)
@@ -32,8 +32,7 @@ if (NOT raylib_nuklear_FOUND)
     FetchContent_Declare(
         raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
-        GIT_TAG d86fdba958fcdd8048e374986b6bb4edc12b7c0c
-        GIT_SHALLOW 1
+        GIT_TAG ab4f1b3
     )
     FetchContent_GetProperties(raylib_nuklear)
     if (NOT raylib_nuklear_POPULATED) # Have we downloaded raylib yet?
@@ -50,7 +49,7 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG e1d37398cd66b14f28649217dbf3b09aeabded18
+        GIT_TAG e1d3739
         GIT_SHALLOW 1
     )
     FetchContent_GetProperties(nuklear_gamepad)
