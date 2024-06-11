@@ -490,6 +490,7 @@ NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size) {
 }
 
 NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
+    NK_UNUSED(unused);
     NK_CONSOLE_FREE(unused, ptr);
 }
 
