@@ -1,6 +1,10 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct nk_console;
 struct nk_gamepads;
 
@@ -113,6 +117,10 @@ NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* game
 #include "nuklear_console_progress.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif  // NK_CONSOLE_H__
 
@@ -336,7 +344,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
  *
  * @internal
  */
-NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
+static nk_console* nk_console_find_first_selectable(nk_console* parent) {
     if (parent == NULL || parent->children == NULL) {
         return NULL;
     }
@@ -356,7 +364,7 @@ NK_API nk_console* nk_console_find_first_selectable(nk_console* parent) {
 /**
  * A function to check whether or not the mouse moved.
  */
-NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
+static nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
     if (input == NULL) {
         return nk_false;
     }
@@ -370,7 +378,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
  * @see nk_tooltip()
  * @todo Support multiline tooltips with nk_text_calculate_text_bounds()
  */
-NK_API void nk_console_tooltip_display(struct nk_context *ctx, const char *text) {
+static void nk_console_tooltip_display(struct nk_context *ctx, const char *text) {
     const struct nk_style *style;
     struct nk_vec2 padding;
 
@@ -476,10 +484,13 @@ NK_API void nk_console_render(nk_console* console) {
 }
 
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size) {
+    NK_UNUSED(unused);
+    NK_UNUSED(old);
     return NK_CONSOLE_MALLOC(unused, old, size);
 }
 
 NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
+    NK_UNUSED(unused);
     NK_CONSOLE_FREE(unused, ptr);
 }
 
