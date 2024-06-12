@@ -58,6 +58,55 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
     theme_options->tooltip = "Change the theme of the console!";
     set_style(ctx, theme);
 
+    // Rows
+    nk_console* calc = nk_console_button(console, "Calculator");
+    {
+      nk_console* row = nk_console_row_begin(calc);
+      nk_console_button(row, "sqrt");
+      nk_console_button(row, "pi");
+      nk_console_row_end(row);
+
+      row = nk_console_row_begin(calc);
+      nk_console_button(row, "AC");
+      nk_console_button(row, "()");
+      nk_console_button(row, "%");
+      nk_console_button(row, "/");
+      nk_console_row_end(row);
+
+      row = nk_console_row_begin(calc);
+      nk_console_button(row, "7");
+      nk_console_button(row, "8");
+      nk_console_button(row, "9");
+      nk_console_button(row, "*");
+      nk_console_row_end(row);
+
+      row = nk_console_row_begin(calc);
+      nk_console_button(row, "4");
+      nk_console_button(row, "5");
+      nk_console_button(row, "6");
+      nk_console_button(row, "-");
+      nk_console_row_end(row);
+
+      row = nk_console_row_begin(calc);
+      nk_console_button(row, "1");
+      nk_console_button(row, "2");
+      nk_console_button(row, "3");
+      nk_console_button(row, "+");
+      nk_console_row_end(row);
+
+      row = nk_console_row_begin(calc);
+      nk_console_button(row, "0");
+      nk_console_button(row, ".");
+      nk_console_button(row, "bksp");
+      nk_console_button(row, "=");
+      nk_console_row_end(row);
+
+      nk_console_button_onclick(calc, "Back", nk_console_button_back)
+            ->button.symbol = NK_SYMBOL_TRIANGLE_LEFT;
+
+      calc->tooltip = "Demo rows and grids!";
+    }
+
     nk_console_button(console, "Save Game")->disabled = nk_true;
     nk_console_button(console, "Quit Game")->button.onclick = button_clicked;
 

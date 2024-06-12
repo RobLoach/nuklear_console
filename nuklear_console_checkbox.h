@@ -115,6 +115,7 @@ NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_
     checkbox->checkbox.value_bool = active;
     checkbox->type = NK_CONSOLE_CHECKBOX;
     checkbox->selectable = nk_true;
+    checkbox->columns = 1;
     return checkbox;
 }
 
