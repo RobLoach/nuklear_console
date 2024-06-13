@@ -228,7 +228,6 @@ NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label
 NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel) {
     nk_console* widget = nk_console_property_int(parent, label, 0, NULL, 0, 0, inc_per_pixel);
     nk_console_property_data* data = (nk_console_property_data*)widget->data;
-    widget->render = nk_console_property_render;
     widget->type = NK_CONSOLE_PROPERTY_FLOAT;
     data->min_float = min;
     data->val_float = val;

@@ -5,7 +5,23 @@
 extern "C" {
 #endif
 
-struct nk_gamepads;
+struct nk_console;
+
+/**
+ * Event handler for a console widget.
+ *
+ * @param widget The widget that was acted upon.
+ */
+typedef void (*nk_console_event)(struct nk_console* widget);
+
+/**
+ * An event handler for rendering the given widget.
+ *
+ * @param widget The widget that is being rendered.
+ *
+ * @return The bounds of the widget.
+ */
+typedef struct nk_rect (*nk_console_render_event)(struct nk_console* widget);
 
 typedef enum {
     NK_CONSOLE_UNKNOWN,
@@ -42,9 +58,9 @@ typedef struct nk_console {
     nk_bool input_processed;
 
     // Events
-    void (*onchange)(struct nk_console*); /** Invoked when there is a change in the value for the widget. */
-    struct nk_rect (*render)(struct nk_console*); /** Render the widget. */
-    void (*destroy)(struct nk_console*); /** Destroy the widget. */
+    nk_console_event onchange; /** Invoked when there is a change in the value for the widget. */
+    nk_console_render_event render; /** Render the widget. */
+    nk_console_event destroy; /** Destroy the widget. */
 
     struct nk_gamepads* gamepads;
 } nk_console;
