@@ -19,7 +19,8 @@ typedef enum {
     NK_CONSOLE_PROPERTY_INT,
     NK_CONSOLE_PROPERTY_FLOAT,
     NK_CONSOLE_SLIDER_INT,
-    NK_CONSOLE_SLIDER_FLOAT
+    NK_CONSOLE_SLIDER_FLOAT,
+    NK_CONSOLE_ROW
 } nk_console_widget_type;
 
 /**
@@ -89,6 +90,7 @@ typedef struct nk_console {
     // Events
     void (*onchange)(struct nk_console*); /** Invoked when there is a change in the value for the widget. */
     struct nk_rect (*render)(struct nk_console*); /** Render the widget. */
+    void (*destroy)(struct nk_console*); /** Destroy the widget. */
 
     struct nk_gamepads* gamepads;
 } nk_console;
@@ -106,6 +108,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
 NK_API void nk_console_set_active_widget(nk_console* widget);
+NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
@@ -117,6 +120,7 @@ NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* game
 #include "nuklear_console_progress.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
+#include "nuklear_console_row.h"
 
 #ifdef __cplusplus
 }
@@ -164,6 +168,8 @@ NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* game
 extern "C" {
 #endif
 
+NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
+
 #ifndef NK_CONSOLE_IMPLEMENTATION
 #define NK_CONSOLE_IMPLEMENTATION
 #include "nuklear_console_button.h"
@@ -172,6 +178,7 @@ extern "C" {
 #include "nuklear_console_progress.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
+#include "nuklear_console_row.h"
 #endif
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
@@ -181,6 +188,14 @@ NK_API void nk_console_set_active_widget(nk_console* widget) {
 
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
     parent->activeWidget = widget;
+}
+
+NK_API nk_console* nk_console_get_active_widget(nk_console* widget) {
+    if (widget == NULL) {
+        return NULL;
+    }
+    nk_console* parent = widget->parent == NULL ? widget : widget->parent;
+    return parent->activeWidget;
 }
 
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
@@ -364,7 +379,7 @@ static nk_console* nk_console_find_first_selectable(nk_console* parent) {
 /**
  * A function to check whether or not the mouse moved.
  */
-static nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
+NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
     if (input == NULL) {
         return nk_false;
     }
@@ -515,6 +530,10 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 NK_API void nk_console_free(nk_console* console) {
     if (console == NULL) {
         return;
+    }
+
+    if (console->destroy) {
+        console->destroy(console);
     }
 
     // Clear all the children
