@@ -5,6 +5,10 @@
 extern "C" {
 #endif
 
+typedef struct nk_console_checkbox_data {
+    nk_bool* value_bool;
+} nk_console_checkbox_data;
+
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active);
 NK_API struct nk_rect nk_console_checkbox_render(nk_console* console);
 
@@ -23,6 +27,11 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
+    nk_console_checkbox_data* data = (nk_console_checkbox_data*)console->data;
+    if (data == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
     if (console->columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
     }
@@ -33,8 +42,8 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     nk_bool active = nk_false;
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
-            if (console->checkbox.value_bool != NULL) {
-                *console->checkbox.value_bool = !*console->checkbox.value_bool;
+            if (data->value_bool != NULL) {
+                *data->value_bool = !*data->value_bool;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }
@@ -43,8 +52,8 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
             top->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
-            if (console->checkbox.value_bool != NULL) {
-                *console->checkbox.value_bool = nk_false;
+            if (data->value_bool != NULL) {
+                *data->value_bool = nk_false;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }
@@ -53,8 +62,8 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
             top->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
-            if (console->checkbox.value_bool != NULL) {
-                *console->checkbox.value_bool = nk_true;
+            if (data->value_bool != NULL) {
+                *data->value_bool = nk_true;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }
@@ -82,10 +91,10 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     // Display the checkbox with fixed alignment.
     nk_bool changed = nk_false;
     if (console->alignment == NK_TEXT_LEFT) {
-        changed = nk_checkbox_label_align(console->context, console->text, console->checkbox.value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
+        changed = nk_checkbox_label_align(console->context, console->text, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
     }
     else {
-        changed = nk_checkbox_label(console->context, console->text, console->checkbox.value_bool);
+        changed = nk_checkbox_label(console->context, console->text, data->value_bool);
     }
 
     // Invoke onchanged event.
@@ -110,12 +119,18 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 }
 
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active) {
+    NK_ASSERT(active != NULL);
+    nk_handle unused = {0};
+    nk_console_checkbox_data* data = (nk_console_checkbox_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_checkbox_data));
+    nk_zero(data, sizeof(nk_console_checkbox_data));
+
     nk_console* checkbox = nk_console_label(parent, text);
     checkbox->render = nk_console_checkbox_render;
-    checkbox->checkbox.value_bool = active;
+    data->value_bool = active;
     checkbox->type = NK_CONSOLE_CHECKBOX;
     checkbox->selectable = nk_true;
     checkbox->columns = 1;
+    checkbox->data = (void*)data;
     return checkbox;
 }
 

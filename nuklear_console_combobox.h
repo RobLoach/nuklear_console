@@ -44,7 +44,7 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
 
     // Change the combobox text that's displayed.
     combobox->text = button->text;
-    combobox->button.text_length = button->button.text_length;
+    combobox->text_length = button->text_length;
 
     // Go back
     nk_console_button_back(button);
@@ -97,7 +97,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
         text_length++;
         if (items_separated_by_separator[i] == (char)separator) {
             nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
-                ->button.text_length = text_length - 1;
+                ->text_length = text_length - 1;
             text_length = 0;
             button_text_start = items_separated_by_separator + i + 1;
         }
@@ -105,7 +105,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
 
     // Add the last item
     nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
-                ->button.text_length = text_length;
+                ->text_length = text_length;
 
     if (selected != NULL) {
         if (*selected < 0) {
@@ -116,7 +116,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
         }
 
         combobox->text = combobox->children[*selected + 1]->text;
-        combobox->button.text_length = combobox->children[*selected + 1]->button.text_length;
+        combobox->text_length = combobox->children[*selected + 1]->text_length;
     }
 
     combobox->button.onclick = nk_console_combobox_button_main_click;
@@ -146,7 +146,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
 
             if (changed) {
                 console->text = console->children[*console->combobox.selected + 1]->text;
-                console->button.text_length = console->children[*console->combobox.selected + 1]->button.text_length;
+                console->text_length = console->children[*console->combobox.selected + 1]->text_length;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }

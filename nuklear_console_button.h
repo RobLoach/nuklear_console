@@ -53,7 +53,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (console->button.text_length <= 0) {
+    if (console->text_length <= 0) {
         if (console->button.symbol == NK_SYMBOL_NONE) {
             selected |= nk_button_label(console->context, console->text);
         }
@@ -63,10 +63,10 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
     else {
         if (console->button.symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_text(console->context, console->text, console->button.text_length);
+            selected |= nk_button_text(console->context, console->text, console->text_length);
         }
         else {
-            selected |= nk_button_symbol_text(console->context, console->button.symbol, console->text, console->button.text_length, console->alignment);
+            selected |= nk_button_symbol_text(console->context, console->button.symbol, console->text, console->text_length, console->alignment);
         }
     }
 

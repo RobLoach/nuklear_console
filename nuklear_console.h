@@ -39,19 +39,15 @@ typedef struct nk_console_progress_data {
     nk_size* value_size;
 } nk_console_progress_data;
 
-typedef struct nk_console_checkbox_data {
-    nk_bool* value_bool;
-} nk_console_checkbox_data;
-
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     void (*onclick)(struct nk_console*);
-    int text_length;
 } nk_console_button_data;
 
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* text;
+    int text_length;
     int alignment;
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
@@ -62,7 +58,6 @@ typedef struct nk_console {
     nk_console_combobox_data combobox;
     nk_console_button_data button;
     nk_console_progress_data progress;
-    nk_console_checkbox_data checkbox;
     void* data; /** Any widget-specific data */
 
     struct nk_console* parent;
