@@ -9,6 +9,11 @@ Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/N
 ``` c
 #define NK_IMPLEMENTATION
 #include "nukear.h"
+
+#define NK_GAMEPAD_IMPLEMENTATION
+#include "nuklear_gamepad.h"
+
+#define NK_CONSOLE_IMPLEMENTATION
 #include "nuklear_console.h"
 
 int main() {
@@ -47,6 +52,7 @@ int main() {
 - Property
 - Slider
 - Tooltip
+- Rows
 
 ## API
 

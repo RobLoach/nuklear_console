@@ -1,7 +1,12 @@
-#include "../../nuklear_console.h"
 #include "../../vendor/Nuklear/demo/common/style.c"
 
-struct nk_console* console;
+#define NK_GAMEPAD_IMPLEMENTATION
+#include "../../vendor/nuklear_gamepad/nuklear_gamepad.h"
+
+#define NK_CONSOLE_IMPLEMENTATION
+#include "../../nuklear_console.h"
+
+static struct nk_console* console = NULL;
 static nk_size progressValue = 50;
 static int weapon = 1;
 static int property_int_test = 20;
@@ -9,8 +14,8 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 static int theme = 4;
-nk_bool showWindowTitle = nk_true;
-nk_bool shouldClose = nk_false;
+static nk_bool showWindowTitle = nk_true;
+static nk_bool shouldClose = nk_false;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(button->text, "Quit Game") == 0) {

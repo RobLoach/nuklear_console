@@ -114,13 +114,15 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
 
-#include "nuklear_console_button.h"
+#define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
+#include "nuklear_console_button.h"
 #include "nuklear_console_checkbox.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+#undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
 }
@@ -128,7 +130,7 @@ NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* game
 
 #endif  // NK_CONSOLE_H__
 
-#ifdef NK_IMPLEMENTATION
+#ifdef NK_CONSOLE_IMPLEMENTATION
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_IMPLEMENTATION_ONCE
 
@@ -159,27 +161,19 @@ NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* game
 #endif
 #endif
 
-#ifndef NK_CONSOLE_GAMEPAD_H
-#define NK_CONSOLE_GAMEPAD_H "vendor/nuklear_gamepad/nuklear_gamepad.h"
-#endif
-#include NK_CONSOLE_GAMEPAD_H
-
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 
-#ifndef NK_CONSOLE_IMPLEMENTATION
-#define NK_CONSOLE_IMPLEMENTATION
-#include "nuklear_console_button.h"
 #include "nuklear_console_label.h"
+#include "nuklear_console_button.h"
 #include "nuklear_console_checkbox.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
-#endif
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
     if (widget == NULL) {
