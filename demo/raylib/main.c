@@ -1,8 +1,7 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
-#define NK_GAMEPAD_RAYLIB
 #include "raylib-nuklear.h"
-#include "../../nuklear_console.h"
+
 #include "../common/nuklear_console_demo.c"
 
 int main() {

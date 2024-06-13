@@ -30,9 +30,11 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console);
 
 #endif  // NK_CONSOLE_ROW_H__
 
-#ifdef NK_CONSOLE_IMPLEMENTATION
+#if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_ROW_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_ROW_IMPLEMENTATION_ONCE
+
+#include <stddef.h> // offsetof
 
 #if defined(__cplusplus)
 extern "C" {

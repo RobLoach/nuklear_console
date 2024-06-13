@@ -16,7 +16,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button);
 
 #endif // NK_CONSOLE_COMBOBOX_H__
 
-#ifdef NK_CONSOLE_IMPLEMENTATION
+#if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_COMBOBOX_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_COMBOBOX_IMPLEMENTATION_ONCE
 

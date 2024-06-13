@@ -14,7 +14,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console);
 
 #endif // NK_CONSOLE_PROGRESS_H__
 
-#ifdef NK_CONSOLE_IMPLEMENTATION
+#if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_PROGRESS_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_PROGRESS_IMPLEMENTATION_ONCE
 

@@ -16,7 +16,7 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
 
 #endif // NK_CONSOLE_BUTTON_H__
 
-#ifdef NK_CONSOLE_IMPLEMENTATION
+#if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_BUTTON_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_BUTTON_IMPLEMENTATION_ONCE
 
