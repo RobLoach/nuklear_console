@@ -34,21 +34,6 @@ typedef struct nk_console_combobox_data {
     int count;
 } nk_console_combobox_data;
 
-/**
- * Data for Property and Slider widgets.
- */
-typedef struct nk_console_property_data {
-    int min_int; /** The minimum value, represented as an integer. */
-    int max_int; /** The maximum value, represented as an integer. */
-    int step_int; /** How much each step should increment. */
-    float min_float; /** The minimum value, represented as a float. */
-    float max_float; /** The maximum value, represented as a float. */
-    float step_float; /** How much each step should increment. */
-    float inc_per_pixel; /** The increment per pixel value as a float. */
-    int* val_int; /** Pointer to the integer value. */
-    float* val_float; /** Pointer to the float value. */
-} nk_console_property_data;
-
 typedef struct nk_console_progress_data {
     nk_size max_size;
     nk_size* value_size;
@@ -76,9 +61,9 @@ typedef struct nk_console {
 
     nk_console_combobox_data combobox;
     nk_console_button_data button;
-    nk_console_property_data property;
     nk_console_progress_data progress;
     nk_console_checkbox_data checkbox;
+    void* data; /** Any widget-specific data */
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -525,9 +510,16 @@ NK_API void nk_console_free(nk_console* console) {
     if (console == NULL) {
         return;
     }
+    nk_handle handle = {0};
 
     if (console->destroy) {
         console->destroy(console);
+    }
+
+    // Clear any component-specific data.
+    if (console->data != NULL) {
+        nk_console_mfree(handle, console->data);
+        console->data = NULL;
     }
 
     // Clear all the children
@@ -538,8 +530,6 @@ NK_API void nk_console_free(nk_console* console) {
 		}
     }
     cvector_free(console->children);
-
-    nk_handle handle;
     nk_console_mfree(handle, console);
 }
 
