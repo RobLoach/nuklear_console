@@ -5,7 +5,6 @@
 extern "C" {
 #endif
 
-struct nk_console;
 struct nk_gamepads;
 
 typedef enum {
@@ -23,22 +22,6 @@ typedef enum {
     NK_CONSOLE_ROW
 } nk_console_widget_type;
 
-/**
- * Data for Combobox widgets.
- */
-typedef struct nk_console_combobox_data {
-    const char* label;
-    const char* items_separated_by_separator;
-    int separator;
-    int* selected;
-    int count;
-} nk_console_combobox_data;
-
-typedef struct nk_console_button_data {
-    enum nk_symbol_type symbol;
-    void (*onclick)(struct nk_console*);
-} nk_console_button_data;
-
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* text;
@@ -49,10 +32,7 @@ typedef struct nk_console {
     nk_bool disabled; /** Whether or not the widget is currently disabled. */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
     const char* tooltip; /** Tooltip */
-
-    nk_console_combobox_data combobox;
-    nk_console_button_data button;
-    void* data; /** Any widget-specific data */
+    void* data; /** Widget-specific data */
 
     struct nk_console* parent;
     struct nk_context* context;

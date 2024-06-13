@@ -34,7 +34,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
     // New Game
     nk_console* newgame = nk_console_button(console, "New Game");
     {
-        newgame->button.symbol = NK_SYMBOL_PLUS;
+        nk_console_button_set_symbol(newgame, NK_SYMBOL_PLUS);
         nk_console_label(newgame, "This would start a new game!");
         nk_console_button_onclick(newgame, "Back", nk_console_button_back);
     }
@@ -52,8 +52,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
         nk_console_slider_float(options, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
         nk_console_slider_int(options, "Slider Int", 0, &slider_int_test, 20, 1)->disabled = nk_true;
 
-        nk_console_button_onclick(options, "Back", nk_console_button_back)
-            ->button.symbol = NK_SYMBOL_TRIANGLE_LEFT;
+        nk_console_button_set_symbol(
+            nk_console_button_onclick(options, "Back", nk_console_button_back),
+            NK_SYMBOL_TRIANGLE_LEFT);
 
         options->tooltip = "Displays some random options!";
     }
@@ -106,14 +107,15 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
       nk_console_button(row, "=");
       nk_console_row_end(row);
 
-      nk_console_button_onclick(calc, "Back", nk_console_button_back)
-            ->button.symbol = NK_SYMBOL_TRIANGLE_LEFT;
+      nk_console_button_set_symbol(
+        nk_console_button_onclick(calc, "Back", nk_console_button_back),
+        NK_SYMBOL_TRIANGLE_LEFT);
 
       calc->tooltip = "Demo rows and grids!";
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
-    nk_console_button(console, "Quit Game")->button.onclick = button_clicked;
+    nk_console_button_onclick(console, "Quit Game", button_clicked);
 
     return console;
 }

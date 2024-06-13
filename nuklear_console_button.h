@@ -5,10 +5,22 @@
 extern "C" {
 #endif
 
+typedef void (*nk_console_button_onclick_event)(struct nk_console*);
+
+typedef struct nk_console_button_data {
+    enum nk_symbol_type symbol;
+    void (*onclick)(struct nk_console*);
+} nk_console_button_data;
+
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text);
 NK_API struct nk_rect nk_console_button_render(nk_console* console);
 NK_API void nk_console_button_back(nk_console* button);
-NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, void (*onclick)(struct nk_console*));
+NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_button_onclick_event onclick);
+
+NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button);
+NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol);
+NK_API nk_console_button_onclick_event nk_console_button_get_onclick(nk_console* button);
+NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_button_onclick_event onclick);
 
 #if defined(__cplusplus)
 }
@@ -24,7 +36,44 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
 extern "C" {
 #endif
 
+NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button) {
+    if (button == NULL || button->data == NULL) {
+        return NK_SYMBOL_NONE;
+    }
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    return data->symbol;
+}
+
+NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol) {
+    if (button == NULL || button->data == NULL) {
+        return;
+    }
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    data->symbol = symbol;
+}
+
+NK_API nk_console_button_onclick_event nk_console_button_get_onclick(nk_console* button) {
+    if (button == NULL || button->data == NULL) {
+        return NULL;
+    }
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    return data->onclick;
+}
+
+NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_button_onclick_event onclick) {
+    if (button == NULL || button->data == NULL) {
+        return;
+    }
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    data->onclick = onclick;
+}
+
 NK_API struct nk_rect nk_console_button_render(nk_console* console) {
+    nk_console_button_data* data = (nk_console_button_data*)console->data;
+    if (data == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
     nk_console* top = nk_console_get_top(console);
     if (console->columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
@@ -54,19 +103,19 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Display the button.
     if (console->text_length <= 0) {
-        if (console->button.symbol == NK_SYMBOL_NONE) {
+        if (data->symbol == NK_SYMBOL_NONE) {
             selected |= nk_button_label(console->context, console->text);
         }
         else {
-            selected |= nk_button_symbol_label(console->context, console->button.symbol, console->text, console->alignment);
+            selected |= nk_button_symbol_label(console->context, data->symbol, console->text, console->alignment);
         }
     }
     else {
-        if (console->button.symbol == NK_SYMBOL_NONE) {
+        if (data->symbol == NK_SYMBOL_NONE) {
             selected |= nk_button_text(console->context, console->text, console->text_length);
         }
         else {
-            selected |= nk_button_symbol_text(console->context, console->button.symbol, console->text, console->text_length, console->alignment);
+            selected |= nk_button_symbol_text(console->context, data->symbol, console->text, console->text_length, console->alignment);
         }
     }
 
@@ -78,14 +127,14 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
         top->input_processed = nk_true;
 
         // If there's no onclick action and there are children...
-        if (console->button.onclick == NULL) {
+        if (data->onclick == NULL) {
             if (console->children != NULL) {
                 //top->activeParent = console;
                 nk_console_set_active_parent(console);
             }
         }
         else {
-            console->button.onclick(console);
+            data->onclick(console);
         }
     }
 
@@ -135,11 +184,17 @@ NK_API void nk_console_button_back(nk_console* button) {
 }
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, void (*onclick)(struct nk_console*)) {
+    // Create the widget data.
+    nk_handle unused = {0};
+    nk_console_button_data* data = (nk_console_button_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_button_data));
+    nk_zero(data, sizeof(nk_console_button_data));
+
     nk_console* button = nk_console_label(parent, text);
     button->type = NK_CONSOLE_BUTTON;
-    button->button.onclick = onclick;
+    data->onclick = onclick;
     button->selectable = nk_true;
     button->render = nk_console_button_render;
+    button->data = (void*)data;
     return button;
 }
 
