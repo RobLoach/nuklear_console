@@ -5,6 +5,11 @@
 extern "C" {
 #endif
 
+typedef struct nk_console_progress_data {
+    nk_size max_size;
+    nk_size* value_size;
+} nk_console_progress_data;
+
 NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
 NK_API struct nk_rect nk_console_progress_render(nk_console* console);
 
@@ -23,13 +28,22 @@ extern "C" {
 #endif
 
 NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max) {
+    NK_ASSERT(current != NULL);
+    NK_ASSERT(max > 0);
+
+    // Create the widget data.
+    nk_handle unused = {0};
+    nk_console_progress_data* data = (nk_console_progress_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_progress_data));
+    nk_zero(data, sizeof(nk_console_progress_data));
+
     nk_console* progress = nk_console_label(parent, text);
     progress->render = nk_console_progress_render;
     progress->type = NK_CONSOLE_PROGRESS;
     progress->selectable = nk_true;
-    progress->progress.value_size = current;
-    progress->progress.max_size = max;
+    data->value_size = current;
+    data->max_size = max;
     progress->columns = 2;
+    progress->data = (void*)data;
     if (*current > max) {
         *current = max;
     }
@@ -37,6 +51,11 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
 }
 
 NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
+    nk_console_progress_data* data = (nk_console_progress_data*)console->data;
+    if (data == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
     int desired_columns = nk_strlen(console->text) > 0 ? console->columns : console->columns - 1;
     if (desired_columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
@@ -48,8 +67,8 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     nk_bool active = nk_false;
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
-            if (console->progress.value_size != NULL && *console->progress.value_size > 0) {
-                *console->progress.value_size = *console->progress.value_size - 1;
+            if (data->value_size != NULL && *data->value_size > 0) {
+                *data->value_size = *data->value_size - 1;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }
@@ -58,8 +77,8 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
             top->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
-            if (console->progress.value_size != NULL && *console->progress.value_size < console->progress.max_size) {
-                *console->progress.value_size = *console->progress.value_size + 1;
+            if (data->value_size != NULL && *data->value_size < data->max_size) {
+                *data->value_size = *data->value_size + 1;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }
@@ -100,7 +119,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     }
 
     // Display the widget
-    if (nk_progress(console->context, console->progress.value_size, console->progress.max_size, nk_true)) {
+    if (nk_progress(console->context, data->value_size, data->max_size, nk_true)) {
         if (console->onchange != NULL) {
             console->onchange(console);
         }

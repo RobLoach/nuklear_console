@@ -34,11 +34,6 @@ typedef struct nk_console_combobox_data {
     int count;
 } nk_console_combobox_data;
 
-typedef struct nk_console_progress_data {
-    nk_size max_size;
-    nk_size* value_size;
-} nk_console_progress_data;
-
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     void (*onclick)(struct nk_console*);
@@ -57,7 +52,6 @@ typedef struct nk_console {
 
     nk_console_combobox_data combobox;
     nk_console_button_data button;
-    nk_console_progress_data progress;
     void* data; /** Any widget-specific data */
 
     struct nk_console* parent;
