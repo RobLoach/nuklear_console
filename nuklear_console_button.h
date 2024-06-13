@@ -96,7 +96,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
         nk_console_check_up_down(console, widget_bounds);
-        nk_console_tooltip(console);
+        nk_console_check_tooltip(console);
     }
 
     return widget_bounds;

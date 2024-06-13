@@ -77,7 +77,7 @@ NK_API void nk_console_render(nk_console* console);
 // Utilities
 NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API int nk_console_get_widget_index(nk_console* widget);
-NK_API void nk_console_tooltip(nk_console* console);
+NK_API void nk_console_check_tooltip(nk_console* console);
 NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
@@ -388,7 +388,7 @@ static void nk_console_tooltip_display(struct nk_context *ctx, const char *text)
     ctx->input.mouse.pos.y = y;
 }
 
-NK_API void nk_console_tooltip(nk_console* console) {
+NK_API void nk_console_check_tooltip(nk_console* console) {
     if (console == NULL) {
         return;
     }

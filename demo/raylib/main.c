@@ -1,5 +1,7 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
+// TODO: Switch to Nuklear's allocator system.
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
 #include "raylib-nuklear.h"
 
 #include "../common/nuklear_console_demo.c"
