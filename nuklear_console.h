@@ -6,7 +6,22 @@ extern "C" {
 #endif
 
 struct nk_console;
-struct nk_gamepads;
+
+/**
+ * Event handler for a console widget.
+ *
+ * @param widget The widget that was acted upon.
+ */
+typedef void (*nk_console_event)(struct nk_console* widget);
+
+/**
+ * An event handler for rendering the given widget.
+ *
+ * @param widget The widget that is being rendered.
+ *
+ * @return The bounds of the widget.
+ */
+typedef struct nk_rect (*nk_console_render_event)(struct nk_console* widget);
 
 typedef enum {
     NK_CONSOLE_UNKNOWN,
@@ -23,62 +38,17 @@ typedef enum {
     NK_CONSOLE_ROW
 } nk_console_widget_type;
 
-/**
- * Data for Combobox widgets.
- */
-typedef struct nk_console_combobox_data {
-    const char* label;
-    const char* items_separated_by_separator;
-    int separator;
-    int* selected;
-    int count;
-} nk_console_combobox_data;
-
-/**
- * Data for Property and Slider widgets.
- */
-typedef struct nk_console_property_data {
-    int min_int; /** The minimum value, represented as an integer. */
-    int max_int; /** The maximum value, represented as an integer. */
-    int step_int; /** How much each step should increment. */
-    float min_float; /** The minimum value, represented as a float. */
-    float max_float; /** The maximum value, represented as a float. */
-    float step_float; /** How much each step should increment. */
-    float inc_per_pixel; /** The increment per pixel value as a float. */
-    int* val_int; /** Pointer to the integer value. */
-    float* val_float; /** Pointer to the float value. */
-} nk_console_property_data;
-
-typedef struct nk_console_progress_data {
-    nk_size max_size;
-    nk_size* value_size;
-} nk_console_progress_data;
-
-typedef struct nk_console_checkbox_data {
-    nk_bool* value_bool;
-} nk_console_checkbox_data;
-
-typedef struct nk_console_button_data {
-    enum nk_symbol_type symbol;
-    void (*onclick)(struct nk_console*);
-    int text_length;
-} nk_console_button_data;
-
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* text;
+    int text_length;
     int alignment;
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
     nk_bool disabled; /** Whether or not the widget is currently disabled. */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
     const char* tooltip; /** Tooltip */
-
-    nk_console_combobox_data combobox;
-    nk_console_button_data button;
-    nk_console_property_data property;
-    nk_console_progress_data progress;
-    nk_console_checkbox_data checkbox;
+    void* data; /** Widget-specific data */
 
     struct nk_console* parent;
     struct nk_context* context;
@@ -88,9 +58,9 @@ typedef struct nk_console {
     nk_bool input_processed;
 
     // Events
-    void (*onchange)(struct nk_console*); /** Invoked when there is a change in the value for the widget. */
-    struct nk_rect (*render)(struct nk_console*); /** Render the widget. */
-    void (*destroy)(struct nk_console*); /** Destroy the widget. */
+    nk_console_event onchange; /** Invoked when there is a change in the value for the widget. */
+    nk_console_render_event render; /** Render the widget. */
+    nk_console_event destroy; /** Destroy the widget. */
 
     struct nk_gamepads* gamepads;
 } nk_console;
@@ -103,7 +73,7 @@ NK_API void nk_console_render(nk_console* console);
 // Utilities
 NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API int nk_console_get_widget_index(nk_console* widget);
-NK_API void nk_console_tooltip(nk_console* console);
+NK_API void nk_console_check_tooltip(nk_console* console);
 NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
@@ -113,6 +83,8 @@ NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
+NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
+NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -174,6 +146,22 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+
+NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
+    if (widget == NULL) {
+        return;
+    }
+
+    widget->tooltip = tooltip;
+}
+
+NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange) {
+    if (widget == NULL) {
+        return;
+    }
+
+    widget->onchange = onchange;
+}
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
     if (widget == NULL) {
@@ -414,7 +402,7 @@ static void nk_console_tooltip_display(struct nk_context *ctx, const char *text)
     ctx->input.mouse.pos.y = y;
 }
 
-NK_API void nk_console_tooltip(nk_console* console) {
+NK_API void nk_console_check_tooltip(nk_console* console) {
     if (console == NULL) {
         return;
     }
@@ -525,9 +513,16 @@ NK_API void nk_console_free(nk_console* console) {
     if (console == NULL) {
         return;
     }
+    nk_handle handle = {0};
 
     if (console->destroy) {
         console->destroy(console);
+    }
+
+    // Clear any component-specific data.
+    if (console->data != NULL) {
+        nk_console_mfree(handle, console->data);
+        console->data = NULL;
     }
 
     // Clear all the children
@@ -538,8 +533,6 @@ NK_API void nk_console_free(nk_console* console) {
 		}
     }
     cvector_free(console->children);
-
-    nk_handle handle;
     nk_console_mfree(handle, console);
 }
 

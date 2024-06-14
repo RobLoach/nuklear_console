@@ -5,6 +5,21 @@
 extern "C" {
 #endif
 
+/**
+ * Data for Property and Slider widgets.
+ */
+typedef struct nk_console_property_data {
+    int min_int; /** The minimum value, represented as an integer. */
+    int max_int; /** The maximum value, represented as an integer. */
+    int step_int; /** How much each step should increment. */
+    float min_float; /** The minimum value, represented as a float. */
+    float max_float; /** The maximum value, represented as a float. */
+    float step_float; /** How much each step should increment. */
+    float inc_per_pixel; /** The increment per pixel value as a float. */
+    int* val_int; /** Pointer to the integer value. */
+    float* val_float; /** Pointer to the float value. */
+} nk_console_property_data;
+
 NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel);
 NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel);
 NK_API nk_console* nk_console_slider_int(nk_console* parent, const char* label, int min, int* val, int max, int step);
@@ -15,7 +30,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console);
 }
 #endif
 
-#endif // NK_CONSOLE_PROPERTY_H__
+#endif  // NK_CONSOLE_PROPERTY_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_PROPERTY_IMPLEMENTATION_ONCE
@@ -26,6 +41,22 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_property_render(nk_console* console) {
+    nk_console_property_data* data = (nk_console_property_data*)console->data;
+    if (data == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
+    if (console->type == NK_CONSOLE_PROPERTY_INT || console->type == NK_CONSOLE_SLIDER_INT) {
+        if (data->val_int == NULL) {
+            return nk_rect(0, 0, 0, 0);
+        }
+    }
+    else if (console->type == NK_CONSOLE_PROPERTY_FLOAT || console->type == NK_CONSOLE_SLIDER_FLOAT) {
+        if (data->val_float == NULL) {
+            return nk_rect(0, 0, 0, 0);
+        }
+    }
+
     int desired_columns = nk_strlen(console->text) > 0 ? console->columns : console->columns - 1;
     if (desired_columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
@@ -38,16 +69,16 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
             switch (console->type) {
                 case NK_CONSOLE_SLIDER_INT:
                 case NK_CONSOLE_PROPERTY_INT:
-                    *console->property.val_int = *console->property.val_int - console->property.step_int;
-                    if (*console->property.val_int < console->property.min_int) {
-                        *console->property.val_int = console->property.min_int;
+                    *data->val_int = *data->val_int - data->step_int;
+                    if (*data->val_int < data->min_int) {
+                        *data->val_int = data->min_int;
                     }
                     break;
                 case NK_CONSOLE_SLIDER_FLOAT:
                 case NK_CONSOLE_PROPERTY_FLOAT:
-                    *console->property.val_float = *console->property.val_float - console->property.step_float;
-                    if (*console->property.val_float < console->property.min_float) {
-                        *console->property.val_float = console->property.min_float;
+                    *data->val_float = *data->val_float - data->step_float;
+                    if (*data->val_float < data->min_float) {
+                        *data->val_float = data->min_float;
                     }
                     break;
                 default:
@@ -63,16 +94,16 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
             switch (console->type) {
                 case NK_CONSOLE_SLIDER_INT:
                 case NK_CONSOLE_PROPERTY_INT:
-                    *console->property.val_int = *console->property.val_int + console->property.step_int;
-                    if (*console->property.val_int > console->property.max_int) {
-                        *console->property.val_int = console->property.max_int;
+                    *data->val_int = *data->val_int + data->step_int;
+                    if (*data->val_int > data->max_int) {
+                        *data->val_int = data->max_int;
                     }
                     break;
                 case NK_CONSOLE_SLIDER_FLOAT:
                 case NK_CONSOLE_PROPERTY_FLOAT:
-                    *console->property.val_float = *console->property.val_float + console->property.step_float;
-                    if (*console->property.val_float > console->property.max_float) {
-                        *console->property.val_float = console->property.max_float;
+                    *data->val_float = *data->val_float + data->step_float;
+                    if (*data->val_float > data->max_float) {
+                        *data->val_float = data->max_float;
                     }
                     break;
                 default:
@@ -125,16 +156,16 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     name[1] = '#';
     switch (console->type) {
         case NK_CONSOLE_PROPERTY_INT:
-            nk_property_int(console->context, name, console->property.min_int, console->property.val_int, console->property.max_int, console->property.step_int, console->property.inc_per_pixel);
+            nk_property_int(console->context, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);
             break;
         case NK_CONSOLE_PROPERTY_FLOAT:
-            nk_property_float(console->context, name, console->property.min_float, console->property.val_float, console->property.max_float, console->property.step_float, console->property.inc_per_pixel);
+            nk_property_float(console->context, name, data->min_float, data->val_float, data->max_float, data->step_float, data->inc_per_pixel);
             break;
         case NK_CONSOLE_SLIDER_INT:
-            nk_slider_int(console->context, console->property.min_int, console->property.val_int, console->property.max_int, console->property.step_int);
+            nk_slider_int(console->context, data->min_int, data->val_int, data->max_int, data->step_int);
             break;
         case NK_CONSOLE_SLIDER_FLOAT:
-            nk_slider_float(console->context, console->property.min_float, console->property.val_float, console->property.max_float, console->property.step_float);
+            nk_slider_float(console->context, data->min_float, data->val_float, data->max_float, data->step_float);
             break;
         default:
             // Nothing
@@ -158,50 +189,58 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
         nk_console_check_up_down(console, widget_bounds);
-        nk_console_tooltip(console);
+        nk_console_check_tooltip(console);
     }
 
     return widget_bounds;
 }
 
 NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel) {
-    NK_ASSERT(val);
+    // Create the property data.
+    nk_handle unused = {0};
+    nk_console_property_data* data = (nk_console_property_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_property_data));
+    nk_zero(data, sizeof(nk_console_property_data));
+    data->min_int = min;
+    data->val_int = val;
+    data->max_int = max;
+    data->step_int = step;
+    data->inc_per_pixel = inc_per_pixel;
+
     nk_console* widget = nk_console_label(parent, label);
     widget->render = nk_console_property_render;
     widget->type = NK_CONSOLE_PROPERTY_INT;
     widget->selectable = nk_true;
-    widget->property.min_int = min;
-    widget->property.val_int = val;
-    widget->property.max_int = max;
-    widget->property.step_int = step;
-    widget->property.inc_per_pixel = inc_per_pixel;
+    widget->data = (void*)data;
     widget->columns = 2;
-    if (*val < min) {
-        *val = min;
+
+    if (val != NULL) {
+        if (*val < min) {
+            *val = min;
+        }
+        else if (*val > max) {
+            *val = max;
+        }
     }
-    else if (*val > max) {
-        *val = max;
-    }
+
     return widget;
 }
 
 NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel) {
-    NK_ASSERT(val);
-    nk_console* widget = nk_console_label(parent, label);
-    widget->render = nk_console_property_render;
+    nk_console* widget = nk_console_property_int(parent, label, 0, NULL, 0, 0, inc_per_pixel);
+    nk_console_property_data* data = (nk_console_property_data*)widget->data;
     widget->type = NK_CONSOLE_PROPERTY_FLOAT;
-    widget->selectable = nk_true;
-    widget->property.min_float = min;
-    widget->property.val_float = val;
-    widget->property.max_float = max;
-    widget->property.step_float = step;
-    widget->property.inc_per_pixel = inc_per_pixel;
-    widget->columns = 2;
-    if (*val < min) {
-        *val = min;
-    }
-    else if (*val > max) {
-        *val = max;
+    data->min_float = min;
+    data->val_float = val;
+    data->max_float = max;
+    data->step_float = step;
+
+    if (val != NULL) {
+        if (*val < min) {
+            *val = min;
+        }
+        else if (*val > max) {
+            *val = max;
+        }
     }
     return widget;
 }
@@ -222,5 +261,5 @@ NK_API nk_console* nk_console_slider_float(nk_console* parent, const char* label
 }
 #endif
 
-#endif
-#endif
+#endif  // NK_CONSOLE_PROPERTY_IMPLEMENTATION_ONCE
+#endif  // NK_CONSOLE_IMPLEMENTATION

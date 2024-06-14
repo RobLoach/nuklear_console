@@ -1,5 +1,7 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
+// TODO: Switch to Nuklear's allocator system.
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
 #include "raylib-nuklear.h"
 
 #include "../common/nuklear_console_demo.c"
@@ -7,7 +9,6 @@
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 600, "nuklear_console_demo");
-    SetTargetFPS(60);
 
     // Create the Nuklear Context
     int fontSize = 13 * 3;

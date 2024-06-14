@@ -229,5 +229,5 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 }
 #endif
 
-#endif
-#endif
+#endif  // NK_CONSOLE_ROW_IMPLEMENTATION_ONCE
+#endif  // NK_CONSOLE_IMPLEMENTATION
