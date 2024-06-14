@@ -210,5 +210,5 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
 }
 #endif
 
-#endif
-#endif
+#endif  // NK_CONSOLE_COMBOBOX_IMPLEMENTATION_ONCE
+#endif  // NK_CONSOLE_IMPLEMENTATION

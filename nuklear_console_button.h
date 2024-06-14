@@ -200,5 +200,5 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
 }
 #endif
 
-#endif
-#endif
+#endif  // NK_CONSOLE_BUTTON_IMPLEMENTATION_ONCE
+#endif  // NK_CONSOLE_IMPLEMENTATION

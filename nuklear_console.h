@@ -83,6 +83,8 @@ NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
+NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
+NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -144,6 +146,22 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+
+NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
+    if (widget == NULL) {
+        return;
+    }
+
+    widget->tooltip = tooltip;
+}
+
+NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange) {
+    if (widget == NULL) {
+        return;
+    }
+
+    widget->onchange = onchange;
+}
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
     if (widget == NULL) {

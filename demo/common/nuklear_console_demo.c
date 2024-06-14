@@ -42,6 +42,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
     // Options
     nk_console* options = nk_console_button(console, "Options");
     {
+        nk_console_set_tooltip(options, "Displays some random options!");
+
         nk_console_checkbox(options, "Show Window Title", &showWindowTitle)
             ->tooltip = "Whether or not to show the window title";
         nk_console_progress(options, "Progress", &progressValue, 100);
@@ -55,8 +57,6 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
         nk_console_button_set_symbol(
             nk_console_button_onclick(options, "Back", nk_console_button_back),
             NK_SYMBOL_TRIANGLE_LEFT);
-
-        options->tooltip = "Displays some random options!";
     }
 
     nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);

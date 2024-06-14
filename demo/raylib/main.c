@@ -9,7 +9,6 @@
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 600, "nuklear_console_demo");
-    SetTargetFPS(60);
 
     // Create the Nuklear Context
     int fontSize = 13 * 3;
