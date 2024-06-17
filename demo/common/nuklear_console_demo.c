@@ -18,7 +18,7 @@ static nk_bool showWindowTitle = nk_true;
 static nk_bool shouldClose = nk_false;
 
 static const int textedit_buffer_size = 256;
-static const char textedit_buffer[256] = "vurtun";
+static char textedit_buffer[256] = "vurtun";
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {

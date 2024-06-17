@@ -7,12 +7,12 @@ extern "C" {
 
 typedef struct nk_console_textedit_data {
     nk_console_button_data button; // Inherited from button.
-    const char* buffer;
+    char* buffer;
     int buffer_size;
     nk_bool shift;
 } nk_console_textedit_data;
 
-NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, const char* buffer, int buffer_size);
+NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
 NK_API void nk_console_textedit_button_click(nk_console* button);
 NK_API void nk_console_textedit_button_main_click(nk_console* button);
@@ -53,10 +53,14 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
     if (button == NULL || button->data == NULL) {
         return;
     }
+
+    // Make sure there aren't any children.
     nk_console_free_children(button);
 
     // TODO: Create the on-screen keyboard.
     nk_console_textedit_data* data = (nk_console_textedit_data*)button->data;
+
+    nk_console_textedit_text(button);
 
     nk_console* row = nk_console_row_begin(button);
         nk_console_button(row, data->shift ? "A" : "a");
@@ -116,7 +120,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
     nk_console_set_active_parent(button);
 }
 
-NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, const char* buffer, int buffer_size) {
+NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size) {
     // Create the widget data.
     nk_handle unused = {0};
     nk_console_textedit_data* data = (nk_console_textedit_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_textedit_data));

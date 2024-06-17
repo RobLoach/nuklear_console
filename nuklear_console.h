@@ -36,7 +36,8 @@ typedef enum {
     NK_CONSOLE_SLIDER_INT,
     NK_CONSOLE_SLIDER_FLOAT,
     NK_CONSOLE_ROW,
-    NK_CONSOLE_TEXTEDIT
+    NK_CONSOLE_TEXTEDIT,
+    NK_CONSOLE_TEXTEDIT_TEXT
 } nk_console_widget_type;
 
 typedef struct nk_console {
@@ -98,6 +99,7 @@ NK_API void nk_console_free_children(nk_console* console);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+#include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
@@ -151,6 +153,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+#include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
