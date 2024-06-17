@@ -23,7 +23,7 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
-    if (nk_strlen(widget->text) <= 0) {
+    if (nk_strlen(widget->label) <= 0) {
         return nk_rect(0, 0, 0, 0);
     }
 
@@ -32,7 +32,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     }
 
     // TODO: Add label options like alignment or text wrapping
-    nk_label(widget->context, widget->text, widget->alignment);
+    nk_label(widget->context, widget->label, widget->alignment);
 
     return nk_rect(0, 0, 0, 0);
 }
@@ -40,7 +40,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
 NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
     nk_console* label = nk_console_init(parent->context);
     label->type = NK_CONSOLE_LABEL;
-    label->text = text;
+    label->label = text;
     label->parent = parent;
     label->alignment = NK_TEXT_LEFT;
     label->columns = 1;

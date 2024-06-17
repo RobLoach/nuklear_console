@@ -40,8 +40,8 @@ typedef enum {
 
 typedef struct nk_console {
     nk_console_widget_type type;
-    const char* text;
-    int text_length;
+    const char* label;
+    int label_length;
     int alignment;
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
@@ -85,6 +85,8 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
+NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
+NK_API const char* nk_console_get_label(nk_console* widget);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -146,6 +148,23 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+
+NK_API const char* nk_console_get_label(nk_console* widget) {
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    return widget->label;
+}
+
+NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length) {
+    if (widget == NULL) {
+        return;
+    }
+
+    widget->label = label;
+    widget->label_length = label_length;
+}
 
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
     if (widget == NULL) {

@@ -18,7 +18,7 @@ static nk_bool showWindowTitle = nk_true;
 static nk_bool shouldClose = nk_false;
 
 void button_clicked(struct nk_console* button) {
-    if (strcmp(button->text, "Quit Game") == 0) {
+    if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
         shouldClose = nk_true;
     }
 }

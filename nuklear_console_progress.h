@@ -56,7 +56,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    int desired_columns = nk_strlen(console->text) > 0 ? console->columns : console->columns - 1;
+    int desired_columns = nk_strlen(console->label) > 0 ? console->columns : console->columns - 1;
     if (desired_columns > 0) {
         nk_layout_row_dynamic(console->context, 0, console->columns);
     }
@@ -89,11 +89,11 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     }
 
     // Display the label
-    if (nk_strlen(console->text) > 0) {
+    if (nk_strlen(console->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->context);
         }
-        nk_label(console->context, console->text, NK_TEXT_LEFT);
+        nk_label(console->context, console->label, NK_TEXT_LEFT);
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_end(console->context);
         }

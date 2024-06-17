@@ -100,20 +100,20 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (console->text_length <= 0) {
+    if (console->label_length <= 0) {
         if (data->symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_label(console->context, console->text);
+            selected |= nk_button_label(console->context, console->label);
         }
         else {
-            selected |= nk_button_symbol_label(console->context, data->symbol, console->text, console->alignment);
+            selected |= nk_button_symbol_label(console->context, data->symbol, console->label, console->alignment);
         }
     }
     else {
         if (data->symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_text(console->context, console->text, console->text_length);
+            selected |= nk_button_text(console->context, console->label, console->label_length);
         }
         else {
-            selected |= nk_button_symbol_text(console->context, data->symbol, console->text, console->text_length, console->alignment);
+            selected |= nk_button_symbol_text(console->context, data->symbol, console->label, console->label_length, console->alignment);
         }
     }
 

@@ -56,8 +56,8 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
     }
 
     // Change the combobox text that's displayed.
-    combobox->text = button->text;
-    combobox->text_length = button->text_length;
+    combobox->label = button->label;
+    combobox->label_length = button->label_length;
 
     // Go back
     nk_console_button_back(button);
@@ -119,7 +119,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
         text_length++;
         if (items_separated_by_separator[i] == (char)separator) {
             nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
-                ->text_length = text_length - 1;
+                ->label_length = text_length - 1;
             text_length = 0;
             button_text_start = items_separated_by_separator + i + 1;
         }
@@ -127,7 +127,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
 
     // Add the last item
     nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
-                ->text_length = text_length;
+                ->label_length = text_length;
 
     if (selected != NULL) {
         if (*selected < 0) {
@@ -137,8 +137,8 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
             *selected = (int)cvector_size(combobox->children) - 2;
         }
 
-        combobox->text = combobox->children[*selected + 1]->text;
-        combobox->text_length = combobox->children[*selected + 1]->text_length;
+        combobox->label = combobox->children[*selected + 1]->label;
+        combobox->label_length = combobox->children[*selected + 1]->label_length;
     }
 
     return combobox;
@@ -170,8 +170,8 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
             }
 
             if (changed) {
-                console->text = console->children[*data->selected + 1]->text;
-                console->text_length = console->children[*data->selected + 1]->text_length;
+                console->label = console->children[*data->selected + 1]->label;
+                console->label_length = console->children[*data->selected + 1]->label_length;
                 if (console->onchange != NULL) {
                     console->onchange(console);
                 }

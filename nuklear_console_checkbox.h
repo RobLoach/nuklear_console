@@ -91,10 +91,10 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     // Display the checkbox with fixed alignment.
     nk_bool changed = nk_false;
     if (console->alignment == NK_TEXT_LEFT) {
-        changed = nk_checkbox_label_align(console->context, console->text, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
+        changed = nk_checkbox_label_align(console->context, console->label, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
     }
     else {
-        changed = nk_checkbox_label(console->context, console->text, data->value_bool);
+        changed = nk_checkbox_label(console->context, console->label, data->value_bool);
     }
 
     // Invoke onchanged event.
