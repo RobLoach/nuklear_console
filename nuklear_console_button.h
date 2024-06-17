@@ -189,10 +189,10 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
 
     nk_console* button = nk_console_label(parent, text);
     button->type = NK_CONSOLE_BUTTON;
-    data->onclick = onclick;
+    button->data = (void*)data;
     button->selectable = nk_true;
     button->render = nk_console_button_render;
-    button->data = (void*)data;
+    nk_console_button_set_onclick(button, onclick);
     return button;
 }
 
