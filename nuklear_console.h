@@ -88,6 +88,7 @@ NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
 NK_API const char* nk_console_get_label(nk_console* widget);
+NK_API void nk_console_free_children(nk_console* console);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -548,14 +549,26 @@ NK_API void nk_console_free(nk_console* console) {
     }
 
     // Clear all the children
+    nk_console_free_children(console);
+
+    nk_console_mfree(handle, console);
+}
+
+NK_API void nk_console_free_children(nk_console* console) {
+    if (console == NULL) {
+        return;
+    }
+    console->activeWidget = NULL;
+
+    // Clear all the children
     if (console->children != NULL) {
-		size_t i;
-		for (i = 0; i < cvector_size(console->children); ++i) {
+		for (size_t i = 0; i < cvector_size(console->children); ++i) {
             nk_console_free(console->children[i]);
 		}
     }
+
     cvector_free(console->children);
-    nk_console_mfree(handle, console);
+    console->children = NULL;
 }
 
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {
