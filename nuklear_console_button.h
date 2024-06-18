@@ -101,11 +101,18 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Display the button.
     if (console->label_length <= 0) {
-        if (data->symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_label(console->context, console->label);
+        // Check if there is a Label
+        if (console->label != NULL && nk_strlen(console->label) > 0) {
+            if (data->symbol == NK_SYMBOL_NONE) {
+                selected |= nk_button_label(console->context, console->label);
+            }
+            else {
+                selected |= nk_button_symbol_label(console->context, data->symbol, console->label, console->alignment);
+            }
         }
         else {
-            selected |= nk_button_symbol_label(console->context, data->symbol, console->label, console->alignment);
+            // Display the button as just a symbol?
+            selected |= nk_button_symbol(console->context, data->symbol);
         }
     }
     else {

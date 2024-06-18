@@ -60,7 +60,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         // Allow using ENTER to go back
         if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_ENTER)) {
             nk_console_get_top(widget)->input_processed = nk_true;
-            nk_console_button_back(widget);
+            nk_console_textedit_button_back_click(widget);
         }
         // Allow changing up/down only if it's not backspace
         else if (!nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
@@ -80,9 +80,6 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
     textedit_text->columns = 1;
     textedit_text->selectable = nk_true;
     textedit_text->render = nk_console_textedit_text_render;
-
-    // TODO: can't refer to the textedit directly
-    //textedit_text->data = textedit;
     cvector_push_back(parent->children, textedit_text);
     return textedit_text;
 }

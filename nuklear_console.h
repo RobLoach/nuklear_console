@@ -99,8 +99,8 @@ NK_API void nk_console_free_children(nk_console* console);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
-#include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
+#include "nuklear_console_textedit_text.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
