@@ -22,13 +22,9 @@ typedef struct nk_console_textedit_data {
  */
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
-NK_API void nk_console_textedit_button_click(nk_console* button);
 NK_API void nk_console_textedit_button_main_click(nk_console* button);
-
-/**
- * Event handler for the back button on the on-screen keyboard.
- */
 NK_API void nk_console_textedit_button_back_click(nk_console* button);
+NK_API void nk_console_textedit_key_click(nk_console* key);
 
 #if defined(__cplusplus)
 }
@@ -44,22 +40,19 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button);
 extern "C" {
 #endif
 
-#include <stdio.h>
-
 /**
  * Handle the click event for textedit's children items.
  */
 NK_API void nk_console_textedit_button_back_click(nk_console* button) {
-    // Make sure we're not going back to a Row.
+    // Make sure we're not going back to a row.
     if (button->parent->type == NK_CONSOLE_ROW) {
-        printf("Targeting row!\n");
         button = button->parent;
     }
-    printf("Going back!\n");
 
+    // Invoke the back button behavior on the button.
     nk_console_button_back(button);
 
-    // Clear out the on-screen keyboard
+    // Clear out the on-screen keyboard keys
     nk_console* enter_textedit_button = button->parent;
     nk_console_free_children(enter_textedit_button);
 }
@@ -305,16 +298,12 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
     nk_console_row_end(row);
 
     // Fifth row: Space
-    //row = nk_console_row_begin(button);
-        key = nk_console_button_onclick(button, NULL, nk_console_textedit_key_click); // Space
-        nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
-    //nk_console_row_end(row);
+    key = nk_console_button_onclick(button, NULL, nk_console_textedit_key_click); // Space
+    nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
 
     // Sixth row: Back
-    // TODO: textedit: Replace "Back" with a symbol?
-    //row = nk_console_row_begin(button);
-        nk_console_button_onclick(button, "Back", nk_console_textedit_button_back_click);
-    //nk_console_row_end(row);
+    // TODO: textedit: Replace "Back" with a RETURN symbol?
+    nk_console_button_onclick(button, "Back", nk_console_textedit_button_back_click);
 
     // Make the onscreen keyboard the active widget.
     nk_console_set_active_parent(button);

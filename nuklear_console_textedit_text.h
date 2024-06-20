@@ -7,6 +7,9 @@ extern "C" {
 
 /**
  * A TextEdit Text widget is a text field that is displayed as part of the on-screen keyboard.
+ *
+ * @see nk_console_textedit()
+ * @internal
  */
 NK_API nk_console* nk_console_textedit_text(nk_console* textedit);
 NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget);
