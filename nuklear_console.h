@@ -42,6 +42,7 @@ typedef enum {
 
 typedef struct nk_console {
     nk_console_widget_type type;
+    void* user_data;
     const char* label;
     int label_length;
     int alignment;
