@@ -100,20 +100,27 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (console->text_length <= 0) {
-        if (data->symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_label(console->context, console->text);
+    if (console->label_length <= 0) {
+        // Check if there is a Label
+        if (console->label != NULL && nk_strlen(console->label) > 0) {
+            if (data->symbol == NK_SYMBOL_NONE) {
+                selected |= nk_button_label(console->context, console->label);
+            }
+            else {
+                selected |= nk_button_symbol_label(console->context, data->symbol, console->label, console->alignment);
+            }
         }
         else {
-            selected |= nk_button_symbol_label(console->context, data->symbol, console->text, console->alignment);
+            // Display the button as just a symbol?
+            selected |= nk_button_symbol(console->context, data->symbol);
         }
     }
     else {
         if (data->symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_text(console->context, console->text, console->text_length);
+            selected |= nk_button_text(console->context, console->label, console->label_length);
         }
         else {
-            selected |= nk_button_symbol_text(console->context, data->symbol, console->text, console->text_length, console->alignment);
+            selected |= nk_button_symbol_text(console->context, data->symbol, console->label, console->label_length, console->alignment);
         }
     }
 
@@ -189,10 +196,10 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
 
     nk_console* button = nk_console_label(parent, text);
     button->type = NK_CONSOLE_BUTTON;
-    data->onclick = onclick;
+    button->data = (void*)data;
     button->selectable = nk_true;
     button->render = nk_console_button_render;
-    button->data = (void*)data;
+    nk_console_button_set_onclick(button, onclick);
     return button;
 }
 

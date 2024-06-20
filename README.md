@@ -52,7 +52,8 @@ int main() {
 - Property
 - Slider
 - Tooltip
-- Rows
+- Row
+- TextEdit
 
 ## API
 
@@ -74,6 +75,7 @@ nk_console* nk_console_slider_int(nk_console* parent, const char* label, int min
 nk_console* nk_console_slider_float(nk_console* parent, const char* label, float min, float* val, float max, float step);
 nk_console* nk_console_row_begin(nk_console* parent);
 void nk_console_row_end(nk_console* console);
+nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 
 // Utilities
 void nk_console_button_back(nk_console* button);

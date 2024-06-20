@@ -35,14 +35,16 @@ typedef enum {
     NK_CONSOLE_PROPERTY_FLOAT,
     NK_CONSOLE_SLIDER_INT,
     NK_CONSOLE_SLIDER_FLOAT,
-    NK_CONSOLE_ROW
+    NK_CONSOLE_ROW,
+    NK_CONSOLE_TEXTEDIT,
+    NK_CONSOLE_TEXTEDIT_TEXT
 } nk_console_widget_type;
 
 typedef struct nk_console {
     nk_console_widget_type type;
     void* user_data;
-    const char* text;
-    int text_length;
+    const char* label;
+    int label_length;
     int alignment;
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
@@ -86,6 +88,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
+NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
+NK_API const char* nk_console_get_label(nk_console* widget);
+NK_API void nk_console_free_children(nk_console* console);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -95,6 +100,8 @@ NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchang
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+#include "nuklear_console_textedit.h"
+#include "nuklear_console_textedit_text.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -147,6 +154,25 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_row.h"
+#include "nuklear_console_textedit_text.h"
+#include "nuklear_console_textedit.h"
+
+NK_API const char* nk_console_get_label(nk_console* widget) {
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    return widget->label;
+}
+
+NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length) {
+    if (widget == NULL) {
+        return;
+    }
+
+    widget->label = label;
+    widget->label_length = label_length;
+}
 
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
     if (widget == NULL) {
@@ -527,14 +553,28 @@ NK_API void nk_console_free(nk_console* console) {
     }
 
     // Clear all the children
+    nk_console_free_children(console);
+
+    nk_console_mfree(handle, console);
+}
+
+NK_API void nk_console_free_children(nk_console* console) {
+    if (console == NULL) {
+        return;
+    }
+
+    // Since there won't be any children, make sure to unselect any active child.
+    console->activeWidget = NULL;
+
+    // Clear all the children
     if (console->children != NULL) {
-		size_t i;
-		for (i = 0; i < cvector_size(console->children); ++i) {
+		for (size_t i = 0; i < cvector_size(console->children); ++i) {
             nk_console_free(console->children[i]);
 		}
     }
+
     cvector_free(console->children);
-    nk_console_mfree(handle, console);
+    console->children = NULL;
 }
 
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {
