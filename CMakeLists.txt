@@ -13,7 +13,7 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG e1d37398cd66b14f28649217dbf3b09aeabded18
+        GIT_TAG bd006c6f452209b59ac43d0d27e042c108c9198d
     )
     FetchContent_GetProperties(nuklear_gamepad)
     if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?

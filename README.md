@@ -2,7 +2,7 @@
 
 Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear) with gamepad, keyboard or mouse support.
 
-![nuklear_console screenshot](screenshot.gif)
+![nuklear_console_demo Screenshot](demo/common/nuklear_console_demo.gif)
 
 ## Usage
 
