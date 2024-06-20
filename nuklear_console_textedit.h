@@ -12,10 +12,22 @@ typedef struct nk_console_textedit_data {
     nk_bool shift;
 } nk_console_textedit_data;
 
+/**
+ * Adds a textedit on-screen keyboard widget to the console given parent.
+ *
+ * @param parent The parent widget to add the textedit to.
+ * @param buffer The buffer to store the textedit data.
+ * @param buffer_size The size of the given buffer.
+ * @return The created textedit widget.
+ */
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
 NK_API void nk_console_textedit_button_click(nk_console* button);
 NK_API void nk_console_textedit_button_main_click(nk_console* button);
+
+/**
+ * Event handler for the back button on the on-screen keyboard.
+ */
 NK_API void nk_console_textedit_button_back_click(nk_console* button);
 
 #if defined(__cplusplus)
@@ -32,14 +44,18 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button);
 extern "C" {
 #endif
 
+#include <stdio.h>
+
 /**
  * Handle the click event for textedit's children items.
  */
 NK_API void nk_console_textedit_button_back_click(nk_console* button) {
     // Make sure we're not going back to a Row.
     if (button->parent->type == NK_CONSOLE_ROW) {
+        printf("Targeting row!\n");
         button = button->parent;
     }
+    printf("Going back!\n");
 
     nk_console_button_back(button);
 
@@ -48,13 +64,17 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button) {
     nk_console_free_children(enter_textedit_button);
 }
 
-#include <stdio.h>
 NK_API void nk_console_textedit_key_click(nk_console* key) {
-    // Find the textedit widget, and make sure it's not a row.
+    if (key == NULL) {
+        return;
+    }
+
+    // Find the textedit widget, and make sure it's not the row.
     nk_console* textedit = key->parent;
     if (textedit->type == NK_CONSOLE_ROW) {
         textedit = textedit->parent;
     }
+    NK_ASSERT(textedit != NULL && textedit->type == NK_CONSOLE_TEXTEDIT);
 
     // Get the textedit data.
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
@@ -62,14 +82,14 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
     // Handle the key press
     enum nk_symbol_type symbol = nk_console_button_get_symbol(key);
     switch (symbol) {
+        // Shift
         case NK_SYMBOL_CIRCLE_SOLID:
         case NK_SYMBOL_CIRCLE_OUTLINE:
             data->shift = !data->shift;
             nk_console_button_set_symbol(key, symbol == NK_SYMBOL_CIRCLE_SOLID ? NK_SYMBOL_CIRCLE_OUTLINE : NK_SYMBOL_CIRCLE_SOLID);
 
-
-
             // Replace all labels of the parent buttons with shifted characters.
+            // TODO: Clean up shifting the key labels so that it's more dynamic.
             for (size_t x = 0; x < cvector_size(textedit->children); ++x) {
                 nk_console* child = textedit->children[x];
                 if (child->type == NK_CONSOLE_ROW) {
@@ -169,6 +189,8 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
                 }
             }
             return;
+
+        // Backspace
         case NK_SYMBOL_TRIANGLE_LEFT:
             {
                 int len = nk_strlen(data->buffer);
@@ -177,25 +199,17 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
                 }
             }
             return;
-        // case NK_SYMBOL_UNDERSCORE:
-        //     {
-        //         int len = nk_strlen(data->buffer);
-        //         if (len < data->buffer_size - 1) {
-        //             data->buffer[len] = ' ';
-        //             data->buffer[len + 1] = '\0';
-        //         }
-        //     }
-        //     return;
-        // case NK_SYMBOL_TRIANGLE_LEFT:
-        //     if (key->context->current->edit.cursor > 0) {
-        //         key->context->current->edit.cursor--;
-        //     }
-        //     return;
-        // case NK_SYMBOL_TRIANGLE_RIGHT:
-        //     if (key->context->current->edit.cursor < nk_strlen(data->buffer)) {
-        //         key->context->current->edit.cursor++;
-        //     }
-        //     return;
+
+        // Space
+        case NK_SYMBOL_RECT_SOLID:
+            {
+                int len = nk_strlen(data->buffer);
+                if (len < data->buffer_size - 1) {
+                    data->buffer[len] = ' ';
+                    data->buffer[len + 1] = '\0';
+                }
+            }
+            return;
     }
 
     // Add the character to the buffer.
@@ -217,15 +231,17 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
         return;
     }
 
-    // Make sure there aren't any children.
+    // Make sure there aren't any children to recreate the keyboard.
     nk_console_free_children(button);
 
-    // TODO: Create the on-screen keyboard.
     nk_console_textedit_data* data = (nk_console_textedit_data*)button->data;
     nk_console* key;
 
     nk_console_textedit_text(button);
 
+    // TODO: Add option for UTF-8 keys with nk_glyph.
+
+    // First row: 1 - 0
     nk_console* row = nk_console_row_begin(button);
         nk_console_button_onclick(row, data->shift ? "!" : "1", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "@" : "2", nk_console_textedit_key_click);
@@ -239,6 +255,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
         nk_console_button_onclick(row, data->shift ? ")" : "0", nk_console_textedit_key_click);
     nk_console_row_end(row);
 
+    // Second row: Q - P
     row = nk_console_row_begin(button);
         nk_console_button_onclick(row, data->shift ? "Q" : "q", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "W" : "w", nk_console_textedit_key_click);
@@ -251,6 +268,8 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
         nk_console_button_onclick(row, data->shift ? "O" : "o", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "P" : "p", nk_console_textedit_key_click);
     nk_console_row_end(row);
+
+    // Third row: A - L
     row = nk_console_row_begin(button);
         nk_console_button_onclick(row, data->shift ? "A" : "a", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "S" : "s", nk_console_textedit_key_click);
@@ -263,8 +282,10 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
         nk_console_button_onclick(row, data->shift ? "L" : "l", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? ">" : ".", nk_console_textedit_key_click);
     nk_console_row_end(row);
+
+    // Fourth row: Z - M
     row = nk_console_row_begin(button);
-        key = nk_console_button_onclick(row, "", nk_console_textedit_key_click);
+        key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click);
         if (data->shift) {
             nk_console_button_set_symbol(key, NK_SYMBOL_CIRCLE_SOLID);
         }
@@ -279,18 +300,23 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
         nk_console_button_onclick(row, data->shift ? "N" : "n", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "M" : "m", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "<" : ",", nk_console_textedit_key_click);
-        key = nk_console_button_onclick(row, "", nk_console_textedit_key_click); // Backspace
+        key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click); // Backspace
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_row_end(row);
 
-    row = nk_console_row_begin(button);
-        nk_console_button_onclick(row, " ", nk_console_textedit_key_click); // Space
-    nk_console_row_end(row);
+    // Fifth row: Space
+    //row = nk_console_row_begin(button);
+        key = nk_console_button_onclick(button, NULL, nk_console_textedit_key_click); // Space
+        nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
+    //nk_console_row_end(row);
 
-    row = nk_console_row_begin(button);
-        nk_console_button_onclick(row, "Enter", nk_console_textedit_button_back_click);
-    nk_console_row_end(row);
+    // Sixth row: Back
+    // TODO: textedit: Replace "Back" with a symbol?
+    //row = nk_console_row_begin(button);
+        nk_console_button_onclick(button, "Back", nk_console_textedit_button_back_click);
+    //nk_console_row_end(row);
 
+    // Make the onscreen keyboard the active widget.
     nk_console_set_active_parent(button);
 }
 
@@ -300,12 +326,13 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     nk_console_textedit_data* data = (nk_console_textedit_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_textedit_data));
     nk_zero(data, sizeof(nk_console_textedit_data));
 
+    // Create the textedit widget.
     nk_console* textedit = nk_console_label(parent, label);
-    textedit->type = NK_CONSOLE_COMBOBOX;
+    textedit->type = NK_CONSOLE_TEXTEDIT;
     textedit->selectable = nk_true;
     data->buffer = buffer;
     data->buffer_size = buffer_size;
-    textedit->columns = 2;
+    textedit->columns = (label != NULL && nk_strlen(label) > 0) ? 2 : 1;
     textedit->render = nk_console_textedit_render;
     textedit->data = data;
 
@@ -320,26 +347,25 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    nk_console* top = nk_console_get_top(console);
-    int desired_columns = nk_strlen(console->label) > 0 ? console->columns : console->columns - 1;
-    if (desired_columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, desired_columns);
+    if (console->columns > 0) {
+        nk_layout_row_dynamic(console->context, 0, console->columns);
     }
 
     // Display the label
-    if (nk_strlen(console->label) > 0) {
-        if (!nk_console_is_active_widget(console)) {
+    if (console->label != NULL && nk_strlen(console->label) > 0) {
+        nk_bool active = nk_console_is_active_widget(console);
+        if (!active) {
             nk_widget_disable_begin(console->context);
         }
         nk_label(console->context, console->label, NK_TEXT_LEFT);
-        if (!nk_console_is_active_widget(console)) {
+        if (!active) {
             nk_widget_disable_end(console->context);
         }
     }
 
     // Display the mocked textedit button
     int swap_columns = console->columns;
-    console->columns = 0;
+    console->columns = 0; // We use 0 as w'ere not making a new row.
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
 
@@ -350,8 +376,9 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
     }
 
     struct nk_rect widget_bounds = nk_console_button_render(console);
-    console->columns = swap_columns;
 
+    // Restore the previous values for the textedit widget.
+    console->columns = swap_columns;
     console->label = swap_label;
     console->label_length = swap_label_length;
 

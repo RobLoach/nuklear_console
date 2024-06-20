@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+/**
+ * A TextEdit Text widget is a text field that is displayed as part of the on-screen keyboard.
+ */
 NK_API nk_console* nk_console_textedit_text(nk_console* textedit);
 NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget);
 
@@ -36,6 +39,23 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     nk_console* textedit = widget->parent;
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
 
+    // Process checking the up/down switching in widgets before processing showing the widget itself
+    if (nk_console_is_active_widget(widget)) {
+        // Allow using ENTER to go back
+        if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
+            nk_console_get_top(widget)->input_processed = nk_true;
+            nk_console_textedit_button_back_click(widget);
+            return nk_rect(0, 0, 0, 0);
+        }
+        // Allow changing up/down only if they're not pressing backspace
+        else if (!nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
+            nk_console_check_up_down(widget, widget_bounds);
+        }
+
+        // Display the tooltip for the textedit.
+        nk_console_check_tooltip(textedit);
+    }
+
     if (widget->disabled) {
         nk_widget_disable_begin(widget->context);
     }
@@ -48,25 +68,12 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         nk_edit_unfocus(widget->context);
     }
 
+    // TODO: textedit_text: Add an option to change the filter.
+    // TODO: textedit_text: Trigger the onchange event when the text changes.
     nk_edit_string_zero_terminated(widget->context, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
 
     if (widget->disabled) {
         nk_widget_disable_end(widget->context);
-    }
-
-    // Allow switching up/down in widgets
-    if (nk_console_is_active_widget(widget)) {
-
-        // Allow using ENTER to go back
-        if (nk_input_is_key_pressed(&widget->context->input, NK_KEY_ENTER)) {
-            nk_console_get_top(widget)->input_processed = nk_true;
-            nk_console_textedit_button_back_click(widget);
-        }
-        // Allow changing up/down only if it's not backspace
-        else if (!nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
-            nk_console_check_up_down(widget, widget_bounds);
-            nk_console_check_tooltip(widget);
-        }
     }
 
     return widget_bounds;

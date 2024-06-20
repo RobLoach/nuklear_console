@@ -561,6 +561,8 @@ NK_API void nk_console_free_children(nk_console* console) {
     if (console == NULL) {
         return;
     }
+
+    // Since there won't be any children, make sure to unselect any active child.
     console->activeWidget = NULL;
 
     // Clear all the children
