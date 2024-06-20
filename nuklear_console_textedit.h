@@ -181,7 +181,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
                     }
                 }
             }
-            return;
+            break;
 
         // Backspace
         case NK_SYMBOL_TRIANGLE_LEFT:
@@ -191,7 +191,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
                     data->buffer[len - 1] = '\0';
                 }
             }
-            return;
+            break;
 
         // Space
         case NK_SYMBOL_RECT_SOLID:
@@ -202,14 +202,21 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
                     data->buffer[len + 1] = '\0';
                 }
             }
-            return;
-    }
+            break;
 
-    // Add the character to the buffer.
-    int len = nk_strlen(data->buffer);
-    if (len < data->buffer_size - 1) {
-        data->buffer[len] = key->label[0];
-        data->buffer[len + 1] = '\0';
+        case NK_SYMBOL_NONE:
+            {
+                // Add the character to the buffer.
+                int len = nk_strlen(data->buffer);
+                if (len < data->buffer_size - 1) {
+                    data->buffer[len] = key->label[0];
+                    data->buffer[len + 1] = '\0';
+                }
+            }
+            break;
+
+        default:
+            break;
     }
 }
 
