@@ -86,9 +86,8 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
             for (size_t x = 0; x < cvector_size(textedit->children); ++x) {
                 nk_console* child = textedit->children[x];
                 if (child->type == NK_CONSOLE_ROW) {
-                    nk_console_row* row = (nk_console_row*)child;
-                    for (size_t i = 0; i < cvector_size(row->data.children); ++i) {
-                        nk_console* activeButton = row->data.children[i].console;
+                    for (size_t i = 0; i < cvector_size(child->children); ++i) {
+                        nk_console* activeButton = child->children[i];
                         if (activeButton->type == NK_CONSOLE_BUTTON) {
                             const char* label = activeButton->label;
                             if (label != NULL && nk_strlen(label) == 1) {
