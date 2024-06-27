@@ -92,10 +92,10 @@ NK_API void nk_console_row_end(nk_console* console) {
     return;
   }
 
-  // Take ownership of the number of columns
+  // Process each of the children within the row
   for (size_t i = 0; i < numChildren; ++i) {
     nk_console* child = console->children[i];
-    // This row is selectable iff there's at least one selectable child.
+    // This row is selectable if there's at least one selectable child.
     console->selectable |= child->selectable;
 
     // Calculate the maximum amount of columns that are in the row
