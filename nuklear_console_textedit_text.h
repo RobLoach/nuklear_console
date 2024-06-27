@@ -35,9 +35,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->context);
 
-    if (widget->columns > 0) {
-        nk_layout_row_dynamic(widget->context, 0, widget->columns);
-    }
+    nk_console_process_columns(widget);
 
     nk_console* textedit = widget->parent;
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;

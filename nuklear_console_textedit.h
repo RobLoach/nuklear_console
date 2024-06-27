@@ -303,13 +303,20 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_row_end(row);
 
-    // Fifth row: Space
-    key = nk_console_button_onclick(button, NULL, nk_console_textedit_key_click); // Space
-    nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
+    // Fifth row: Space and Back
+    row = nk_console_row_begin(button);
+    {
+        // Space
+        key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click); // Space
+        key->columns = 3;
+        nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
 
-    // Sixth row: Back
-    // TODO: textedit: Replace "Back" with a RETURN symbol?
-    nk_console_button_onclick(button, "Back", nk_console_textedit_button_back_click);
+        // Back
+        // TODO: textedit: Replace "Back" with a RETURN symbol?
+        key = nk_console_button_onclick(row, "Back", nk_console_textedit_button_back_click);
+        key->columns = 1;
+    }
+    nk_console_row_end(row);
 
     // Make the onscreen keyboard the active widget.
     nk_console_set_active_parent(button);
@@ -342,9 +349,7 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    if (console->columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, console->columns);
-    }
+    nk_console_process_columns(console);
 
     // Display the label
     if (console->label != NULL && nk_strlen(console->label) > 0) {

@@ -97,8 +97,9 @@ NK_API void nk_console_row_end(nk_console* console) {
     nk_console* child = console->children[i];
     // This row is selectable iff there's at least one selectable child.
     console->selectable |= child->selectable;
+
+    // Calculate the maximum amount of columns that are in the row
     console->columns += child->columns;
-    child->columns = 0;  // The child should not set a row layout.
   }
 
   // Make sure we start on a selectable child by default.
@@ -129,7 +130,8 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
   nk_console_row_data* data = (nk_console_row_data*)console->data;
   nk_console* top = nk_console_get_top(console);
 
-  nk_layout_row_dynamic(console->context, 0, console->columns);
+  // Rows use the advanced layout system to render their children.
+  nk_layout_row_begin(console->context, NK_DYNAMIC, 0, console->columns);
 
   struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
 
@@ -195,6 +197,8 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
   if (console->disabled) {
     nk_widget_disable_end(console->context);
   }
+
+  nk_layout_row_end(console->context);
 
   return widget_bounds;
 }

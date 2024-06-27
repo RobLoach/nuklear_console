@@ -91,6 +91,7 @@ NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchang
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
 NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
+NK_API void nk_console_process_columns(nk_console* console);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -575,6 +576,31 @@ NK_API void nk_console_free_children(nk_console* console) {
 
     cvector_free(console->children);
     console->children = NULL;
+}
+
+/**
+ * Set up the layout of a widget, based on the amount of columns specified.
+ */
+NK_API void nk_console_process_columns(nk_console* console) {
+    // If the child specifies 0 columns, avoid doing anything.
+    if (console == NULL || console->columns <= 0) {
+        return;
+    }
+
+    // If we're rendering a row, use the parent's columns to determine the width of the widget.
+    if (console->parent != NULL && console->parent->type == NK_CONSOLE_ROW) {
+        int max_columns = console->parent->columns;
+        if (max_columns <= 0) { // Avoid division by 0
+            return;
+        }
+
+        // Calculate how wide the widget's column should be.
+        nk_layout_row_push(console->context, (float)console->columns / (float)max_columns);
+        return;
+    }
+
+    // Since we're not within a row, the widget owns the whole row.
+    nk_layout_row_dynamic(console->context, 0, console->columns);
 }
 
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {
