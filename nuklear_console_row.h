@@ -148,8 +148,21 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console_set_active_widget(console);
 
     // Find the child that the mouse is hovering over.
-    float x = (input->mouse.pos.x - widget_bounds.x) / widget_bounds.w;
-    data->activeChild = (int)(x * numChildren);
+    if (console->columns > 0) {
+        float x_percent = (input->mouse.pos.x - widget_bounds.x) / widget_bounds.w;
+        float column_width_percent = 0.0f;
+        for (int i = 0; i < numChildren; i++) {
+            int widget_columns = console->children[i]->columns;
+            if (widget_columns <= 0) {
+                widget_columns = 1;
+            }
+            column_width_percent += (float)widget_columns / (float)console->columns;
+            if (x_percent < column_width_percent) {
+                data->activeChild = i;
+                break;
+            }
+        }
+    }
 
     // Ensure it's a valid index.
     if (data->activeChild >= numChildren) {
