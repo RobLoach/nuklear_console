@@ -9,8 +9,20 @@ typedef struct nk_console_row_data {
   int activeChild;
 } nk_console_row_data;
 
+/**
+ * Begin a new row in the console.
+ *
+ * @param parent The parent of which to create the new row.
+ * @return The new row.
+ */
 NK_API nk_console* nk_console_row_begin(nk_console* parent);
-NK_API void nk_console_row_end(nk_console* console);
+
+/**
+ * End the current row in the console.
+ *
+ * @param row The row to end.
+ */
+NK_API void nk_console_row_end(nk_console* row);
 NK_API struct nk_rect nk_console_row_render(nk_console* console);
 
 #if defined(__cplusplus)
@@ -28,10 +40,24 @@ extern "C" {
 #endif
 
 static inline nk_console* nk_console_row_active_child(nk_console* row) {
-  nk_console_row_data* data = (nk_console_row_data*)row->data;
-  NK_ASSERT(data->activeChild >= 0);
-  NK_ASSERT((size_t)data->activeChild < cvector_size(row->children));
-  return row->children[data->activeChild];
+    if (row == NULL || row->data == NULL) {
+        return NULL;
+    }
+
+    int amount = (int)cvector_size(row->children);
+    if (amount == 0) {
+        return NULL;
+    }
+
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
+    if (data->activeChild < 0) {
+        data->activeChild = 0;
+    }
+    else if (data->activeChild >= amount) {
+        data->activeChild = amount - 1;
+    }
+
+    return row->children[data->activeChild];
 }
 
 // Find the index of the next selectable child by either going right (direction
@@ -50,22 +76,32 @@ static int nk_console_row_next_selectable_child(nk_console* row,
   return data->activeChild;
 }
 
-static void nk_console_row_pick_nearest_selectable_child(nk_console* row) {
-  nk_console_row_data* data = (nk_console_row_data*)row->data;
-  NK_ASSERT(!nk_console_row_active_child(row)->selectable);
-  int numChildren = (int)cvector_size(row->children);
-  int index = data->activeChild;
-  for (int i = 1; i < numChildren; ++i) {
-    if (index + i < numChildren &&
-        row->children[index + i]->selectable) {
-      data->activeChild = index + i;
-      break;
+/**
+ * Pick the nearest selectable child to the currently active child.
+ *
+ * @param row The row to pick the nearest selectable child from.
+ * @return True or false if a new selectable child was found.
+ */
+static nk_bool nk_console_row_pick_nearest_selectable_child(nk_console* row) {
+    // Ensure there is actually a possible active child.
+    if (row == NULL || row->data == NULL || nk_console_row_active_child(row) == NULL) {
+        return nk_false;
     }
-    if (index - i >= 0 && row->children[index - i]->selectable) {
-      data->activeChild = index - i;
-      break;
+
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
+    int amount = (int)cvector_size(row->children);
+    for (int i = 1; i < amount; ++i) {
+        if (data->activeChild + i < amount && row->children[data->activeChild + i]->selectable) {
+            data->activeChild += i;
+            return nk_true;
+        }
+        if (data->activeChild - i >= 0 && row->children[data->activeChild - i]->selectable) {
+            data->activeChild -= i;
+            return nk_true;
+        }
     }
-  }
+
+    return nk_false;
 }
 
 NK_API nk_console* nk_console_row_begin(nk_console* parent) {
@@ -85,27 +121,30 @@ NK_API nk_console* nk_console_row_begin(nk_console* parent) {
     return row;
 }
 
-NK_API void nk_console_row_end(nk_console* console) {
-  nk_console_row_data* data = (nk_console_row_data*)console->data;
-  size_t numChildren = cvector_size(console->children);
-  if (!numChildren) {
-    return;
-  }
+NK_API void nk_console_row_end(nk_console* row) {
+    // Make sure there is a row to end that has available children.
+    nk_console* active_child = nk_console_row_active_child(row);
+    if (active_child == NULL) {
+        return;
+    }
 
-  // Process each of the children within the row
-  for (size_t i = 0; i < numChildren; ++i) {
-    nk_console* child = console->children[i];
-    // This row is selectable if there's at least one selectable child.
-    console->selectable |= child->selectable;
+    // Set up the row data based on the available children.
+    row->selectable = nk_false;
+    int numChildren = (int)cvector_size(row->children);
+    for (int i = 0; i < numChildren; ++i) {
+        nk_console* child = row->children[i];
 
-    // Calculate the maximum amount of columns that are in the row
-    console->columns += child->columns;
-  }
+        // This row is selectable if there's at least one selectable child.
+        row->selectable |= child->selectable;
 
-  // Make sure we start on a selectable child by default.
-  if (!nk_console_row_active_child(console)->selectable) {
-    data->activeChild = nk_console_row_next_selectable_child(console, 1);
-  }
+        // Calculate the maximum amount of columns that are in the row
+        row->columns += child->columns;
+    }
+
+    // Make sure we start on a selectable child by default.
+    if (!active_child->selectable) {
+        nk_console_row_pick_nearest_selectable_child(row);
+    }
 }
 
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
@@ -183,25 +222,25 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console* active = nk_console_get_active_widget(console);
     NK_ASSERT(active);
     // Attempt to accuratle move vertically if the new widget is also a row.
-    if (active != console &&
-        active->type == NK_CONSOLE_ROW) {
-    nk_console_row_data* activeData = (nk_console_row_data*)active->data;
-      float x = (float)data->activeChild / cvector_size(console->children);
-      activeData->activeChild = x * cvector_size(active->children);
-      if (!nk_console_row_active_child(active)->selectable) {
-        nk_console_row_pick_nearest_selectable_child(active);
-      }
+    // TODO: Pick the nearest selectable child based on the X percent of the columns, rather than the number of children.
+    if (active != console && active->type == NK_CONSOLE_ROW) {
+        nk_console_row_data* activeData = (nk_console_row_data*)active->data;
+        float x = (float)data->activeChild / (float)numChildren;
+        activeData->activeChild = x * (float)cvector_size(active->children);
+        if (!nk_console_row_active_child(active)->selectable) {
+            nk_console_row_pick_nearest_selectable_child(active);
+        }
     }
   }
 
-  if (!console->disabled && nk_console_is_active_widget(console) &&
-      numChildren > 0) {
+  if (!console->disabled && nk_console_is_active_widget(console) && numChildren > 0) {
     console->activeWidget = nk_console_row_active_child(console);
   }
 
+  // Render all the children
   for (int i = 0; i < numChildren; ++i) {
     nk_console* child = console->children[i];
-    if (child->render) {
+    if (child->render != NULL) {
       child->render(child);
     }
   }
@@ -211,6 +250,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_widget_disable_end(console->context);
   }
 
+  // Finished rendering the row, so complete the row layout.
   nk_layout_row_end(console->context);
 
   return widget_bounds;

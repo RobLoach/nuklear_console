@@ -101,7 +101,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     data->separator = separator;
     data->selected = selected;
     data->label = label;
-    combobox->columns = 2;
+    combobox->columns = label != NULL ? 2 : 1;
     combobox->render = nk_console_combobox_render;
     combobox->data = data;
 

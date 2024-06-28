@@ -209,7 +209,7 @@ NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label
     widget->type = NK_CONSOLE_PROPERTY_INT;
     widget->selectable = nk_true;
     widget->data = (void*)data;
-    widget->columns = 2;
+    widget->columns = label != NULL ? 2 : 1;
 
     if (val != NULL) {
         if (*val < min) {

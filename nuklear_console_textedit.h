@@ -334,7 +334,7 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     textedit->selectable = nk_true;
     data->buffer = buffer;
     data->buffer_size = buffer_size;
-    textedit->columns = (label != NULL && nk_strlen(label) > 0) ? 2 : 1;
+    textedit->columns = label != NULL ? 2 : 1;
     textedit->render = nk_console_textedit_render;
     textedit->data = data;
 

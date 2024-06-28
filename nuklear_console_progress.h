@@ -42,7 +42,7 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
     progress->selectable = nk_true;
     data->value_size = current;
     data->max_size = max;
-    progress->columns = 2;
+    progress->columns = text != NULL ? 2 : 1;
     progress->data = (void*)data;
     if (*current > max) {
         *current = max;

@@ -198,6 +198,7 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
     button->type = NK_CONSOLE_BUTTON;
     button->data = (void*)data;
     button->selectable = nk_true;
+    button->columns = 1;
     button->render = nk_console_button_render;
     nk_console_button_set_onclick(button, onclick);
     return button;
