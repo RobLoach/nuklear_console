@@ -83,10 +83,12 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
 
             // Replace all labels of the parent buttons with shifted characters.
             // TODO: Clean up shifting the key labels so that it's more dynamic.
-            for (size_t x = 0; x < cvector_size(textedit->children); ++x) {
+            int textedit_children_size = (int)cvector_size(textedit->children);
+            for (int x = 0; x < textedit_children_size; ++x) {
                 nk_console* child = textedit->children[x];
                 if (child->type == NK_CONSOLE_ROW) {
-                    for (size_t i = 0; i < cvector_size(child->children); ++i) {
+                    int child_children_size = (int)cvector_size(child->children);
+                    for (int i = 0; i < child_children_size; ++i) {
                         nk_console* activeButton = child->children[i];
                         if (activeButton->type == NK_CONSOLE_BUTTON) {
                             const char* label = activeButton->label;
@@ -203,6 +205,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
             }
             break;
 
+        // Any key character
         case NK_SYMBOL_NONE:
             {
                 // Add the character to the buffer.

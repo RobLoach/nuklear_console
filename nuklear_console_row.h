@@ -44,8 +44,8 @@ static nk_console* nk_console_row_active_child(nk_console* row) {
         return NULL;
     }
 
-    int amount = (int)cvector_size(row->children);
-    if (amount == 0) {
+    int row_children_size = (int)cvector_size(row->children);
+    if (row_children_size == 0) {
         return NULL;
     }
 
@@ -53,8 +53,8 @@ static nk_console* nk_console_row_active_child(nk_console* row) {
     if (data->activeChild < 0) {
         data->activeChild = 0;
     }
-    else if (data->activeChild >= amount) {
-        data->activeChild = amount - 1;
+    else if (data->activeChild >= row_children_size) {
+        data->activeChild = row_children_size - 1;
     }
 
     return row->children[data->activeChild];
