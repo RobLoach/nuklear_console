@@ -39,7 +39,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console);
 extern "C" {
 #endif
 
-static inline nk_console* nk_console_row_active_child(nk_console* row) {
+static nk_console* nk_console_row_active_child(nk_console* row) {
     if (row == NULL || row->data == NULL) {
         return NULL;
     }
@@ -63,17 +63,16 @@ static inline nk_console* nk_console_row_active_child(nk_console* row) {
 // Find the index of the next selectable child by either going right (direction
 // = 1) or left (direction = -1). Returns the index of the currently active
 // child if no other selectable child is found.
-static int nk_console_row_next_selectable_child(nk_console* row,
-                                                int direction) {
-  nk_console_row_data* data = (nk_console_row_data*)row->data;
-  int numChildren = (int)cvector_size(row->children);
-  for (int i = data->activeChild + direction; i >= 0 && i < numChildren;
-       i += direction) {
-    if (row->children[i]->selectable) {
-      return i;
+static int nk_console_row_next_selectable_child(nk_console* row, int direction) {
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
+    int numChildren = (int)cvector_size(row->children);
+    for (int i = data->activeChild + direction; i >= 0 && i < numChildren; i += direction) {
+        if (row->children[i]->selectable) {
+            return i;
+        }
     }
-  }
-  return data->activeChild;
+
+    return data->activeChild;
 }
 
 /**
@@ -148,112 +147,113 @@ NK_API void nk_console_row_end(nk_console* row) {
 }
 
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
-  nk_console_row_data* data = (nk_console_row_data*)row->data;
-  if (top->input_processed) {
-    return;
-  }
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
+    if (top->input_processed) {
+        return;
+    }
 
-  // Left
-  if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
-    data->activeChild = nk_console_row_next_selectable_child(row, -1);
-    top->input_processed = nk_true;
-  }
-  // Right
-  else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
-    data->activeChild = nk_console_row_next_selectable_child(row, 1);
-    top->input_processed = nk_true;
-  }
+    // Left
+    if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
+        data->activeChild = nk_console_row_next_selectable_child(row, -1);
+        top->input_processed = nk_true;
+    }
+    // Right
+    else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
+        data->activeChild = nk_console_row_next_selectable_child(row, 1);
+        top->input_processed = nk_true;
+    }
 }
 
 NK_API struct nk_rect nk_console_row_render(nk_console* console) {
-  nk_console_row_data* data = (nk_console_row_data*)console->data;
-  nk_console* top = nk_console_get_top(console);
+    if (console == NULL || console->data == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
 
-  // Rows use the advanced layout system to render their children.
-  nk_layout_row_begin(console->context, NK_DYNAMIC, 0, console->columns);
+    nk_console_row_data* data = (nk_console_row_data*)console->data;
+    nk_console* top = nk_console_get_top(console);
 
-  struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
+    // Rows use the advanced layout system to render their children.
+    nk_layout_row_begin(console->context, NK_DYNAMIC, 0, console->columns);
 
-  if (console->disabled) {
-    nk_widget_disable_begin(console->context);
-  }
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
 
-  // Consume mouse movement before children have a chance to.
-  int numChildren = (int)cvector_size(console->children);
-  struct nk_input* input = &console->context->input;
-  if (console->selectable && top->input_processed == nk_false &&
-      widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
-      nk_input_is_mouse_hovering_rect(input, widget_bounds)) {
-    nk_console_set_active_widget(console);
+    if (console->disabled) {
+        nk_widget_disable_begin(console->context);
+    }
 
-    // Find the child that the mouse is hovering over.
-    if (console->columns > 0) {
-        float x_percent = (input->mouse.pos.x - widget_bounds.x) / widget_bounds.w;
-        float column_width_percent = 0.0f;
-        for (int i = 0; i < numChildren; i++) {
-            int widget_columns = console->children[i]->columns;
-            if (widget_columns <= 0) {
-                widget_columns = 1;
+    // Consume mouse movement before children have a chance to.
+    int numChildren = (int)cvector_size(console->children);
+    struct nk_input* input = &console->context->input;
+    if (console->selectable && top->input_processed == nk_false &&
+        widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
+        nk_input_is_mouse_hovering_rect(input, widget_bounds)) {
+        // First, make sure that the active widget is the row.
+        nk_console_set_active_widget(console);
+
+        // Find the child that the mouse is hovering over.
+        if (console->columns > 0) {
+            float x_percent = (input->mouse.pos.x - widget_bounds.x) / widget_bounds.w;
+            float column_width_percent = 0.0f;
+            for (int i = 0; i < numChildren; i++) {
+                int widget_columns = console->children[i]->columns;
+                if (widget_columns <= 0) {
+                    widget_columns = 1;
+                }
+                column_width_percent += (float)widget_columns / (float)console->columns;
+                if (x_percent < column_width_percent) {
+                    data->activeChild = i;
+                    break;
+                }
             }
-            column_width_percent += (float)widget_columns / (float)console->columns;
-            if (x_percent < column_width_percent) {
-                data->activeChild = i;
-                break;
+        }
+
+        // Ensure the new active child is actually selectable.
+        if (!nk_console_row_active_child(console)->selectable) {
+            nk_console_row_pick_nearest_selectable_child(console);
+        }
+    }
+
+    // Consume directional input before children have a chance to.
+    if (nk_console_is_active_widget(console)) {
+        nk_console_row_check_left_right(console, top);
+        nk_console_check_up_down(console, widget_bounds);
+        nk_console* active = nk_console_get_active_widget(console);
+        NK_ASSERT(active);
+        // Attempt to accuratle move vertically if the new widget is also a row.
+        // TODO: Pick the nearest selectable child based on the X percent of the columns, rather than the number of children.
+        if (active != console && active->type == NK_CONSOLE_ROW) {
+            nk_console_row_data* activeData = (nk_console_row_data*)active->data;
+            float x = (float)data->activeChild / (float)numChildren;
+            activeData->activeChild = x * (float)cvector_size(active->children);
+            if (!nk_console_row_active_child(active)->selectable) {
+                nk_console_row_pick_nearest_selectable_child(active);
             }
         }
     }
 
-    // Ensure it's a valid index.
-    if (data->activeChild >= numChildren) {
-      data->activeChild = numChildren - 1;
+    // Set the active widget to the active child of the row.
+    if (!console->disabled && nk_console_is_active_widget(console) && numChildren > 0) {
+        console->activeWidget = nk_console_row_active_child(console);
     }
-    else if (data->activeChild < 0) {
-      data->activeChild = 0;
-    }
-    if (!nk_console_row_active_child(console)->selectable) {
-      nk_console_row_pick_nearest_selectable_child(console);
-    }
-  }
 
-  // Consume directional input before children have a chance to.
-  if (nk_console_is_active_widget(console)) {
-    nk_console_row_check_left_right(console, top);
-    nk_console_check_up_down(console, widget_bounds);
-    nk_console* active = nk_console_get_active_widget(console);
-    NK_ASSERT(active);
-    // Attempt to accuratle move vertically if the new widget is also a row.
-    // TODO: Pick the nearest selectable child based on the X percent of the columns, rather than the number of children.
-    if (active != console && active->type == NK_CONSOLE_ROW) {
-        nk_console_row_data* activeData = (nk_console_row_data*)active->data;
-        float x = (float)data->activeChild / (float)numChildren;
-        activeData->activeChild = x * (float)cvector_size(active->children);
-        if (!nk_console_row_active_child(active)->selectable) {
-            nk_console_row_pick_nearest_selectable_child(active);
+    // Render all the children
+    for (int i = 0; i < numChildren; ++i) {
+        nk_console* child = console->children[i];
+        if (child->render != NULL) {
+            child->render(child);
         }
     }
-  }
 
-  if (!console->disabled && nk_console_is_active_widget(console) && numChildren > 0) {
-    console->activeWidget = nk_console_row_active_child(console);
-  }
+    console->activeWidget = NULL;
 
-  // Render all the children
-  for (int i = 0; i < numChildren; ++i) {
-    nk_console* child = console->children[i];
-    if (child->render != NULL) {
-      child->render(child);
+    if (console->disabled) {
+        nk_widget_disable_end(console->context);
     }
-  }
-  console->activeWidget = NULL;
 
-  if (console->disabled) {
-    nk_widget_disable_end(console->context);
-  }
+    // Finished rendering the row, so complete the row layout.
+    nk_layout_row_end(console->context);
 
-  // Finished rendering the row, so complete the row layout.
-  nk_layout_row_end(console->context);
-
-  return widget_bounds;
+    return widget_bounds;
 }
 
 #if defined(__cplusplus)
