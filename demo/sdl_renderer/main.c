@@ -88,6 +88,25 @@ int main(int argc, char *argv[]) {
 
     nk_console* console = nuklear_console_demo_init(ctx, NULL);
 
+    SDL_Surface *surface = SDL_LoadBMP("image.bmp");
+    SDL_Texture* texture = NULL;
+    if (surface != NULL) {
+        texture = SDL_CreateTextureFromSurface(renderer, surface);
+        if (texture != NULL) {
+            struct nk_image img;
+            img.handle.ptr = texture;
+            img.w = surface->w;
+            img.h = surface->h;
+            img.region[0] = 0;
+            img.region[1] = 0;
+            img.region[2] = img.w;
+            img.region[3] = img.h;
+            nuklear_console_demo_set_image(img);
+            printf("Loaded image\n");
+        }
+        SDL_FreeSurface(surface);
+    }
+
     while (running) {
         /* Input */
         SDL_Event evt;
@@ -126,6 +145,9 @@ int main(int argc, char *argv[]) {
     }
 
 cleanup:
+    if (texture != NULL) {
+        SDL_DestroyTexture(texture);
+    }
     nuklear_console_demo_free();
     nk_sdl_shutdown();
     SDL_DestroyRenderer(renderer);

@@ -16,6 +16,7 @@ static float slider_float_test = 0.4f;
 static int theme = 4;
 static nk_bool showWindowTitle = nk_true;
 static nk_bool shouldClose = nk_false;
+static struct nk_image img = {0};
 
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
@@ -28,6 +29,10 @@ void button_clicked(struct nk_console* button) {
 
 void theme_changed(struct nk_console* combobox) {
     set_style(combobox->ctx, theme);
+}
+
+void nuklear_console_demo_set_image(struct nk_image image) {
+    img = image;
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
@@ -59,6 +64,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
 
         nk_console* textedit = nk_console_textedit(options, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
+
+        nk_console* image_button = nk_console_button(options, NULL);
+        nk_console_button_set_image(image_button, img);
 
         nk_console_button_set_symbol(
             nk_console_button_onclick(options, "Back", nk_console_button_back),
