@@ -218,14 +218,30 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
         nk_console_row_check_left_right(console, top);
         nk_console_check_up_down(console, widget_bounds);
         nk_console* active = nk_console_get_active_widget(console);
-        NK_ASSERT(active);
-        // Attempt to accuratle move vertically if the new widget is also a row.
-        // TODO: Pick the nearest selectable child based on the X percent of the columns, rather than the number of children.
-        if (active != console && active->type == NK_CONSOLE_ROW) {
-            nk_console_row_data* activeData = (nk_console_row_data*)active->data;
-            float x = (float)data->activeChild / (float)numChildren;
-            activeData->activeChild = x * (float)cvector_size(active->children);
-            if (!nk_console_row_active_child(active)->selectable) {
+
+        // Attempt to accurately move vertically if the new widget is also a row.
+        if (active != NULL && active != console && active->type == NK_CONSOLE_ROW && active->data != NULL) {
+            nk_console_row_data* active_data = (nk_console_row_data*)active->data;
+
+            // Find the desired destination based on the current row child widths.
+            float desired_destination_percent = 0.0f;
+            for (int i = 0; i < data->activeChild; i++) {
+                desired_destination_percent += (float)console->children[i]->columns / (float)console->columns;
+            }
+
+            // Determine the new active child based on the desired destination percent.
+            float x = 0.0f;
+            int active_children_size = cvector_size(active->children);
+            for (active_data->activeChild = 0; active_data->activeChild < active_children_size; active_data->activeChild++) {
+                x += (float)active->children[active_data->activeChild]->columns / (float)active->columns;
+                if (x > desired_destination_percent) {
+                    break;
+                }
+            }
+
+            // Ensure we switched to a selectable child.
+            nk_console* new_active_child = nk_console_row_active_child(active);
+            if (new_active_child != NULL && !new_active_child->selectable) {
                 nk_console_row_pick_nearest_selectable_child(active);
             }
         }
