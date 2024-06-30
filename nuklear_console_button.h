@@ -73,9 +73,9 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     nk_console* top = nk_console_get_top(console);
-    if (console->columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, console->columns);
-    }
+
+    nk_console_layout_widget(console);
+
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
 
     if (console->disabled) {
@@ -198,6 +198,7 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
     button->type = NK_CONSOLE_BUTTON;
     button->data = (void*)data;
     button->selectable = nk_true;
+    button->columns = 1;
     button->render = nk_console_button_render;
     nk_console_button_set_onclick(button, onclick);
     return button;

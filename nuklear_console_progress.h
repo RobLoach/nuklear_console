@@ -42,7 +42,7 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
     progress->selectable = nk_true;
     data->value_size = current;
     data->max_size = max;
-    progress->columns = 2;
+    progress->columns = text != NULL ? 2 : 1;
     progress->data = (void*)data;
     if (*current > max) {
         *current = max;
@@ -56,10 +56,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    int desired_columns = nk_strlen(console->label) > 0 ? console->columns : console->columns - 1;
-    if (desired_columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, console->columns);
-    }
+    nk_console_layout_widget(console);
 
     nk_console* top = nk_console_get_top(console);
 

@@ -101,7 +101,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     data->separator = separator;
     data->selected = selected;
     data->label = label;
-    combobox->columns = 2;
+    combobox->columns = label != NULL ? 2 : 1;
     combobox->render = nk_console_combobox_render;
     combobox->data = data;
 
@@ -151,10 +151,8 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     }
 
     nk_console* top = nk_console_get_top(console);
-    int desired_columns = nk_strlen(data->label) > 0 ? console->columns : console->columns - 1;
-    if (desired_columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, desired_columns);
-    }
+
+    nk_console_layout_widget(console);
 
     // Allow changing the value with left/right
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {

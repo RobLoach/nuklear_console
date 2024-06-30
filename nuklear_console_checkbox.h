@@ -32,9 +32,8 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    if (console->columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, console->columns);
-    }
+    nk_console_layout_widget(console);
+
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
     nk_console* top = nk_console_get_top(console);
 

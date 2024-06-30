@@ -57,10 +57,8 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         }
     }
 
-    int desired_columns = nk_strlen(console->label) > 0 ? console->columns : console->columns - 1;
-    if (desired_columns > 0) {
-        nk_layout_row_dynamic(console->context, 0, console->columns);
-    }
+    nk_console_layout_widget(console);
+
     nk_console* top = nk_console_get_top(console);
 
     // Allow changing the value with left/right
@@ -211,7 +209,7 @@ NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label
     widget->type = NK_CONSOLE_PROPERTY_INT;
     widget->selectable = nk_true;
     widget->data = (void*)data;
-    widget->columns = 2;
+    widget->columns = label != NULL ? 2 : 1;
 
     if (val != NULL) {
         if (*val < min) {
