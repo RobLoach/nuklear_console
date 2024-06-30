@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.11) # FetchContent is available in 3.11+
-project(nuklear_console_raylib)
+project(nuklear_console_demo_raylib)
 
 # C
 set(CMAKE_C_STANDARD 99)
