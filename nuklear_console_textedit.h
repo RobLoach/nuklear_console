@@ -76,10 +76,10 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
     enum nk_symbol_type symbol = nk_console_button_get_symbol(key);
     switch (symbol) {
         // Shift
-        case NK_SYMBOL_CIRCLE_SOLID:
-        case NK_SYMBOL_CIRCLE_OUTLINE:
+        case NK_SYMBOL_TRIANGLE_UP:
+        case NK_SYMBOL_TRIANGLE_UP_OUTLINE:
             data->shift = !data->shift;
-            nk_console_button_set_symbol(key, symbol == NK_SYMBOL_CIRCLE_SOLID ? NK_SYMBOL_CIRCLE_OUTLINE : NK_SYMBOL_CIRCLE_SOLID);
+            nk_console_button_set_symbol(key, symbol == NK_SYMBOL_TRIANGLE_UP ? NK_SYMBOL_TRIANGLE_UP_OUTLINE : NK_SYMBOL_TRIANGLE_UP);
 
             // Replace all labels of the parent buttons with shifted characters.
             // TODO: Clean up shifting the key labels so that it's more dynamic.
@@ -289,10 +289,10 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
     row = nk_console_row_begin(button);
         key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click);
         if (data->shift) {
-            nk_console_button_set_symbol(key, NK_SYMBOL_CIRCLE_SOLID);
+            nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP);
         }
         else {
-            nk_console_button_set_symbol(key, NK_SYMBOL_CIRCLE_OUTLINE);
+            nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP_OUTLINE);
         }
         nk_console_button_onclick(row, data->shift ? "Z" : "z", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "X" : "x", nk_console_textedit_key_click);
