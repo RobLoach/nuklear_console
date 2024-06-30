@@ -352,7 +352,7 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    nk_console_process_columns(console);
+    nk_console_layout_widget(console);
 
     // Display the label
     if (console->label != NULL && nk_strlen(console->label) > 0) {

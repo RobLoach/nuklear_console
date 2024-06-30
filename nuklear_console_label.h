@@ -27,7 +27,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    nk_console_process_columns(widget);
+    nk_console_layout_widget(widget);
 
     // TODO: Add label options like alignment or text wrapping
     nk_label(widget->context, widget->label, widget->alignment);

@@ -91,7 +91,7 @@ NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchang
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
 NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
-NK_API void nk_console_process_columns(nk_console* widget);
+NK_API void nk_console_layout_widget(nk_console* widget);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -583,8 +583,9 @@ NK_API void nk_console_free_children(nk_console* console) {
  *
  * @see nk_layout_row_dynamic()
  * @see nk_layout_row_push()
+ * @see nk_console::columns
  */
-NK_API void nk_console_process_columns(nk_console* widget) {
+NK_API void nk_console_layout_widget(nk_console* widget) {
     // If the widget has 0 columns, don't do anything.
     if (widget == NULL || widget->columns <= 0) {
         return;

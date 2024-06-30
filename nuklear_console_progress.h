@@ -56,7 +56,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    nk_console_process_columns(console);
+    nk_console_layout_widget(console);
 
     nk_console* top = nk_console_get_top(console);
 

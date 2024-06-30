@@ -152,7 +152,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
 
     nk_console* top = nk_console_get_top(console);
 
-    nk_console_process_columns(console);
+    nk_console_layout_widget(console);
 
     // Allow changing the value with left/right
     if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {

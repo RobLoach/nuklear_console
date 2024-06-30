@@ -74,7 +74,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     nk_console* top = nk_console_get_top(console);
 
-    nk_console_process_columns(console);
+    nk_console_layout_widget(console);
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
 
