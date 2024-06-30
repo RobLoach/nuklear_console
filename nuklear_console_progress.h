@@ -88,47 +88,47 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     // Display the label
     if (nk_strlen(console->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_begin(console->context);
+            nk_widget_disable_begin(console->ctx);
         }
-        nk_label(console->context, console->label, NK_TEXT_LEFT);
+        nk_label(console->ctx, console->label, NK_TEXT_LEFT);
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_end(console->context);
+            nk_widget_disable_end(console->ctx);
         }
     }
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
     if (console->disabled) {
-        nk_widget_disable_begin(console->context);
+        nk_widget_disable_begin(console->ctx);
     }
 
     // Progress
-    struct nk_style_item cursor_normal = console->context->style.progress.cursor_normal;
-    struct nk_style_item cursor_hover = console->context->style.progress.cursor_hover;
-    struct nk_style_item cursor_active = console->context->style.progress.cursor_active;
+    struct nk_style_item cursor_normal = console->ctx->style.progress.cursor_normal;
+    struct nk_style_item cursor_hover = console->ctx->style.progress.cursor_hover;
+    struct nk_style_item cursor_active = console->ctx->style.progress.cursor_active;
     if (nk_console_is_active_widget(console)) {
         if (active) {
-            console->context->style.progress.cursor_normal = cursor_active;
+            console->ctx->style.progress.cursor_normal = cursor_active;
         }
         else {
-            console->context->style.progress.cursor_normal = cursor_active;
+            console->ctx->style.progress.cursor_normal = cursor_active;
         }
     }
 
     // Display the widget
-    if (nk_progress(console->context, data->value_size, data->max_size, nk_true)) {
+    if (nk_progress(console->ctx, data->value_size, data->max_size, nk_true)) {
         if (console->onchange != NULL) {
             console->onchange(console);
         }
     }
 
     // Restore the styles
-    console->context->style.progress.cursor_normal = cursor_normal;
-    console->context->style.progress.cursor_hover = cursor_hover;
-    console->context->style.progress.cursor_active = cursor_active;
+    console->ctx->style.progress.cursor_normal = cursor_normal;
+    console->ctx->style.progress.cursor_hover = cursor_hover;
+    console->ctx->style.progress.cursor_active = cursor_active;
 
     if (console->disabled) {
-        nk_widget_disable_end(console->context);
+        nk_widget_disable_end(console->ctx);
     }
 
     // Allow switching up/down in widgets

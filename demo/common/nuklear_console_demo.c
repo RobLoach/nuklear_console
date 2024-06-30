@@ -27,7 +27,7 @@ void button_clicked(struct nk_console* button) {
 }
 
 void theme_changed(struct nk_console* combobox) {
-    set_style(combobox->context, theme);
+    set_style(combobox->ctx, theme);
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {

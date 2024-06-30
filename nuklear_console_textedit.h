@@ -358,11 +358,11 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
     if (console->label != NULL && nk_strlen(console->label) > 0) {
         nk_bool active = nk_console_is_active_widget(console);
         if (!active) {
-            nk_widget_disable_begin(console->context);
+            nk_widget_disable_begin(console->ctx);
         }
-        nk_label(console->context, console->label, NK_TEXT_LEFT);
+        nk_label(console->ctx, console->label, NK_TEXT_LEFT);
         if (!active) {
-            nk_widget_disable_end(console->context);
+            nk_widget_disable_end(console->ctx);
         }
     }
 

@@ -33,7 +33,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->context);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
 
     nk_console_layout_widget(widget);
 
@@ -49,7 +49,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
             return nk_rect(0, 0, 0, 0);
         }
         // Allow changing up/down only if they're not pressing backspace
-        else if (!nk_input_is_key_pressed(&widget->context->input, NK_KEY_BACKSPACE)) {
+        else if (!nk_input_is_key_pressed(&widget->ctx->input, NK_KEY_BACKSPACE)) {
             nk_console_check_up_down(widget, widget_bounds);
         }
 
@@ -58,30 +58,30 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     }
 
     if (widget->disabled) {
-        nk_widget_disable_begin(widget->context);
+        nk_widget_disable_begin(widget->ctx);
     }
 
     // Display the text edit
     if (nk_console_is_active_widget(widget)) {
-        nk_edit_focus(widget->context, NK_EDIT_FIELD);
+        nk_edit_focus(widget->ctx, NK_EDIT_FIELD);
     }
     else {
-        nk_edit_unfocus(widget->context);
+        nk_edit_unfocus(widget->ctx);
     }
 
     // TODO: textedit_text: Add an option to change the filter.
     // TODO: textedit_text: Trigger the onchange event when the text changes.
-    nk_edit_string_zero_terminated(widget->context, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
+    nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
 
     if (widget->disabled) {
-        nk_widget_disable_end(widget->context);
+        nk_widget_disable_end(widget->ctx);
     }
 
     return widget_bounds;
 }
 
 NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
-    nk_console* textedit_text = nk_console_init(parent->context);
+    nk_console* textedit_text = nk_console_init(parent->ctx);
     textedit_text->type = NK_CONSOLE_TEXTEDIT_TEXT;
     textedit_text->parent = parent;
     textedit_text->alignment = NK_TEXT_LEFT;

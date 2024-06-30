@@ -54,7 +54,7 @@ typedef struct nk_console {
     void* data; /** Widget-specific data */
 
     struct nk_console* parent;
-    struct nk_context* context;
+    struct nk_context* ctx;
     struct nk_console** children;
     struct nk_console* activeParent;
     struct nk_console* activeWidget;
@@ -276,16 +276,16 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     nk_console* top = nk_console_get_top(widget);
 
     // Scroll to the active widget if needed.
-    struct nk_rect content_region = nk_window_get_content_region(widget->context);
+    struct nk_rect content_region = nk_window_get_content_region(widget->ctx);
     nk_uint offsetx, offsety;
-    nk_window_get_scroll(widget->context, &offsetx, &offsety);
+    nk_window_get_scroll(widget->ctx, &offsetx, &offsety);
     if (bounds.y + bounds.h > content_region.y + content_region.h + offsety) {
         nk_uint dest = bounds.y + bounds.h - content_region.y - content_region.h;
-        nk_window_set_scroll(widget->context, offsetx, dest);
+        nk_window_set_scroll(widget->ctx, offsetx, dest);
     }
     else if (bounds.y < content_region.y + offsety) {
         nk_uint dest = bounds.y - content_region.y;
-        nk_window_set_scroll(widget->context, offsetx, dest);
+        nk_window_set_scroll(widget->ctx, offsetx, dest);
     }
 
     // Only process an active input once.
@@ -436,7 +436,7 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
     }
 
     if (console->tooltip != NULL) {
-        nk_console_tooltip_display(console->context, console->tooltip);
+        nk_console_tooltip_display(console->ctx, console->tooltip);
     }
 }
 
@@ -502,7 +502,7 @@ NK_API void nk_console_render(nk_console* console) {
 
     // Allow mouse to switch focus between active widgets
     nk_console* top = nk_console_get_top(console);
-    if (top->input_processed == nk_false && widget_bounds.w > 0 && nk_input_is_mouse_moved(&console->context->input) && nk_input_is_mouse_hovering_rect(&console->context->input, widget_bounds)) {
+    if (top->input_processed == nk_false && widget_bounds.w > 0 && nk_input_is_mouse_moved(&console->ctx->input) && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
         nk_console_set_active_widget(console);
         top->input_processed = nk_true;
     }
@@ -529,7 +529,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_console* console = nk_console_malloc(handle, NULL, sizeof(nk_console));
     nk_zero(console, sizeof(nk_console));
     console->type = NK_CONSOLE_PARENT;
-    console->context = context;
+    console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
     return console;
 }
@@ -595,14 +595,14 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     if (widget->parent != NULL && widget->parent->type == NK_CONSOLE_ROW) {
         // Calculate how wide the widget's column should be.
         if (widget->parent->columns > 0) { // Avoid division by 0
-            nk_layout_row_push(widget->context, (float)widget->columns / (float)widget->parent->columns);
+            nk_layout_row_push(widget->ctx, (float)widget->columns / (float)widget->parent->columns);
         }
 
         return;
     }
 
     // Since we're not within a row, the widget owns the whole row.
-    nk_layout_row_dynamic(widget->context, 0, widget->columns);
+    nk_layout_row_dynamic(widget->ctx, 0, widget->columns);
 }
 
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {
@@ -628,18 +628,18 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Keyboard/Mouse
     switch (button) {
-        case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
-        case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN);
-        case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_pressed(&console->context->input, NK_KEY_LEFT);
-        case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_pressed(&console->context->input, NK_KEY_RIGHT);
-        case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->context->input, NK_KEY_ENTER);
-        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->context->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->context->input, NK_BUTTON_RIGHT) && nk_window_is_hovered(console->context));
-        // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->context->input, NK_KEY_A);
-        // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->context->input, NK_KEY_S);
-        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP) && nk_input_is_key_down(&console->context->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->context->input, NK_KEY_SHIFT);
-        //case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->context->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_RIGHT);
+        case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER);
+        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT) && nk_window_is_hovered(console->ctx));
+        // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
+        // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
+        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
+        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
+        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
+        //case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
     }
 
     return nk_false;

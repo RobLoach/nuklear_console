@@ -116,35 +116,35 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     }
 
     // Style
-    enum nk_symbol_type left = console->context->style.property.sym_left;
-    enum nk_symbol_type right = console->context->style.property.sym_right;
-    struct nk_color bar_normal = console->context->style.slider.bar_normal;
-    struct nk_style_item cursor_normal = console->context->style.slider.cursor_normal;
+    enum nk_symbol_type left = console->ctx->style.property.sym_left;
+    enum nk_symbol_type right = console->ctx->style.property.sym_right;
+    struct nk_color bar_normal = console->ctx->style.slider.bar_normal;
+    struct nk_style_item cursor_normal = console->ctx->style.slider.cursor_normal;
 
     if (!nk_console_is_active_widget(console)) {
-        console->context->style.property.sym_left = NK_SYMBOL_NONE;
-        console->context->style.property.sym_right = NK_SYMBOL_NONE;
+        console->ctx->style.property.sym_left = NK_SYMBOL_NONE;
+        console->ctx->style.property.sym_right = NK_SYMBOL_NONE;
     }
     else {
-        console->context->style.slider.bar_normal = console->context->style.slider.bar_hover;
-        console->context->style.slider.cursor_normal = console->context->style.slider.cursor_hover;
+        console->ctx->style.slider.bar_normal = console->ctx->style.slider.bar_hover;
+        console->ctx->style.slider.cursor_normal = console->ctx->style.slider.cursor_hover;
     }
 
     // Display the label
     if (nk_strlen(console->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_begin(console->context);
+            nk_widget_disable_begin(console->ctx);
         }
-        nk_label(console->context, console->label, NK_TEXT_LEFT);
+        nk_label(console->ctx, console->label, NK_TEXT_LEFT);
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_end(console->context);
+            nk_widget_disable_end(console->ctx);
         }
     }
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
     if (console->disabled) {
-        nk_widget_disable_begin(console->context);
+        nk_widget_disable_begin(console->ctx);
     }
 
     // Display the widget
@@ -154,16 +154,16 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     name[1] = '#';
     switch (console->type) {
         case NK_CONSOLE_PROPERTY_INT:
-            nk_property_int(console->context, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);
+            nk_property_int(console->ctx, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);
             break;
         case NK_CONSOLE_PROPERTY_FLOAT:
-            nk_property_float(console->context, name, data->min_float, data->val_float, data->max_float, data->step_float, data->inc_per_pixel);
+            nk_property_float(console->ctx, name, data->min_float, data->val_float, data->max_float, data->step_float, data->inc_per_pixel);
             break;
         case NK_CONSOLE_SLIDER_INT:
-            nk_slider_int(console->context, data->min_int, data->val_int, data->max_int, data->step_int);
+            nk_slider_int(console->ctx, data->min_int, data->val_int, data->max_int, data->step_int);
             break;
         case NK_CONSOLE_SLIDER_FLOAT:
-            nk_slider_float(console->context, data->min_float, data->val_float, data->max_float, data->step_float);
+            nk_slider_float(console->ctx, data->min_float, data->val_float, data->max_float, data->step_float);
             break;
         default:
             // Nothing
@@ -172,16 +172,16 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 
     // Style Restoration
     if (!nk_console_is_active_widget(console)) {
-        console->context->style.property.sym_left = left;
-        console->context->style.property.sym_right = right;
+        console->ctx->style.property.sym_left = left;
+        console->ctx->style.property.sym_right = right;
     }
     else {
-        console->context->style.slider.bar_normal = bar_normal;
-        console->context->style.slider.cursor_normal = cursor_normal;
+        console->ctx->style.slider.bar_normal = bar_normal;
+        console->ctx->style.slider.cursor_normal = cursor_normal;
     }
 
     if (console->disabled) {
-        nk_widget_disable_end(console->context);
+        nk_widget_disable_end(console->ctx);
     }
 
     // Allow switching up/down in widgets

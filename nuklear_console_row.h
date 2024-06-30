@@ -173,17 +173,17 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
 
     // Rows use the advanced layout system to render their children.
-    nk_layout_row_begin(console->context, NK_DYNAMIC, 0, console->columns);
+    nk_layout_row_begin(console->ctx, NK_DYNAMIC, 0, console->columns);
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
     if (console->disabled) {
-        nk_widget_disable_begin(console->context);
+        nk_widget_disable_begin(console->ctx);
     }
 
     // Consume mouse movement before children have a chance to.
     int numChildren = (int)cvector_size(console->children);
-    struct nk_input* input = &console->context->input;
+    struct nk_input* input = &console->ctx->input;
     if (console->selectable && top->input_processed == nk_false &&
         widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
         nk_input_is_mouse_hovering_rect(input, widget_bounds)) {
@@ -263,11 +263,11 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     console->activeWidget = NULL;
 
     if (console->disabled) {
-        nk_widget_disable_end(console->context);
+        nk_widget_disable_end(console->ctx);
     }
 
     // Finished rendering the row, so complete the row layout.
-    nk_layout_row_end(console->context);
+    nk_layout_row_end(console->ctx);
 
     return widget_bounds;
 }

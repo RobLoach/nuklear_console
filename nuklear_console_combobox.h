@@ -180,11 +180,11 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     // Display the label
     if (nk_strlen(data->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_begin(console->context);
+            nk_widget_disable_begin(console->ctx);
         }
-        nk_label(console->context, data->label, NK_TEXT_LEFT);
+        nk_label(console->ctx, data->label, NK_TEXT_LEFT);
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_end(console->context);
+            nk_widget_disable_end(console->ctx);
         }
     }
 

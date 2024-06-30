@@ -34,7 +34,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
     nk_console_layout_widget(console);
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->context);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
     nk_console* top = nk_console_get_top(console);
 
     // Allow changing the checkbox value.
@@ -73,27 +73,27 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     }
 
     // Style
-    struct nk_style_item checkboxStyle = console->context->style.checkbox.normal;
+    struct nk_style_item checkboxStyle = console->ctx->style.checkbox.normal;
     if (nk_console_is_active_widget(console)) {
         if (active) {
-            console->context->style.checkbox.normal = console->context->style.checkbox.active;
+            console->ctx->style.checkbox.normal = console->ctx->style.checkbox.active;
         }
         else {
-            console->context->style.checkbox.normal = console->context->style.checkbox.hover;
+            console->ctx->style.checkbox.normal = console->ctx->style.checkbox.hover;
         }
     }
 
     if (console->disabled || !nk_console_is_active_widget(console)) {
-        nk_widget_disable_begin(console->context);
+        nk_widget_disable_begin(console->ctx);
     }
 
     // Display the checkbox with fixed alignment.
     nk_bool changed = nk_false;
     if (console->alignment == NK_TEXT_LEFT) {
-        changed = nk_checkbox_label_align(console->context, console->label, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
+        changed = nk_checkbox_label_align(console->ctx, console->label, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
     }
     else {
-        changed = nk_checkbox_label(console->context, console->label, data->value_bool);
+        changed = nk_checkbox_label(console->ctx, console->label, data->value_bool);
     }
 
     // Invoke onchanged event.
@@ -102,11 +102,11 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     }
 
     if (console->disabled || !nk_console_is_active_widget(console)) {
-        nk_widget_disable_end(console->context);
+        nk_widget_disable_end(console->ctx);
     }
 
     // Restore the styles
-    console->context->style.checkbox.normal = checkboxStyle;
+    console->ctx->style.checkbox.normal = checkboxStyle;
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
