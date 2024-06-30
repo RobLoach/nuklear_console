@@ -92,6 +92,7 @@ NK_API void nk_console_set_label(nk_console* widget, const char* label, int labe
 NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
 NK_API void nk_console_layout_widget(nk_console* widget);
+NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -474,6 +475,7 @@ NK_API void nk_console_render(nk_console* console) {
                         break;
                     }
                 }
+
                 if (widgetFound == nk_false) {
                     nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
                 }
@@ -487,24 +489,25 @@ NK_API void nk_console_render(nk_console* console) {
         }
     }
 
-    // Render the widget and get the bounds.
+    // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
 
-    // If it's a parent, render all the children manually.
-    if (console->type == NK_CONSOLE_PARENT) {
-        if (console->children != NULL) {
-            size_t i;
-            for (i = 0; i < cvector_size(console->children); ++i) {
-                nk_console_render(console->children[i]);
+    // Allow the mouse to switch focus to the widget.
+    if (widget_bounds.w > 0 && widget_bounds.h > 0 && nk_input_is_mouse_moved(&console->ctx->input)) {
+        // Make sure we consider the active scroll position of the window.
+        nk_uint window_scroll_x, window_scroll_y;
+        nk_window_get_scroll(console->ctx, &window_scroll_x, &window_scroll_y);
+        widget_bounds.x -= (float)window_scroll_x;
+        widget_bounds.y -= (float)window_scroll_y;
+
+        nk_console* top = nk_console_get_top(console);
+        if (top->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
+            // Select the widget, if possible.
+            if (!console->disabled && console->selectable) {
+                nk_console_set_active_widget(console);
+                top->input_processed = nk_true;
             }
         }
-    }
-
-    // Allow mouse to switch focus between active widgets
-    nk_console* top = nk_console_get_top(console);
-    if (top->input_processed == nk_false && widget_bounds.w > 0 && nk_input_is_mouse_moved(&console->ctx->input) && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
-        nk_console_set_active_widget(console);
-        top->input_processed = nk_true;
     }
 }
 
@@ -520,6 +523,23 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
 }
 
 /**
+ * Render all the children of the given parent.
+ */
+NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
+    if (parent == NULL || parent->children == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
+    // // Render the children
+    int children_size = (int)cvector_size(parent->children);
+    for (int i = 0; i < children_size; i++) {
+        nk_console_render(parent->children[i]);
+    }
+
+    return nk_rect(0, 0, 0, 0);
+}
+
+/**
  * Initialize a new nk_console.
  *
  * @param context The associated Nuklear context.
@@ -531,6 +551,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->type = NK_CONSOLE_PARENT;
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
+    console->render = nk_console_parent_render;
     return console;
 }
 
