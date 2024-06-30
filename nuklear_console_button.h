@@ -121,7 +121,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (data->image.w == 0) {
+    if (data->image.handle.ptr == NULL) {
         // No image
         if (console->label_length <= 0) {
             // Check if there is a Label
@@ -150,16 +150,13 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     else {
         // Display the button with an image
         if (console->label_length > 0) {
-            printf("Image\n");
             selected |= nk_button_image_text(console->ctx, data->image, console->label, console->label_length, console->alignment);
         }
         else if (console->label != NULL && nk_strlen(console->label) > 0) {
             selected |= nk_button_image_label(console->ctx, data->image, console->label, console->alignment);
-            printf("Image\n");
         }
         else {
             selected |= nk_button_image(console->ctx, data->image);
-            printf("Image\n");
         }
     }
 
