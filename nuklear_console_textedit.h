@@ -36,11 +36,6 @@ NK_API void nk_console_textedit_key_click(nk_console* key);
 #ifndef NK_CONSOLE_TEXTEDIT_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_TEXTEDIT_IMPLEMENTATION_ONCE
 
-// Backwards compatibility for older versions of Nuklear.
-#ifndef NK_SYMBOL_TRIANGLE_UP_OUTLINE
-#define NK_SYMBOL_TRIANGLE_UP_OUTLINE NK_SYMBOL_CIRCLE_OUTLINE
-#endif
-
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -297,7 +292,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button) {
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP);
         }
         else {
-            nk_console_button_set_symbol(key, NK_SYMBOL_CIRCLE_OUTLINE);
+            nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP_OUTLINE);
         }
         nk_console_button_onclick(row, data->shift ? "Z" : "z", nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "X" : "x", nk_console_textedit_key_click);
