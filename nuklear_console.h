@@ -50,6 +50,7 @@ typedef struct nk_console {
     nk_bool selectable; /** Whether or not the widget can be selected. */
     nk_bool disabled; /** Whether or not the widget is currently disabled. */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
+    int height; /** When set, will determine the height of the row. */
     const char* tooltip; /** Tooltip */
     void* data; /** Widget-specific data */
 
@@ -623,7 +624,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     }
 
     // Since we're not within a row, the widget owns the whole row.
-    nk_layout_row_dynamic(widget->ctx, 0, widget->columns);
+    nk_layout_row_dynamic(widget->ctx, widget->height, widget->columns);
 }
 
 NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {

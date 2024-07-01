@@ -94,6 +94,12 @@ int main(int argc, char *argv[]) {
         texture = SDL_CreateTextureFromSurface(renderer, surface);
         if (texture != NULL) {
             img = nk_image_ptr(texture);
+            img.w = surface->w;
+            img.h = surface->h;
+            img.region[0] = 0;
+            img.region[1] = 0;
+            img.region[2] = surface->w;
+            img.region[3] = surface->h;
         }
         SDL_FreeSurface(surface);
     }
