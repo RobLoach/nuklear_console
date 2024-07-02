@@ -177,10 +177,6 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
-    if (console->disabled) {
-        nk_widget_disable_begin(console->ctx);
-    }
-
     // Consume mouse movement before children have a chance to.
     int numChildren = (int)cvector_size(console->children);
     struct nk_input* input = &console->ctx->input;
@@ -256,15 +252,20 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = console->children[i];
         if (child->render != NULL) {
-            child->render(child);
+            // If the row is disabled, then temporarily disable the child when rendering.
+            if (console->disabled) {
+                nk_bool child_disabled = child->disabled;
+                child->disabled = nk_true;
+                child->render(child);
+                child->disabled = child_disabled;
+            }
+            else {
+                child->render(child);
+            }
         }
     }
 
     console->activeWidget = NULL;
-
-    if (console->disabled) {
-        nk_widget_disable_end(console->ctx);
-    }
 
     // Finished rendering the row, so complete the row layout.
     nk_layout_row_end(console->ctx);
