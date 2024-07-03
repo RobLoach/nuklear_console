@@ -7,6 +7,7 @@ extern "C" {
 
 typedef struct nk_console_row_data {
   int activeChild;
+  nk_bool widgets_added; /** Indicates if all the row's widgets have been added. */
 } nk_console_row_data;
 
 /**
@@ -128,6 +129,7 @@ NK_API void nk_console_row_end(nk_console* row) {
     }
 
     // Set up the row data based on the available children.
+    row->columns = 0;
     row->selectable = nk_false;
     int numChildren = (int)cvector_size(row->children);
     for (int i = 0; i < numChildren; ++i) {
@@ -144,6 +146,9 @@ NK_API void nk_console_row_end(nk_console* row) {
     if (!active_child->selectable) {
         nk_console_row_pick_nearest_selectable_child(row);
     }
+
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
+    data->widgets_added = nk_true;
 }
 
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {

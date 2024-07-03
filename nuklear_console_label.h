@@ -43,7 +43,7 @@ NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
     label->alignment = NK_TEXT_LEFT;
     label->columns = 1;
     label->render = nk_console_label_render;
-    cvector_push_back(parent->children, label);
+    nk_console_add_child(parent, label);
     return label;
 }
 

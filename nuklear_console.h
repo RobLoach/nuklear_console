@@ -93,6 +93,7 @@ NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
 NK_API void nk_console_layout_widget(nk_console* widget);
 NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
+NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -664,6 +665,23 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
     }
 
     return nk_false;
+}
+
+NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
+    if (parent == NULL || child == NULL) {
+        return;
+    }
+
+    child->parent = parent;
+    cvector_push_back(parent->children, child);
+
+    // If we added a child to a row, make sure to let the row know a new widget was added.
+    if (parent->type == NK_CONSOLE_ROW) {
+        struct nk_console_row_data* data = (struct nk_console_row_data*)parent->data;
+        if (data != NULL && data->widgets_added == nk_true) {
+            nk_console_row_end(parent);
+        }
+    }
 }
 
 #ifdef __cplusplus
