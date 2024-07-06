@@ -122,7 +122,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (data->image.handle.ptr == NULL) {
+    if (data->image.region[3] == 0) {
         // No image
         if (console->label_length <= 0) {
             // Check if there is a Label
