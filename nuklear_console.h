@@ -95,6 +95,8 @@ NK_API void nk_console_free_children(nk_console* console);
 NK_API void nk_console_layout_widget(nk_console* widget);
 NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
+NK_API void nk_console_set_height(nk_console* widget, int height);
+NK_API int nk_console_height(nk_console* widget);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -245,6 +247,20 @@ NK_API nk_console* nk_console_get_top(nk_console* widget) {
     }
 
     return parent;
+}
+
+NK_API void nk_console_set_height(nk_console* widget, int height) {
+    if (widget == NULL) {
+        return;
+    }
+    widget->height = height < 0 ? 0 : widget->height;
+}
+
+NK_API int nk_console_height(nk_console* widget) {
+    if (widget == NULL) {
+        return 0;
+    }
+    return widget->height;
 }
 
 /**

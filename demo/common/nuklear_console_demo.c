@@ -62,7 +62,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
 
         nk_console* image_button = nk_console_button(options, "Image");
         nk_console_button_set_image(image_button, image);
-        image_button->height = 64;
+        image_button->height = 128;
 
         nk_console_button_set_symbol(
             nk_console_button_onclick(options, "Back", nk_console_button_back),
