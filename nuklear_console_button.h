@@ -8,6 +8,7 @@ extern "C" {
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     nk_console_event onclick;
+    struct nk_image image;
 } nk_console_button_data;
 
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text);
@@ -19,6 +20,9 @@ NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button);
 NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol);
 NK_API nk_console_event nk_console_button_get_onclick(nk_console* button);
 NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_event onclick);
+
+NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image);
+NK_API struct nk_image nk_console_button_get_image(nk_console* button);
 
 #if defined(__cplusplus)
 }
@@ -66,6 +70,24 @@ NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_event o
     data->onclick = onclick;
 }
 
+NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image) {
+    if (button == NULL || button->data == NULL) {
+        return;
+    }
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    data->image = image;
+    button->height = (int)image.h;
+}
+
+NK_API struct nk_image nk_console_button_get_image(nk_console* button) {
+    if (button == NULL || button->data == NULL) {
+        struct nk_image output = {0};
+        return output;
+    }
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    return data->image;
+}
+
 NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     nk_console_button_data* data = (nk_console_button_data*)console->data;
     if (data == NULL) {
@@ -100,27 +122,42 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (console->label_length <= 0) {
-        // Check if there is a Label
-        if (console->label != NULL && nk_strlen(console->label) > 0) {
-            if (data->symbol == NK_SYMBOL_NONE) {
-                selected |= nk_button_label(console->ctx, console->label);
+    if (data->image.region[3] == 0) {
+        // No image
+        if (console->label_length <= 0) {
+            // Check if there is a Label
+            if (console->label != NULL && nk_strlen(console->label) > 0) {
+                if (data->symbol == NK_SYMBOL_NONE) {
+                    selected |= nk_button_label(console->ctx, console->label);
+                }
+                else {
+                    selected |= nk_button_symbol_label(console->ctx, data->symbol, console->label, console->alignment);
+                }
             }
             else {
-                selected |= nk_button_symbol_label(console->ctx, data->symbol, console->label, console->alignment);
+                // Display the button as just a symbol?
+                selected |= nk_button_symbol(console->ctx, data->symbol);
             }
         }
         else {
-            // Display the button as just a symbol?
-            selected |= nk_button_symbol(console->ctx, data->symbol);
+            if (data->symbol == NK_SYMBOL_NONE) {
+                selected |= nk_button_text(console->ctx, console->label, console->label_length);
+            }
+            else {
+                selected |= nk_button_symbol_text(console->ctx, data->symbol, console->label, console->label_length, console->alignment);
+            }
         }
     }
     else {
-        if (data->symbol == NK_SYMBOL_NONE) {
-            selected |= nk_button_text(console->ctx, console->label, console->label_length);
+        // Display the button with an image
+        if (console->label_length > 0) {
+            selected |= nk_button_image_text(console->ctx, data->image, console->label, console->label_length, console->alignment);
+        }
+        else if (console->label != NULL && nk_strlen(console->label) > 0) {
+            selected |= nk_button_image_label(console->ctx, data->image, console->label, console->alignment);
         }
         else {
-            selected |= nk_button_symbol_text(console->ctx, data->symbol, console->label, console->label_length, console->alignment);
+            selected |= nk_button_image(console->ctx, data->image);
         }
     }
 

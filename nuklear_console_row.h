@@ -131,12 +131,18 @@ NK_API void nk_console_row_end(nk_console* row) {
     // Set up the row data based on the available children.
     row->columns = 0;
     row->selectable = nk_false;
+    row->height = 0;
     int numChildren = (int)cvector_size(row->children);
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = row->children[i];
 
         // This row is selectable if there's at least one selectable child.
         row->selectable |= child->selectable;
+
+        // The row's height is taken from the tallest child.
+        if (child->height > row->height) {
+            row->height = child->height;
+        }
 
         // Calculate the maximum amount of columns that are in the row
         row->columns += child->columns;
@@ -178,7 +184,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
 
     // Rows use the advanced layout system to render their children.
-    nk_layout_row_begin(console->ctx, NK_DYNAMIC, 0, console->columns);
+    nk_layout_row_begin(console->ctx, NK_DYNAMIC, console->height, console->columns);
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 

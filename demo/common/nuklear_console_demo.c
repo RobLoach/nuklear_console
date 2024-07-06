@@ -30,7 +30,7 @@ void theme_changed(struct nk_console* combobox) {
     set_style(combobox->ctx, theme);
 }
 
-nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
+nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
     console = nk_console_init(ctx);
     nk_console_set_gamepad(console, nk_gamepad_init(ctx, user_data));
 
@@ -59,6 +59,10 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data) {
 
         nk_console* textedit = nk_console_textedit(options, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
+
+        nk_console* image_button = nk_console_button(options, "Image");
+        nk_console_button_set_image(image_button, image);
+        image_button->height = 128;
 
         nk_console_button_set_symbol(
             nk_console_button_onclick(options, "Back", nk_console_button_back),

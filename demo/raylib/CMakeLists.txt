@@ -19,7 +19,6 @@ if (NOT raylib_FOUND)
         set(FETCHCONTENT_QUIET NO)
         FetchContent_Populate(raylib)
         set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-        set(BUILD_GAMES    OFF CACHE BOOL "" FORCE)
         add_subdirectory(${raylib_SOURCE_DIR} ${raylib_BINARY_DIR})
     endif()
 endif()
@@ -31,7 +30,7 @@ if (NOT raylib_nuklear_FOUND)
     FetchContent_Declare(
         raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
-        GIT_TAG deff0edba9f475353063ade746cf0771d955d83e
+        GIT_TAG 3599509
     )
     FetchContent_GetProperties(raylib_nuklear)
     if (NOT raylib_nuklear_POPULATED) # Have we downloaded raylib yet?
@@ -48,7 +47,7 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG 5e57eff9e576d36418322388cfaf9e661559e164
+        GIT_TAG b8f3937
     )
     FetchContent_GetProperties(nuklear_gamepad)
     if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?
@@ -56,6 +55,17 @@ if (NOT nuklear_gamepad_FOUND)
         FetchContent_Populate(nuklear_gamepad)
         add_subdirectory(${nuklear_gamepad_SOURCE_DIR} ${nuklear_gamepad_BINARY_DIR})
     endif()
+endif()
+
+# Resources
+if (EXISTS ${PROJECT_SOURCE_DIR}/resources)
+    file(GLOB resources ${PROJECT_SOURCE_DIR}/resources/*)
+    set(examples_resources)
+    list(APPEND examples_resources ${resources})
+    file(COPY ${examples_resources} DESTINATION "resources/")
+    set(EMSCRIPTEN_RESOURCES "--preload-file ${PROJECT_SOURCE_DIR}/resources@/resources")
+else()
+    set(EMSCRIPTEN_RESOURCES "")
 endif()
 
 # Setup the example

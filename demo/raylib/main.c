@@ -16,8 +16,9 @@ int main() {
     Font font = LoadFontFromNuklear(fontSize);
     GenTextureMipmaps(&font.texture);
     struct nk_context *ctx = InitNuklearEx(font, fontSize);
+    Texture texture = LoadTexture("resources/image.png");
 
-    nk_console* console = nuklear_console_demo_init(ctx, NULL);
+    nk_console* console = nuklear_console_demo_init(ctx, NULL, TextureToNuklear(texture));
 
     while (!WindowShouldClose()) {
 
@@ -49,6 +50,7 @@ int main() {
     }
 
     // De-initialize the Nuklear GUI
+    UnloadTexture(texture);
     nuklear_console_demo_free();
     UnloadNuklear(ctx);
     UnloadFont(font);
