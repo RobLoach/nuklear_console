@@ -13,7 +13,7 @@ static int property_int_test = 20;
 static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
-static int theme = 4;
+static int theme = 5;
 static nk_bool showWindowTitle = nk_true;
 static nk_bool shouldClose = nk_false;
 

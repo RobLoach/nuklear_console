@@ -103,7 +103,6 @@ int main(int argc, char *argv[]) {
         nk_input_end(ctx);
 
         int flags = NK_WINDOW_BORDER;
-        flags |= NK_WINDOW_SCROLL_AUTO_HIDE;
         if (showWindowTitle) {
             flags |= NK_WINDOW_TITLE;
         }

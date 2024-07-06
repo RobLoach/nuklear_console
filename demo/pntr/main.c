@@ -1,6 +1,6 @@
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
-#define PNTR_ENABLE_MATH
+//#define PNTR_ENABLE_MATH
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
 #include "pntr_app.h"
 
@@ -11,8 +11,8 @@
 #define NK_GAMEPAD_IMPLEMENTATION
 #include "nuklear_gamepad.h"
 
-#define WINDOW_WIDTH 800
-#define WINDOW_HEIGHT 600
+#define WINDOW_WIDTH 400
+#define WINDOW_HEIGHT 300
 
 #include "../common/nuklear_console_demo.c"
 
@@ -49,8 +49,19 @@ bool Update(pntr_app* app, pntr_image* screen) {
     // Clear the background
     pntr_clear_background(screen, PNTR_BLACK);
 
-    // Update the context
-    nuklear_console_demo_render();
+    /* GUI */
+    int flags = NK_WINDOW_BORDER;
+    if (showWindowTitle) {
+        flags |= NK_WINDOW_TITLE;
+    }
+    if (nk_begin(ctx, "nuklear_console", nk_rect(25, 25, WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50), flags)) {
+        /* Render it, and see if we're to stop running. */
+        if (nuklear_console_demo_render()) {
+            nk_end(ctx);
+            return false;
+        }
+    }
+    nk_end(ctx);
 
     // Draw it on the screen
     pntr_draw_nuklear(screen, ctx);
