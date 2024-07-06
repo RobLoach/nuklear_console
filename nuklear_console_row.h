@@ -7,6 +7,7 @@ extern "C" {
 
 typedef struct nk_console_row_data {
   int activeChild;
+  nk_bool widgets_added; /** Indicates if all the row's widgets have been added. */
 } nk_console_row_data;
 
 /**
@@ -128,6 +129,7 @@ NK_API void nk_console_row_end(nk_console* row) {
     }
 
     // Set up the row data based on the available children.
+    row->columns = 0;
     row->selectable = nk_false;
     row->height = 0;
     int numChildren = (int)cvector_size(row->children);
@@ -150,6 +152,9 @@ NK_API void nk_console_row_end(nk_console* row) {
     if (!active_child->selectable) {
         nk_console_row_pick_nearest_selectable_child(row);
     }
+
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
+    data->widgets_added = nk_true;
 }
 
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
@@ -182,10 +187,6 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_layout_row_begin(console->ctx, NK_DYNAMIC, console->height, console->columns);
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
-
-    if (console->disabled) {
-        nk_widget_disable_begin(console->ctx);
-    }
 
     // Consume mouse movement before children have a chance to.
     int numChildren = (int)cvector_size(console->children);
@@ -262,15 +263,20 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = console->children[i];
         if (child->render != NULL) {
-            child->render(child);
+            // If the row is disabled, then temporarily disable the child when rendering.
+            if (console->disabled) {
+                nk_bool child_disabled = child->disabled;
+                child->disabled = nk_true;
+                child->render(child);
+                child->disabled = child_disabled;
+            }
+            else {
+                child->render(child);
+            }
         }
     }
 
     console->activeWidget = NULL;
-
-    if (console->disabled) {
-        nk_widget_disable_end(console->ctx);
-    }
 
     // Finished rendering the row, so complete the row layout.
     nk_layout_row_end(console->ctx);

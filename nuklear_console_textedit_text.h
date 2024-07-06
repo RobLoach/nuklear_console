@@ -88,7 +88,7 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
     textedit_text->columns = 1;
     textedit_text->selectable = nk_true;
     textedit_text->render = nk_console_textedit_text_render;
-    cvector_push_back(parent->children, textedit_text);
+    nk_console_add_child(parent, textedit_text);
     return textedit_text;
 }
 

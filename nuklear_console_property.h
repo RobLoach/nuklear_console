@@ -149,7 +149,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 
     // Display the widget
     char name[NK_MAX_NUMBER_BUFFER];
-    nk_memcopy(name + 2, console->label, nk_strlen(console->label) + 1);
+    NK_MEMCPY(name + 2, console->label, nk_strlen(console->label) + 1);
     name[0] = '#';
     name[1] = '#';
     switch (console->type) {
