@@ -102,7 +102,7 @@ int main(void)
         /*nk_style_set_font(ctx, &droid->handle);*/
     }
 
-    nk_console* console = nuklear_console_demo_init(ctx, NULL);
+    nk_console* console = nuklear_console_demo_init(ctx, NULL, nk_image_id(0));
 
     while (!glfwWindowShouldClose(win))
     {
