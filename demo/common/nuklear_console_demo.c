@@ -14,7 +14,9 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 static int theme = 5;
-static nk_bool showWindowTitle = nk_true;
+static nk_bool checkbox1 = nk_false;
+static nk_bool checkbox2 = nk_false;
+static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
 
 static const int textedit_buffer_size = 256;
@@ -47,8 +49,30 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     {
         nk_console_set_tooltip(options, "Displays some random options!");
 
-        nk_console_checkbox(options, "Show Window Title", &showWindowTitle)
-            ->tooltip = "Whether or not to show the window title";
+        nk_console* label_button = nk_console_button(options, "Labels");
+        {
+            nk_console_label(label_button, "This is a label that should wrap across multiple lines.")
+                ->height = 128;
+            nk_console_label(label_button, "This is a disabled label")
+                ->disabled = nk_true;
+            nk_console_label(label_button, "Center Aligned Label!")
+                ->alignment = NK_TEXT_CENTERED;
+            nk_console_label(label_button, "Right Aligned Label!")
+                ->alignment = NK_TEXT_RIGHT;
+            nk_console_button_onclick(label_button, "Back", nk_console_button_back);
+        }
+
+        nk_console* checkbox_button = nk_console_button(options, "Checkboxes");
+        {
+            nk_console_checkbox(checkbox_button, "Checkbox", &checkbox1)
+                ->tooltip = "This is a checkbox!";
+            nk_console_checkbox(checkbox_button, "Right aligned", &checkbox3)
+                ->alignment = NK_TEXT_RIGHT;
+            nk_console_checkbox(checkbox_button, "Disabled Checkbox", &checkbox2)
+                ->disabled = nk_true;
+            nk_console_button_onclick(checkbox_button, "Back", nk_console_button_back);
+        }
+
         nk_console_progress(options, "Progress", &progressValue, 100);
         nk_console_combobox(options, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
             ->tooltip = "Choose a weapon! The chainsaw is the best!";

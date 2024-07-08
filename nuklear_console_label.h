@@ -27,12 +27,26 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         return nk_rect(0, 0, 0, 0);
     }
 
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
     nk_console_layout_widget(widget);
 
-    // TODO: Add label options like alignment or text wrapping
-    nk_label(widget->ctx, widget->label, widget->alignment);
+    if (widget->disabled) {
+        nk_widget_disable_begin(widget->ctx);
+    }
 
-    return nk_rect(0, 0, 0, 0);
+    // Display the label, considering the alignment.
+    if (widget->alignment == NK_TEXT_LEFT) {
+        nk_label_wrap(widget->ctx, widget->label);
+    }
+    else {
+        nk_label(widget->ctx, widget->label, widget->alignment);
+    }
+
+    if (widget->disabled) {
+        nk_widget_disable_end(widget->ctx);
+    }
+
+    return widget_bounds;
 }
 
 NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {

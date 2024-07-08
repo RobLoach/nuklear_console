@@ -37,7 +37,6 @@ int main(int argc, char *argv[]) {
     int running = 1;
     int flags = 0;
     float font_scale = 3;
-    showWindowTitle = nk_true;
 
     /* GUI */
     struct nk_context *ctx;
@@ -120,13 +119,10 @@ int main(int argc, char *argv[]) {
         }
         nk_input_end(ctx);
 
-        int flags = NK_WINDOW_BORDER;
-        if (showWindowTitle) {
-            flags |= NK_WINDOW_TITLE;
-        }
+        int flags = NK_WINDOW_SCROLL_AUTO_HIDE;
 
         /* GUI */
-        if (nk_begin(ctx, "nuklear_console", nk_rect(25, 25, WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50), flags)) {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
             /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render()) {
                 running = 0;
