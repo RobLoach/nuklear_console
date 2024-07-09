@@ -30,7 +30,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
     nk_console_layout_widget(widget);
 
-    if (widget->disabled) {
+    if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -42,8 +42,14 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         nk_label(widget->ctx, widget->label, widget->alignment);
     }
 
-    if (widget->disabled) {
+    if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
         nk_widget_disable_end(widget->ctx);
+    }
+
+    // Allow switching up/down in widgets
+    if (nk_console_is_active_widget(widget)) {
+        nk_console_check_up_down(widget, widget_bounds);
+        nk_console_check_tooltip(widget);
     }
 
     return widget_bounds;
