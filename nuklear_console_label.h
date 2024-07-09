@@ -27,9 +27,9 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
     nk_console_layout_widget(widget);
 
+    // Toggle it as disabled if needed.
     if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
         nk_widget_disable_begin(widget->ctx);
     }
@@ -42,9 +42,13 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         nk_label(widget->ctx, widget->label, widget->alignment);
     }
 
+    // Release the disabled state if needed.
     if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
         nk_widget_disable_end(widget->ctx);
     }
+
+    // Since labels don't really have widget bounds, we get the bounds after the label is displayed as a work-around.
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(widget)) {
