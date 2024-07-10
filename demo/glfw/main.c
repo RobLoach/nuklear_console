@@ -114,7 +114,7 @@ int main(void)
         int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
 
         /* GUI */
-        if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, width, height), flags)) {
             /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render()) {
                 glfwSetWindowShouldClose(win, GLFW_TRUE);

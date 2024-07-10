@@ -1,6 +1,6 @@
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
-//#define PNTR_ENABLE_MATH
+#define PNTR_ENABLE_MATH
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
 #include "pntr_app.h"
 
@@ -53,7 +53,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
 
     /* GUI */
     int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
-    if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
+    if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, screen->width, screen->height), flags)) {
         /* Render it, and see if we're to stop running. */
         if (nuklear_console_demo_render()) {
             nk_end(ctx);
