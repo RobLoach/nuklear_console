@@ -96,30 +96,31 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
+    struct nk_context* ctx = nk_console_get_ctx(console);
     nk_console* top = nk_console_get_top(console);
 
     nk_console_layout_widget(console);
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(ctx);
 
     if (console->disabled) {
-        nk_widget_disable_begin(console->ctx);
+        nk_widget_disable_begin(ctx);
     }
 
     // Check the button state.
     nk_bool selected = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
+    if (!console->disabled && nk_console_is_active_widget(console) && !nk_console_get_input_processed(top) && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
         selected = nk_true;
     }
 
     // Apply the style.
-    struct nk_style_item buttonStyle = console->ctx->style.button.normal;
+    struct nk_style_item buttonStyle = ctx->style.button.normal;
     if (nk_console_is_active_widget(console)) {
         if (selected) {
-            console->ctx->style.button.normal = console->ctx->style.button.active;
+            ctx->style.button.normal = ctx->style.button.active;
         }
         else {
-            console->ctx->style.button.normal = console->ctx->style.button.hover;
+            ctx->style.button.normal = ctx->style.button.hover;
         }
     }
 
@@ -130,50 +131,49 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
             // Check if there is a Label
             if (console->label != NULL && nk_strlen(console->label) > 0) {
                 if (data->symbol == NK_SYMBOL_NONE) {
-                    selected |= nk_button_label(console->ctx, console->label);
+                    selected |= nk_button_label(ctx, console->label);
                 }
                 else {
-                    selected |= nk_button_symbol_label(console->ctx, data->symbol, console->label, console->alignment);
+                    selected |= nk_button_symbol_label(ctx, data->symbol, console->label, console->alignment);
                 }
             }
             else {
                 // Display the button as just a symbol?
-                selected |= nk_button_symbol(console->ctx, data->symbol);
+                selected |= nk_button_symbol(ctx, data->symbol);
             }
         }
         else {
             if (data->symbol == NK_SYMBOL_NONE) {
-                selected |= nk_button_text(console->ctx, console->label, console->label_length);
+                selected |= nk_button_text(ctx, console->label, console->label_length);
             }
             else {
-                selected |= nk_button_symbol_text(console->ctx, data->symbol, console->label, console->label_length, console->alignment);
+                selected |= nk_button_symbol_text(ctx, data->symbol, console->label, console->label_length, console->alignment);
             }
         }
     }
     else {
         // Display the button with an image
         if (console->label_length > 0) {
-            selected |= nk_button_image_text(console->ctx, data->image, console->label, console->label_length, console->alignment);
+            selected |= nk_button_image_text(ctx, data->image, console->label, console->label_length, console->alignment);
         }
         else if (console->label != NULL && nk_strlen(console->label) > 0) {
-            selected |= nk_button_image_label(console->ctx, data->image, console->label, console->alignment);
+            selected |= nk_button_image_label(ctx, data->image, console->label, console->alignment);
         }
         else {
-            selected |= nk_button_image(console->ctx, data->image);
+            selected |= nk_button_image(ctx, data->image);
         }
     }
 
     // Restore the styles
-    console->ctx->style.button.normal = buttonStyle;
+    ctx->style.button.normal = buttonStyle;
 
     // Act on the button
     if (selected) {
-        top->input_processed = nk_true;
+        nk_console_set_input_processed(top, nk_true);
 
         // If there's no onclick action and there are children...
         if (data->onclick == NULL) {
             if (console->children != NULL) {
-                //top->activeParent = console;
                 nk_console_set_active_parent(console);
             }
         }
@@ -183,7 +183,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     if (console->disabled) {
-        nk_widget_disable_end(console->ctx);
+        nk_widget_disable_end(ctx);
     }
 
     // Allow switching up/down in widgets
@@ -219,11 +219,12 @@ NK_API void nk_console_button_back(nk_console* button) {
     if (parent != NULL) {
         parent = parent->parent;
     }
+
     if (parent != NULL) {
-        top->activeParent = parent;
+        nk_console_set_active_parent(parent);
     }
     else {
-        top->activeParent = NULL;
+        nk_console_set_active_parent(top);
     }
 }
 

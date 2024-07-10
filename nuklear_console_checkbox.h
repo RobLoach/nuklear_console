@@ -34,12 +34,13 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
     nk_console_layout_widget(console);
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
+    struct nk_context* ctx = nk_console_get_ctx(console);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(ctx);
     nk_console* top = nk_console_get_top(console);
 
     // Allow changing the checkbox value.
     nk_bool active = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
+    if (!console->disabled && nk_console_is_active_widget(console) && !nk_console_get_input_processed(top)) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = !*data->value_bool;
@@ -48,7 +49,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 }
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            nk_console_set_input_processed(top, nk_true);
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             if (data->value_bool != NULL) {
@@ -58,7 +59,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 }
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            nk_console_set_input_processed(top, nk_true);
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (data->value_bool != NULL) {
@@ -68,32 +69,32 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 }
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            nk_console_set_input_processed(top, nk_true);
         }
     }
 
     // Style
-    struct nk_style_item checkboxStyle = console->ctx->style.checkbox.normal;
+    struct nk_style_item checkboxStyle = ctx->style.checkbox.normal;
     if (nk_console_is_active_widget(console)) {
         if (active) {
-            console->ctx->style.checkbox.normal = console->ctx->style.checkbox.active;
+            ctx->style.checkbox.normal = ctx->style.checkbox.active;
         }
         else {
-            console->ctx->style.checkbox.normal = console->ctx->style.checkbox.hover;
+            ctx->style.checkbox.normal = ctx->style.checkbox.hover;
         }
     }
 
     if (console->disabled || !nk_console_is_active_widget(console)) {
-        nk_widget_disable_begin(console->ctx);
+        nk_widget_disable_begin(ctx);
     }
 
     // Display the checkbox with fixed alignment.
     nk_bool changed = nk_false;
     if (console->alignment == NK_TEXT_LEFT) {
-        changed = nk_checkbox_label_align(console->ctx, console->label, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
+        changed = nk_checkbox_label_align(ctx, console->label, data->value_bool, NK_TEXT_RIGHT, NK_TEXT_LEFT);
     }
     else {
-        changed = nk_checkbox_label(console->ctx, console->label, data->value_bool);
+        changed = nk_checkbox_label(ctx, console->label, data->value_bool);
     }
 
     // Invoke onchanged event.
@@ -102,11 +103,11 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     }
 
     if (console->disabled || !nk_console_is_active_widget(console)) {
-        nk_widget_disable_end(console->ctx);
+        nk_widget_disable_end(ctx);
     }
 
     // Restore the styles
-    console->ctx->style.checkbox.normal = checkboxStyle;
+    ctx->style.checkbox.normal = checkboxStyle;
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {

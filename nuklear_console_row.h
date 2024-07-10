@@ -158,20 +158,21 @@ NK_API void nk_console_row_end(nk_console* row) {
 }
 
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
-    nk_console_row_data* data = (nk_console_row_data*)row->data;
-    if (top->input_processed) {
+    if (nk_console_get_input_processed(top)) {
         return;
     }
+
+    nk_console_row_data* data = (nk_console_row_data*)row->data;
 
     // Left
     if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
         data->activeChild = nk_console_row_next_selectable_child(row, -1);
-        top->input_processed = nk_true;
+        nk_console_set_input_processed(top, nk_true);
     }
     // Right
     else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
         data->activeChild = nk_console_row_next_selectable_child(row, 1);
-        top->input_processed = nk_true;
+        nk_console_set_input_processed(top, nk_true);
     }
 }
 
@@ -182,16 +183,17 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 
     nk_console_row_data* data = (nk_console_row_data*)console->data;
     nk_console* top = nk_console_get_top(console);
+    struct nk_context* ctx = nk_console_get_ctx(top);
 
     // Rows use the advanced layout system to render their children.
-    nk_layout_row_begin(console->ctx, NK_DYNAMIC, console->height, console->columns);
+    nk_layout_row_begin(ctx, NK_DYNAMIC, console->height, console->columns);
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(ctx);
 
     // Consume mouse movement before children have a chance to.
     int numChildren = (int)cvector_size(console->children);
-    struct nk_input* input = &console->ctx->input;
-    if (console->selectable && top->input_processed == nk_false &&
+    struct nk_input* input = &ctx->input;
+    if (console->selectable && nk_console_get_input_processed(top) == nk_false &&
         widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
         nk_input_is_mouse_hovering_rect(input, widget_bounds)) {
         // First, make sure that the active widget is the row.
@@ -256,7 +258,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 
     // Set the active widget to the active child of the row.
     if (!console->disabled && nk_console_is_active_widget(console) && numChildren > 0) {
-        console->activeWidget = nk_console_row_active_child(console);
+        console->active_widget = nk_console_row_active_child(console);
     }
 
     // Render all the children
@@ -276,10 +278,10 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
         }
     }
 
-    console->activeWidget = NULL;
+    console->active_widget = NULL;
 
     // Finished rendering the row, so complete the row layout.
-    nk_layout_row_end(console->ctx);
+    nk_layout_row_end(ctx);
 
     return widget_bounds;
 }

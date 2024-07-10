@@ -59,10 +59,11 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     nk_console_layout_widget(console);
 
     nk_console* top = nk_console_get_top(console);
+    struct nk_context* ctx = nk_console_get_ctx(top);
 
     // Allow changing the value.
     nk_bool active = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
+    if (!console->disabled && nk_console_is_active_widget(console) && !nk_console_get_input_processed(top)) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             if (data->value_size != NULL && *data->value_size > 0) {
                 *data->value_size = *data->value_size - 1;
@@ -71,7 +72,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
                 }
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            nk_console_set_input_processed(top, nk_true);
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (data->value_size != NULL && *data->value_size < data->max_size) {
@@ -81,54 +82,54 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
                 }
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            nk_console_set_input_processed(top, nk_true);
         }
     }
 
     // Display the label
     if (nk_strlen(console->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_begin(console->ctx);
+            nk_widget_disable_begin(ctx);
         }
-        nk_label(console->ctx, console->label, NK_TEXT_LEFT);
+        nk_label(ctx, console->label, NK_TEXT_LEFT);
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_end(console->ctx);
+            nk_widget_disable_end(ctx);
         }
     }
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(ctx);
 
     if (console->disabled) {
-        nk_widget_disable_begin(console->ctx);
+        nk_widget_disable_begin(ctx);
     }
 
     // Progress
-    struct nk_style_item cursor_normal = console->ctx->style.progress.cursor_normal;
-    struct nk_style_item cursor_hover = console->ctx->style.progress.cursor_hover;
-    struct nk_style_item cursor_active = console->ctx->style.progress.cursor_active;
+    struct nk_style_item cursor_normal = ctx->style.progress.cursor_normal;
+    struct nk_style_item cursor_hover = ctx->style.progress.cursor_hover;
+    struct nk_style_item cursor_active = ctx->style.progress.cursor_active;
     if (nk_console_is_active_widget(console)) {
         if (active) {
-            console->ctx->style.progress.cursor_normal = cursor_active;
+            ctx->style.progress.cursor_normal = cursor_active;
         }
         else {
-            console->ctx->style.progress.cursor_normal = cursor_active;
+            ctx->style.progress.cursor_normal = cursor_active;
         }
     }
 
     // Display the widget
-    if (nk_progress(console->ctx, data->value_size, data->max_size, nk_true)) {
+    if (nk_progress(ctx, data->value_size, data->max_size, nk_true)) {
         if (console->onchange != NULL) {
             console->onchange(console);
         }
     }
 
     // Restore the styles
-    console->ctx->style.progress.cursor_normal = cursor_normal;
-    console->ctx->style.progress.cursor_hover = cursor_hover;
-    console->ctx->style.progress.cursor_active = cursor_active;
+    ctx->style.progress.cursor_normal = cursor_normal;
+    ctx->style.progress.cursor_hover = cursor_hover;
+    ctx->style.progress.cursor_active = cursor_active;
 
     if (console->disabled) {
-        nk_widget_disable_end(console->ctx);
+        nk_widget_disable_end(ctx);
     }
 
     // Allow switching up/down in widgets

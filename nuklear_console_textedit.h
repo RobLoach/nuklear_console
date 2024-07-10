@@ -356,13 +356,14 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
 
     // Display the label
     if (console->label != NULL && nk_strlen(console->label) > 0) {
+        struct nk_context* ctx = nk_console_get_ctx(console);
         nk_bool active = nk_console_is_active_widget(console);
         if (!active) {
-            nk_widget_disable_begin(console->ctx);
+            nk_widget_disable_begin(ctx);
         }
-        nk_label(console->ctx, console->label, NK_TEXT_LEFT);
+        nk_label(ctx, console->label, NK_TEXT_LEFT);
         if (!active) {
-            nk_widget_disable_end(console->ctx);
+            nk_widget_disable_end(ctx);
         }
     }
 

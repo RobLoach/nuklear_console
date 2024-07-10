@@ -33,7 +33,8 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
+    struct nk_context* ctx = nk_console_get_ctx(widget);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(ctx);
 
     nk_console_layout_widget(widget);
 
@@ -44,12 +45,12 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     if (nk_console_is_active_widget(widget)) {
         // Allow using ENTER to go back
         if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
-            nk_console_get_top(widget)->input_processed = nk_true;
+            nk_console_set_input_processed(widget, nk_true);
             nk_console_textedit_button_back_click(widget);
             return nk_rect(0, 0, 0, 0);
         }
         // Allow changing up/down only if they're not pressing backspace
-        else if (!nk_input_is_key_pressed(&widget->ctx->input, NK_KEY_BACKSPACE)) {
+        else if (!nk_input_is_key_pressed(&ctx->input, NK_KEY_BACKSPACE)) {
             nk_console_check_up_down(widget, widget_bounds);
         }
 
@@ -58,37 +59,35 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     }
 
     if (widget->disabled) {
-        nk_widget_disable_begin(widget->ctx);
+        nk_widget_disable_begin(ctx);
     }
 
     // Display the text edit
     if (nk_console_is_active_widget(widget)) {
-        nk_edit_focus(widget->ctx, NK_EDIT_FIELD);
+        nk_edit_focus(ctx, NK_EDIT_FIELD);
     }
     else {
-        nk_edit_unfocus(widget->ctx);
+        nk_edit_unfocus(ctx);
     }
 
     // TODO: textedit_text: Add an option to change the filter.
     // TODO: textedit_text: Trigger the onchange event when the text changes.
-    nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
+    nk_edit_string_zero_terminated(ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
 
     if (widget->disabled) {
-        nk_widget_disable_end(widget->ctx);
+        nk_widget_disable_end(ctx);
     }
 
     return widget_bounds;
 }
 
 NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
-    nk_console* textedit_text = nk_console_init(parent->ctx);
+    nk_console* textedit_text = nk_console_label(parent, NULL);
     textedit_text->type = NK_CONSOLE_TEXTEDIT_TEXT;
-    textedit_text->parent = parent;
     textedit_text->alignment = NK_TEXT_LEFT;
     textedit_text->columns = 1;
     textedit_text->selectable = nk_true;
     textedit_text->render = nk_console_textedit_text_render;
-    nk_console_add_child(parent, textedit_text);
     return textedit_text;
 }
 

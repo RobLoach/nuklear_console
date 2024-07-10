@@ -109,7 +109,7 @@ int main(void)
         /* Input */
         glfwPollEvents();
         nk_glfw3_new_frame(&glfw);
-        nk_gamepad_update(console->gamepads);
+        nk_gamepad_update(nk_console_get_gamepads(console));
 
         int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
 

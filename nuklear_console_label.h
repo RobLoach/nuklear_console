@@ -28,27 +28,28 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     }
 
     nk_console_layout_widget(widget);
+    struct nk_context* ctx = nk_console_get_ctx(widget);
 
     // Toggle it as disabled if needed.
     if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
-        nk_widget_disable_begin(widget->ctx);
+        nk_widget_disable_begin(ctx);
     }
 
     // Display the label, considering the alignment.
     if (widget->alignment == NK_TEXT_LEFT) {
-        nk_label_wrap(widget->ctx, widget->label);
+        nk_label_wrap(ctx, widget->label);
     }
     else {
-        nk_label(widget->ctx, widget->label, widget->alignment);
+        nk_label(ctx, widget->label, widget->alignment);
     }
 
     // Release the disabled state if needed.
     if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
-        nk_widget_disable_end(widget->ctx);
+        nk_widget_disable_end(ctx);
     }
 
     // Since labels don't really have widget bounds, we get the bounds after the label is displayed as a work-around.
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(ctx);
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(widget)) {
@@ -60,7 +61,9 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
-    nk_console* label = nk_console_init(parent->ctx);
+    nk_handle handle;
+    nk_console* label = nk_console_malloc(handle, NULL, sizeof(nk_console));
+    nk_zero(label, sizeof(nk_console));
     label->type = NK_CONSOLE_LABEL;
     label->label = text;
     label->parent = parent;

@@ -76,7 +76,6 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
  */
 NK_API void nk_console_combobox_button_main_click(nk_console* button) {
     nk_console_combobox_data* data = (nk_console_combobox_data*)button->data;
-    nk_console* top = nk_console_get_top(button);
     int selected = data->selected == NULL ? 0 : *data->selected;
     if (button->children != NULL) {
         if ((int)cvector_size(button->children) > selected + 1) {
@@ -85,7 +84,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button) {
     }
 
     // Switch to show all the children.
-    top->activeParent = button;
+    nk_console_set_active_parent(button);
 }
 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
@@ -155,7 +154,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     nk_console_layout_widget(console);
 
     // Allow changing the value with left/right
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
+    if (!console->disabled && nk_console_is_active_widget(console) && !nk_console_get_input_processed(top)) {
         if (data->selected != NULL && console->children != NULL) {
             nk_bool changed = nk_false;
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && *data->selected > 0) {
@@ -179,12 +178,13 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
 
     // Display the label
     if (nk_strlen(data->label) > 0) {
+        struct nk_context* ctx = nk_console_get_ctx(console);
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_begin(console->ctx);
+            nk_widget_disable_begin(ctx);
         }
-        nk_label(console->ctx, data->label, NK_TEXT_LEFT);
+        nk_label(ctx, data->label, NK_TEXT_LEFT);
         if (!nk_console_is_active_widget(console)) {
-            nk_widget_disable_end(console->ctx);
+            nk_widget_disable_end(ctx);
         }
     }
 

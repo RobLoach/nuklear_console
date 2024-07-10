@@ -29,7 +29,7 @@ void button_clicked(struct nk_console* button) {
 }
 
 void theme_changed(struct nk_console* combobox) {
-    set_style(combobox->ctx, theme);
+    set_style(nk_console_get_ctx(combobox), theme);
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
@@ -197,6 +197,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
-    nk_gamepad_free(console->gamepads);
+    nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }
