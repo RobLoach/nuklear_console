@@ -52,10 +52,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
     pntr_clear_background(screen, PNTR_BLACK);
 
     /* GUI */
-    int flags = NK_WINDOW_BORDER;
-    if (showWindowTitle) {
-        flags |= NK_WINDOW_TITLE;
-    }
+    int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
         /* Render it, and see if we're to stop running. */
         if (nuklear_console_demo_render()) {

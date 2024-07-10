@@ -14,7 +14,9 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 static int theme = 5;
-static nk_bool showWindowTitle = nk_true;
+static nk_bool checkbox1 = nk_false;
+static nk_bool checkbox2 = nk_false;
+static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
 
 static const int textedit_buffer_size = 256;
@@ -42,30 +44,88 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console_button_onclick(newgame, "Back", nk_console_button_back);
     }
 
-    // Options
-    nk_console* options = nk_console_button(console, "Options");
+    // Widgets
+    nk_console* widgets = nk_console_button(console, "Widgets");
     {
-        nk_console_set_tooltip(options, "Displays some random options!");
+        nk_console_set_tooltip(widgets, "Displays some random options!");
 
-        nk_console_checkbox(options, "Show Window Title", &showWindowTitle)
-            ->tooltip = "Whether or not to show the window title";
-        nk_console_progress(options, "Progress", &progressValue, 100);
-        nk_console_combobox(options, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
+        nk_console* label_button = nk_console_button(widgets, "Labels");
+        {
+            nk_console_label(label_button, "Simple label.");
+            nk_console_label(label_button, "Selectable label #1")
+                ->selectable = nk_true;
+            nk_console_label(label_button, "Selectable label #2.")
+                ->selectable = nk_true;
+            nk_console_label(label_button, "This is a label that will wrap across multiple lines.")
+                ->height = 128;
+            nk_console_label(label_button, "This is a disabled label")
+                ->disabled = nk_true;
+            nk_console_label(label_button, "Center Aligned Label!")
+                ->alignment = NK_TEXT_CENTERED;
+            nk_console_label(label_button, "Right Aligned Label!")
+                ->alignment = NK_TEXT_RIGHT;
+            nk_console_button_onclick(label_button, "Back", nk_console_button_back);
+        }
+
+        nk_console* checkbox_button = nk_console_button(widgets, "Checkboxes");
+        {
+            nk_console_checkbox(checkbox_button, "Checkbox", &checkbox1)
+                ->tooltip = "This is a checkbox!";
+            nk_console_checkbox(checkbox_button, "Right aligned", &checkbox3)
+                ->alignment = NK_TEXT_RIGHT;
+            nk_console_checkbox(checkbox_button, "Disabled Checkbox", &checkbox2)
+                ->disabled = nk_true;
+            nk_console_button_onclick(checkbox_button, "Back", nk_console_button_back);
+        }
+
+        nk_console* buttons = nk_console_button(widgets, "Buttons");
+        {
+            nk_console_button(buttons, "Button");
+            nk_console_button(buttons, "Button #2");
+            nk_console_button(buttons, "Disabled Button")
+                ->disabled = nk_true;
+
+            // Image Button
+            nk_console* image_button = nk_console_button(buttons, "Image");
+            nk_console_button_set_image(image_button, image);
+            image_button->height = 128;
+
+            nk_console_button_onclick(buttons, "Back", nk_console_button_back);
+        }
+
+        // Progress Bar
+        nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
+        {
+            nk_console_progress(progressbar, "Progress", &progressValue, 100);
+            nk_console_button_onclick(progressbar, "Back", nk_console_button_back);
+        }
+
+        // Combobox
+        nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
             ->tooltip = "Choose a weapon! The chainsaw is the best!";
-        nk_console_property_int(options, "Property Int", 10, &property_int_test, 30, 1, 1);
-        nk_console_property_float(options, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
-        nk_console_slider_float(options, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
-        nk_console_slider_int(options, "Slider Int", 0, &slider_int_test, 20, 1)->disabled = nk_true;
 
-        nk_console* textedit = nk_console_textedit(options, "Username", textedit_buffer, textedit_buffer_size);
+        // Property
+        nk_console* properties = nk_console_button(widgets, "Property");
+        {
+            nk_console_property_int(properties, "Property Int", 10, &property_int_test, 30, 1, 1);
+            nk_console_property_float(properties, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
+            nk_console_button_onclick(properties, "Back", nk_console_button_back);
+        }
+
+        // Sliders
+        nk_console* sliders = nk_console_button(widgets, "Sliders");
+        {
+            nk_console_slider_float(sliders, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
+            nk_console_slider_int(sliders, "Slider Int", 0, &slider_int_test, 20, 1);
+            nk_console_button_onclick(sliders, "Back", nk_console_button_back);
+        }
+
+        // Textedit
+        nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
 
-        nk_console* image_button = nk_console_button(options, "Image");
-        nk_console_button_set_image(image_button, image);
-        image_button->height = 128;
-
         nk_console_button_set_symbol(
-            nk_console_button_onclick(options, "Back", nk_console_button_back),
+            nk_console_button_onclick(widgets, "Back", nk_console_button_back),
             NK_SYMBOL_TRIANGLE_LEFT);
     }
 

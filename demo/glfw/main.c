@@ -111,14 +111,10 @@ int main(void)
         nk_glfw3_new_frame(&glfw);
         nk_gamepad_update(console->gamepads);
 
-        int flags = NK_WINDOW_BORDER;
-        flags |= NK_WINDOW_SCROLL_AUTO_HIDE;
-        if (showWindowTitle) {
-            flags |= NK_WINDOW_TITLE;
-        }
+        int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
 
         /* GUI */
-        if (nk_begin(ctx, "nuklear_console", nk_rect(25, 25, WINDOW_WIDTH - 50, WINDOW_HEIGHT - 50), flags)) {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
             /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render()) {
                 glfwSetWindowShouldClose(win, GLFW_TRUE);

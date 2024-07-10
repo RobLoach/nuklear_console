@@ -12,7 +12,7 @@ int main() {
 
     // Create the Nuklear Context
     int fontSize = 13 * 3;
-    int padding = 25;
+    int padding = 0;
     Font font = LoadFontFromNuklear(fontSize);
     GenTextureMipmaps(&font.texture);
     struct nk_context *ctx = InitNuklearEx(font, fontSize);
@@ -26,13 +26,10 @@ int main() {
         UpdateNuklear(ctx);
         nk_gamepad_update(console->gamepads);
 
-        int flags = NK_WINDOW_BORDER;
-        if (showWindowTitle) {
-            flags |= NK_WINDOW_TITLE;
-        }
+        int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
 
         // Nuklear GUI Code
-        if (nk_begin(ctx, "nuklear_console_demo", nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2), flags)) {
+        if (nk_begin(ctx, "nuklear_console", nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2), flags)) {
             if (nuklear_console_demo_render()) {
                 break;
             }
