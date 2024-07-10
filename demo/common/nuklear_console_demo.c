@@ -34,7 +34,7 @@ void theme_changed(struct nk_console* combobox) {
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
     console = nk_console_init(ctx);
-    nk_console_set_gamepad(console, nk_gamepad_init(ctx, user_data));
+    nk_console_set_gamepads(console, nk_gamepad_init(ctx, user_data));
 
     // New Game
     nk_console* newgame = nk_console_button(console, "New Game");

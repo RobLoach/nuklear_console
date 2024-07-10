@@ -66,7 +66,7 @@ typedef struct nk_console {
     nk_console_render_event render; /** Render the widget. */
     nk_console_event destroy; /** Destroy the widget. */
 
-    struct nk_gamepads* gamepads;
+    void* gamepads;
 } nk_console;
 
 // Console
@@ -86,7 +86,7 @@ NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
-NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads);
+NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
@@ -120,17 +120,7 @@ NK_API int nk_console_height(nk_console* widget);
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_IMPLEMENTATION_ONCE
 
-#ifndef cvector_clib_free
-#define cvector_clib_free(ptr) nk_console_mfree((nk_handle) {.id = 0}, ptr)
-#endif
-#ifndef cvector_clib_malloc
-#define cvector_clib_malloc(size) nk_console_malloc((nk_handle) {.ptr = NULL}, NULL, size)
-#endif
-#ifndef CVECTOR_H
-#define CVECTOR_H "vendor/c-vector/cvector.h"
-#endif
-#include CVECTOR_H
-
+// NK_CONSOLE_MALLOC
 #ifndef NK_CONSOLE_MALLOC
 #ifdef NK_INCLUDE_DEFAULT_ALLOCATOR
 #define NK_CONSOLE_MALLOC nk_malloc
@@ -139,6 +129,7 @@ NK_API int nk_console_height(nk_console* widget);
 #endif
 #endif
 
+// NK_CONSOLE_FREE
 #ifndef NK_CONSOLE_FREE
 #ifdef NK_INCLUDE_DEFAULT_ALLOCATOR
 #define NK_CONSOLE_FREE nk_mfree
@@ -146,6 +137,65 @@ NK_API int nk_console_height(nk_console* widget);
 #error "Requires NK_CONSOLE_FREE, or NK_INCLUDE_DEFAULT_ALLOCATOR"
 #endif
 #endif
+
+#ifndef cvector_clib_free
+#define cvector_clib_free(ptr) nk_console_mfree((nk_handle) {.id = 0}, ptr)
+#endif
+#ifndef cvector_clib_malloc
+#define cvector_clib_malloc(size) nk_console_malloc((nk_handle) {.ptr = NULL}, NULL, size)
+#endif
+#ifndef cvector_clib_calloc
+#define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
+#endif
+#ifndef cvector_clib_realloc
+static void* nk_console_realloc(void* ptr, size_t size) {
+	if (size == 0) {
+        cvector_clib_free(ptr);
+        return NULL;
+    }
+    if (ptr == NULL) {
+        return cvector_clib_malloc(size);
+    }
+    void* output = cvector_clib_malloc(size);
+    if (output == NULL) {
+        return NULL;
+    }
+    NK_MEMCPY(output, ptr, size); // TODO: This memory copy is unsafe, and slow.
+    cvector_clib_free(ptr);
+	return output;
+}
+#define cvector_clib_realloc(ptr, size) nk_console_realloc(ptr, size)
+#endif
+#ifndef cvector_clib_assert
+#define cvector_clib_assert(expression) NK_ASSERT(expression)
+#endif
+#ifndef cvector_clib_memcpy
+#define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
+#endif
+#ifndef cvector_clib_memmove
+#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+#endif
+#ifndef CVECTOR_H
+#define CVECTOR_H "vendor/c-vector/cvector.h"
+#endif
+#include CVECTOR_H
+
+#ifndef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
+#ifdef NUKLEAR_GAMEPAD_H__ // nuklear_gamepad.h
+/**
+ * Check if the given button is pressed on the gamepad.
+ *
+ * @param gamepads The gamepad system provided at `console->gamepads`.
+ * @param index The index of the gamepad to check. -1 is provided to check all gamepads.
+ * @param button Which button we are to check.
+ *
+ * @see nk_gamepad_is_button_pressed()
+ * @see nk_gamepad_button
+ * @see https://github.com/RobLoach/nuklear_gamepad
+ */
+#define NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(gamepads, index, button) nk_gamepad_is_button_pressed((struct nk_gamepads*)gamepads, index, button)
+#endif  // NUKLEAR_GAMEPAD_H__
+#endif  // NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
 
 #ifdef __cplusplus
 extern "C" {
@@ -241,12 +291,10 @@ NK_API nk_console* nk_console_get_top(nk_console* widget) {
         return NULL;
     }
 
-    nk_console* parent = widget;
-    while (parent->parent != NULL) {
-        parent = parent->parent;
+    while (widget->parent != NULL) {
+        widget = widget->parent;
     }
-
-    return parent;
+    return widget;
 }
 
 NK_API void nk_console_set_height(nk_console* widget, int height) {
@@ -644,7 +692,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     nk_layout_row_dynamic(widget->ctx, widget->height, widget->columns);
 }
 
-NK_API void nk_console_set_gamepad(nk_console* console, struct nk_gamepads* gamepads) {
+NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads) {
     if (console == NULL) {
         return;
     }
@@ -656,14 +704,18 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
     if (console == NULL) {
         return nk_false;
     }
+
+    // Get the top console.
     if (console->parent != NULL) {
         console = nk_console_get_top(console);
     }
 
-    // Gamepad
-    if (nk_gamepad_is_button_pressed(console->gamepads, -1, button)) {
-        return nk_true;
-    }
+    // Check gamepads.
+    #ifdef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
+        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(console->gamepads, -1, button)) {
+            return nk_true;
+        }
+    #endif
 
     // Keyboard/Mouse
     switch (button) {
