@@ -1,4 +1,5 @@
 #include <string.h> // strcmp
+#include <stdio.h> // snprintf
 
 #include "../../vendor/Nuklear/demo/common/style.c"
 
@@ -20,6 +21,7 @@ static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
+static int message_count = 1;
 
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
@@ -35,7 +37,9 @@ void theme_changed(struct nk_console* combobox) {
 }
 
 void nk_console_demo_show_message(struct nk_console* button) {
-    nk_console_show_message(button, "This is a message!");
+    char message[128];
+    snprintf(message, 128, "This is a message! #%d", message_count++);
+    nk_console_show_message(button, message);
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {

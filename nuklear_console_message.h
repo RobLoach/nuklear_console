@@ -32,6 +32,15 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
+    #ifndef NK_CONSOLE_MESSAGE_DEFAULT_DURATION
+    #define NK_CONSOLE_MESSAGE_DEFAULT_DURATION 4.0f
+    #endif  // NK_CONSOLE_MESSAGE_DEFAULT_DURATION
+
+    // Make sure the starting duration is sane.
+    if (data->messages_default_duration <= 0) {
+        data->messages_default_duration = NK_CONSOLE_MESSAGE_DEFAULT_DURATION;
+    }
+
     // Create a new message
     nk_console_message message = {
         .duration = data->messages_default_duration,
@@ -45,14 +54,6 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         }
     }
     message.text[255] = '\0'; // Make sure it's null-terminated
-
-    #ifndef NK_CONSOLE_MESSAGE_DEFAULT_DURATION
-    #define NK_CONSOLE_MESSAGE_DEFAULT_DURATION 4.0f
-    #endif  // NK_CONSOLE_MESSAGE_DEFAULT_DURATION
-    // Make sure the starting duration is sane.
-    if (data->messages_default_duration <= 0) {
-        data->messages_default_duration = NK_CONSOLE_MESSAGE_DEFAULT_DURATION;
-    }
 
     cvector_push_back(data->messages, message);
 }
@@ -116,7 +117,7 @@ NK_API void nk_console_render_messages(nk_console* console) {
     nk_bool clear_all = nk_true;
 
     nk_console_message* end = cvector_end(data->messages);
-    for (it = cvector_begin(data->messages); it != end; ++it) {
+    for (it = cvector_begin(data->messages); it != end; it++) {
         if (it->duration <= 0.0f) {
             continue;
         }
