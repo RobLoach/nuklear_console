@@ -1,3 +1,6 @@
+#include <string.h> // strcmp
+#include <stdio.h> // snprintf
+
 #include "../../vendor/Nuklear/demo/common/style.c"
 
 #define NK_GAMEPAD_IMPLEMENTATION
@@ -18,6 +21,7 @@ static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
+static int message_count = 0;
 
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
@@ -30,6 +34,12 @@ void button_clicked(struct nk_console* button) {
 
 void theme_changed(struct nk_console* combobox) {
     set_style(combobox->ctx, theme);
+}
+
+void nk_console_demo_show_message(struct nk_console* button) {
+    char message[128];
+    snprintf(message, 128, "This is message #%d!", ++message_count);
+    nk_console_show_message(button, message);
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
@@ -124,6 +134,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
 
+        // Messages
+        nk_console_button_onclick(widgets, "Show Message", nk_console_demo_show_message);
+
         nk_console_button_set_symbol(
             nk_console_button_onclick(widgets, "Back", nk_console_button_back),
             NK_SYMBOL_TRIANGLE_LEFT);
@@ -197,6 +210,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
-    nk_gamepad_free(console->gamepads);
+    nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }

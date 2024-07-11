@@ -109,17 +109,17 @@ int main(int argc, char *argv[]) {
         /* Input */
         SDL_Event evt;
         nk_input_begin(ctx);
-        nk_gamepad_update(console->gamepads);
+        nk_gamepad_update(nk_console_get_gamepads(console));
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) goto cleanup;
             if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) running = 0;
 
             nk_sdl_handle_event(&evt);
-            nk_gamepad_sdl_handle_event(console->gamepads, &evt);
+            nk_gamepad_sdl_handle_event(nk_console_get_gamepads(console), &evt);
         }
         nk_input_end(ctx);
 
-        int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
+        int flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE;
 
         /* GUI */
         if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {

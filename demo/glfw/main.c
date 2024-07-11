@@ -109,9 +109,10 @@ int main(void)
         /* Input */
         glfwPollEvents();
         nk_glfw3_new_frame(&glfw);
-        nk_gamepad_update(console->gamepads);
 
-        int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
+        nk_gamepad_update(nk_console_get_gamepads(console));
+
+        int flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE;
 
         /* GUI */
         if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, width, height), flags)) {

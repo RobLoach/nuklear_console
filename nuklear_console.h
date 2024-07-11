@@ -40,6 +40,11 @@ typedef enum {
     NK_CONSOLE_TEXTEDIT_TEXT
 } nk_console_widget_type;
 
+typedef struct nk_console_message {
+    char text[256];
+    float duration;
+} nk_console_message;
+
 typedef struct nk_console {
     nk_console_widget_type type;
     void* user_data;
@@ -65,9 +70,24 @@ typedef struct nk_console {
     nk_console_event onchange; /** Invoked when there is a change in the value for the widget. */
     nk_console_render_event render; /** Render the widget. */
     nk_console_event destroy; /** Destroy the widget. */
-
-    void* gamepads;
 } nk_console;
+
+typedef struct nk_console_top_data {
+    struct nk_console_message* messages;
+
+    /**
+     * When set, will determine where messages should appear on the screen.
+     */
+    struct nk_rect message_bounds;
+
+    /**
+     * The gamepad system to use for gamepad input.
+     *
+     * @see nk_console_get_gamepads()
+     * @see nk_console_set_gamepads()
+     */
+    void* gamepads;
+} nk_console_top_data;
 
 // Console
 NK_API nk_console* nk_console_init(struct nk_context* context);
@@ -87,6 +107,7 @@ NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads);
+NK_API void* nk_console_get_gamepads(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
@@ -108,6 +129,7 @@ NK_API int nk_console_height(nk_console* widget);
 #include "nuklear_console_row.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_console_message.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -212,6 +234,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_row.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
+#include "nuklear_console_message.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -547,6 +570,9 @@ NK_API void nk_console_render(nk_console* console) {
                 }
             }
 
+            // Render the active message.
+            nk_console_render_message(console);
+
             // Render all the children
             for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
                 nk_console_render(console->activeParent->children[i]);
@@ -605,6 +631,19 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
     return nk_rect(0, 0, 0, 0);
 }
 
+NK_API void nk_console_free_top(nk_console* console) {
+    if (console == NULL || console->data == NULL) {
+        return;
+    }
+
+    // Free the messages
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    if (data->messages != NULL) {
+        cvector_free(data->messages);
+        data->messages = NULL;
+    }
+}
+
 /**
  * Initialize a new nk_console.
  *
@@ -618,6 +657,12 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
     console->render = nk_console_parent_render;
+
+    nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
+    nk_zero(data, sizeof(nk_console_top_data));
+    console->data = data;
+    console->destroy = nk_console_free_top;
+
     return console;
 }
 
@@ -693,11 +738,31 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
 }
 
 NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads) {
-    if (console == NULL) {
+    nk_console* top = nk_console_get_top(console);
+    if (top == NULL) {
         return;
     }
 
-    console->gamepads = gamepads;
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data == NULL) {
+        return;
+    }
+
+    data->gamepads = gamepads;
+}
+
+NK_API void* nk_console_get_gamepads(nk_console* console) {
+    nk_console* top = nk_console_get_top(console);
+    if (top == NULL) {
+        return NULL;
+    }
+
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data == NULL) {
+        return NULL;
+    }
+    return data->gamepads;
+
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
@@ -712,7 +777,8 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Check gamepads.
     #ifdef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
-        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(console->gamepads, -1, button)) {
+        nk_console_top_data* data = (nk_console_top_data*)console->data;
+        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, button)) {
             return nk_true;
         }
     #endif

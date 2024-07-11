@@ -24,9 +24,10 @@ int main() {
 
         // Update the Nuklear context, along with input
         UpdateNuklear(ctx);
-        nk_gamepad_update(console->gamepads);
 
-        int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
+        nk_gamepad_update(nk_console_get_gamepads(console));
+
+        int flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE;
 
         // Nuklear GUI Code
         if (nk_begin(ctx, "nuklear_console", nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2), flags)) {
