@@ -77,6 +77,7 @@ typedef struct nk_console {
 typedef struct nk_console_top_data {
     struct nk_console_message* messages;
     float messages_default_duration;
+    // TODO: Add a nk_rect for where the messages should appear. `nk_rect messages_bounds;`
 } nk_console_top_data;
 
 // Console

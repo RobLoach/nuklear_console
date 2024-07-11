@@ -5,7 +5,24 @@
 extern "C" {
 #endif
 
+/**
+ * Displays a notification message on the screen.
+ *
+ * This requires ctx->delta_time_seconds to be set within the Nuklear runner.
+ *
+ * @param console The active console system.
+ * @param text The text to display.
+ */
 NK_API void nk_console_show_message(nk_console* console, const char* text);
+
+/**
+ * Renders the messages that are currently set within the console.
+ *
+ * @param console The active console system.
+ *
+ * @internal
+ * @private
+ */
 NK_API void nk_console_render_messages(nk_console* console);
 
 #if defined(__cplusplus)
@@ -69,20 +86,15 @@ NK_API void nk_console_render_message(nk_console* console, nk_console_message* m
         return;
     }
 
-    // TODO: Clean up this logic.
+    // Retrieve style sizes.
+    struct nk_vec2 padding = ctx->style.window.padding;
+    float border = ctx->style.window.border;
+    float text_height = (ctx->style.font->height + padding.y);
 
-    const struct nk_style *style;
-    struct nk_vec2 padding;
+    // Backup the mouse information as we'll be mocking it with a tooltip.
+    struct nk_vec2 mouse_pos = ctx->input.mouse.pos;
 
-    style = &ctx->style;
-    padding = style->window.padding;
-    float border = style->window.border;
-
-    float text_height = (style->font->height + padding.y);
-    int x = ctx->input.mouse.pos.x;
-    int y = ctx->input.mouse.pos.y;
-
-    // Display the tooltip at the bottom of the window, manipulating the mouse position
+    // Display the tooltip at the bottom of the window, by manipulating the mouse position
     struct nk_rect bounds = nk_window_get_bounds(ctx);
     bounds.w -= border;
     ctx->input.mouse.pos.x = bounds.x;
@@ -96,6 +108,7 @@ NK_API void nk_console_render_message(nk_console* console, nk_console_message* m
         ctx->input.mouse.pos.y += (int)((message->duration - data->messages_default_duration + 1.0f) * (text_height + padding.y * 2 + border * 2.0f));
     }
 
+    // Display the tooltip
     if (nk_tooltip_begin(ctx, (float)bounds.w)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_label(ctx, message->text, NK_TEXT_LEFT);
@@ -103,12 +116,13 @@ NK_API void nk_console_render_message(nk_console* console, nk_console_message* m
     }
 
     // Restore the mouse x/y positions.
-    ctx->input.mouse.pos.x = x;
-    ctx->input.mouse.pos.y = y;
+    ctx->input.mouse.pos = mouse_pos;
 }
 
 NK_API void nk_console_render_messages(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
+
+    // The message system depends on ctx->delta_time_seconds.
     if (data->messages == NULL || cvector_size(data->messages) == 0 || console->ctx->delta_time_seconds <= 0.0f) {
         return;
     }
@@ -130,7 +144,8 @@ NK_API void nk_console_render_messages(nk_console* console) {
 	}
 
     if (clear_all) {
-        cvector_clear(data->messages);
+        cvector_free(data->messages);
+        data->messages = NULL;
     }
 }
 
