@@ -40,15 +40,8 @@ typedef enum {
     NK_CONSOLE_TEXTEDIT_TEXT
 } nk_console_widget_type;
 
-enum nk_console_message_type {
-    NK_CONSOLE_MESSAGE_INFO,
-    NK_CONSOLE_MESSAGE_WARNING,
-    NK_CONSOLE_MESSAGE_ERROR,
-};
-
 typedef struct nk_console_message {
     char text[256];
-    enum nk_console_message_type type;
     float duration;
 } nk_console_message;
 

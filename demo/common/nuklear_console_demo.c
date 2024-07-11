@@ -1,3 +1,5 @@
+#include <string.h> // strcmp
+
 #include "../../vendor/Nuklear/demo/common/style.c"
 
 #define NK_GAMEPAD_IMPLEMENTATION
@@ -33,7 +35,7 @@ void theme_changed(struct nk_console* combobox) {
 }
 
 void nk_console_demo_show_message(struct nk_console* button) {
-    nk_console_show_message(button, NK_CONSOLE_MESSAGE_INFO, "This is a message!");
+    nk_console_show_message(button, "This is a message!");
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {

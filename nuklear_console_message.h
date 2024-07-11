@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-NK_API void nk_console_show_message(nk_console* console, enum nk_console_message_type type, const char* text);
+NK_API void nk_console_show_message(nk_console* console, const char* text);
 NK_API void nk_console_render_messages(nk_console* console);
 
 #if defined(__cplusplus)
@@ -22,7 +22,7 @@ NK_API void nk_console_render_messages(nk_console* console);
 extern "C" {
 #endif
 
-NK_API void nk_console_show_message(nk_console* console, enum nk_console_message_type type, const char* text) {
+NK_API void nk_console_show_message(nk_console* console, const char* text) {
     if (console == NULL || text == NULL || text[0] == '\0') {
         return;
     }
@@ -35,7 +35,6 @@ NK_API void nk_console_show_message(nk_console* console, enum nk_console_message
     // Create a new message
     nk_console_message message = {
         .duration = data->messages_default_duration,
-        .type = type,
     };
 
     // Copy the string.
@@ -47,9 +46,12 @@ NK_API void nk_console_show_message(nk_console* console, enum nk_console_message
     }
     message.text[255] = '\0'; // Make sure it's null-terminated
 
+    #ifndef NK_CONSOLE_MESSAGE_DEFAULT_DURATION
+    #define NK_CONSOLE_MESSAGE_DEFAULT_DURATION 4.0f
+    #endif  // NK_CONSOLE_MESSAGE_DEFAULT_DURATION
     // Make sure the starting duration is sane.
     if (data->messages_default_duration <= 0) {
-        data->messages_default_duration = 3.0f;
+        data->messages_default_duration = NK_CONSOLE_MESSAGE_DEFAULT_DURATION;
     }
 
     cvector_push_back(data->messages, message);
@@ -66,24 +68,35 @@ NK_API void nk_console_render_message(nk_console* console, nk_console_message* m
         return;
     }
 
+    // TODO: Clean up this logic.
+
     const struct nk_style *style;
     struct nk_vec2 padding;
 
     style = &ctx->style;
     padding = style->window.padding;
+    float border = style->window.border;
 
     float text_height = (style->font->height + padding.y);
     int x = ctx->input.mouse.pos.x;
     int y = ctx->input.mouse.pos.y;
 
     // Display the tooltip at the bottom of the window, manipulating the mouse position
-    struct nk_rect windowbounds = nk_window_get_bounds(ctx);
-    ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2;
+    struct nk_rect bounds = nk_window_get_bounds(ctx);
+    bounds.w -= border;
+    ctx->input.mouse.pos.x = bounds.x;
+    ctx->input.mouse.pos.y = bounds.y + bounds.h - text_height - padding.y * 2 - border * 2.0f;
 
-    if (nk_tooltip_begin(ctx, (float)windowbounds.w)) {
+    // Animation.
+    if (message->duration <= 1.0f) {
+        ctx->input.mouse.pos.y += (int)((1.0f - message->duration) * (text_height + padding.y * 2 + border * 2.0f));
+    }
+    else if (message->duration >= data->messages_default_duration - 1.0f) {
+        ctx->input.mouse.pos.y += (int)((message->duration - data->messages_default_duration + 1.0f) * (text_height + padding.y * 2 + border * 2.0f));
+    }
+
+    if (nk_tooltip_begin(ctx, (float)bounds.w)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
-        
         nk_label(ctx, message->text, NK_TEXT_LEFT);
         nk_tooltip_end(ctx);
     }
