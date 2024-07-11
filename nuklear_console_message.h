@@ -27,6 +27,13 @@ NK_API void nk_console_show_message(nk_console* console, const char* text);
 extern "C" {
 #endif
 
+#ifndef NK_CONSOLE_MESSAGE_DURATION
+/**
+ * A float determining how many seconds messages should be shown for.
+ */
+#define NK_CONSOLE_MESSAGE_DURATION 4.0f
+#endif  // NK_CONSOLE_MESSAGE_DURATION
+
 NK_API void nk_console_show_message(nk_console* console, const char* text) {
     if (console == NULL || text == NULL || text[0] == '\0') {
         return;
@@ -37,29 +44,20 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
-    #ifndef NK_CONSOLE_MESSAGE_DEFAULT_DURATION
-    #define NK_CONSOLE_MESSAGE_DEFAULT_DURATION 4.0f
-    #endif  // NK_CONSOLE_MESSAGE_DEFAULT_DURATION
-
-    // Make sure the starting duration is sane.
-    if (data->messages_default_duration <= 0) {
-        data->messages_default_duration = NK_CONSOLE_MESSAGE_DEFAULT_DURATION;
-    }
-
-    // Create a new message
+    // Create the new message.
     nk_console_message message = {
-        .duration = data->messages_default_duration,
+        .duration = NK_CONSOLE_MESSAGE_DURATION,
     };
 
     // Copy the string.
-    for (int i = 0; i < 254; i++) {
-        message.text[i] = text[i];
-        if (text[i] == '\0') {
-            break;
-        }
+    int len = nk_strlen(text);
+    if (len > 255) {
+        len = 255;
     }
-    message.text[255] = '\0'; // Make sure it's null-terminated
+    NK_MEMCPY(message.text, text, len);
+    message.text[len] = '\0'; // Make sure it's null-terminated
 
+    // Add the new message to the message queue.
     cvector_push_back(data->messages, message);
 }
 
@@ -79,22 +77,23 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     struct nk_vec2 mouse_pos = ctx->input.mouse.pos;
 
     // Display the tooltip at the bottom of the window, by manipulating the mouse position
-    struct nk_rect bounds = nk_window_get_bounds(ctx);
+    struct nk_rect bounds = data->message_bounds.w == 0 ? nk_window_get_bounds(ctx) : data->message_bounds;
     bounds.w -= border;
     ctx->input.mouse.pos.x = bounds.x;
     ctx->input.mouse.pos.y = bounds.y + bounds.h - text_height - padding.y * 2 - border * 2.0f;
 
-    // Animation, only if delta time is available.
+    // Animations can be applied if delta time is available.
     if (ctx->delta_time_seconds > 0) {
+        // TODO(RobLoach): Apply easing to the message animation.
         if (message->duration <= 1.0f) {
             ctx->input.mouse.pos.y += (int)((1.0f - message->duration) * (text_height + padding.y * 2 + border * 2.0f));
         }
-        else if (message->duration >= data->messages_default_duration - 1.0f) {
-            ctx->input.mouse.pos.y += (int)((message->duration - data->messages_default_duration + 1.0f) * (text_height + padding.y * 2 + border * 2.0f));
+        else if (message->duration >= NK_CONSOLE_MESSAGE_DURATION - 1.0f) {
+            ctx->input.mouse.pos.y += (int)((message->duration - NK_CONSOLE_MESSAGE_DURATION + 1.0f) * (text_height + padding.y * 2 + border * 2.0f));
         }
     }
 
-    // Display the tooltip
+    // Display the tooltip where the mocked mouse is.
     if (nk_tooltip_begin(ctx, (float)bounds.w)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_label(ctx, message->text, NK_TEXT_LEFT);
@@ -136,7 +135,8 @@ NK_API void nk_console_render_message(nk_console* console) {
 	}
 
     if (clear_all) {
-        nk_console_free_messages(console);
+        cvector_free(data->messages);
+        data->messages = NULL;
     }
 }
 

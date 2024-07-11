@@ -76,8 +76,11 @@ typedef struct nk_console {
 
 typedef struct nk_console_top_data {
     struct nk_console_message* messages;
-    float messages_default_duration;
-    // TODO: Add a nk_rect for where the messages should appear. `nk_rect messages_bounds;`
+
+    /**
+     * When set, will determine where messages should appear on the screen.
+     */
+    struct nk_rect message_bounds;
 } nk_console_top_data;
 
 // Console
@@ -108,7 +111,6 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
-NK_API void nk_console_free_messages(nk_console* console);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -622,7 +624,7 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
     return nk_rect(0, 0, 0, 0);
 }
 
-NK_API void nk_console_free_messages(nk_console* console) {
+NK_API void nk_console_free_top(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return;
     }
@@ -652,7 +654,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
-    console->destroy = nk_console_free_messages;
+    console->destroy = nk_console_free_top;
 
     return console;
 }
