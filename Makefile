@@ -1,4 +1,4 @@
-build: glfw raylib sdl
+build: glfw raylib sdl pntr
 
 test: clean test-sdl
 

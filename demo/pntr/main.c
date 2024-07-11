@@ -46,7 +46,7 @@ bool Update(pntr_app* app, pntr_image* screen) {
     pntr_nuklear_update(ctx, app);
 
     // Update the gamepad state
-    nk_gamepad_update(console->gamepads);
+    nk_gamepad_update(nk_console_get_gamepads(console));
 
     // Clear the background
     pntr_clear_background(screen, PNTR_BLACK);

@@ -24,7 +24,8 @@ int main() {
 
         // Update the Nuklear context, along with input
         UpdateNuklear(ctx);
-        nk_gamepad_update(console->gamepads);
+
+        nk_gamepad_update(nk_console_get_gamepads(console));
 
         int flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE;
 

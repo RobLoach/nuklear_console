@@ -21,7 +21,7 @@ static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
-static int message_count = 1;
+static int message_count = 0;
 
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
@@ -38,7 +38,7 @@ void theme_changed(struct nk_console* combobox) {
 
 void nk_console_demo_show_message(struct nk_console* button) {
     char message[128];
-    snprintf(message, 128, "This is a message! #%d", message_count++);
+    snprintf(message, 128, "This is message #%d!", ++message_count);
     nk_console_show_message(button, message);
 }
 
@@ -210,6 +210,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
-    nk_gamepad_free(console->gamepads);
+    nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }

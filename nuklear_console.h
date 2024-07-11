@@ -70,8 +70,6 @@ typedef struct nk_console {
     nk_console_event onchange; /** Invoked when there is a change in the value for the widget. */
     nk_console_render_event render; /** Render the widget. */
     nk_console_event destroy; /** Destroy the widget. */
-
-    void* gamepads;
 } nk_console;
 
 typedef struct nk_console_top_data {
@@ -81,6 +79,14 @@ typedef struct nk_console_top_data {
      * When set, will determine where messages should appear on the screen.
      */
     struct nk_rect message_bounds;
+
+    /**
+     * The gamepad system to use for gamepad input.
+     *
+     * @see nk_console_get_gamepads()
+     * @see nk_console_set_gamepads()
+     */
+    void* gamepads;
 } nk_console_top_data;
 
 // Console
@@ -101,6 +107,7 @@ NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads);
+NK_API void* nk_console_get_gamepads(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
@@ -731,11 +738,31 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
 }
 
 NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads) {
-    if (console == NULL) {
+    nk_console* top = nk_console_get_top(console);
+    if (top == NULL) {
         return;
     }
 
-    console->gamepads = gamepads;
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data == NULL) {
+        return;
+    }
+
+    data->gamepads = gamepads;
+}
+
+NK_API void* nk_console_get_gamepads(nk_console* console) {
+    nk_console* top = nk_console_get_top(console);
+    if (top == NULL) {
+        return NULL;
+    }
+
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data == NULL) {
+        return NULL;
+    }
+    return data->gamepads;
+
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
@@ -750,7 +777,8 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Check gamepads.
     #ifdef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
-        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(console->gamepads, -1, button)) {
+        nk_console_top_data* data = (nk_console_top_data*)console->data;
+        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, button)) {
             return nk_true;
         }
     #endif
