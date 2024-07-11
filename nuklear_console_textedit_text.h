@@ -81,7 +81,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
-    nk_console* textedit_text = nk_console_init(parent->ctx);
+    nk_console* textedit_text = nk_console_label(parent, NULL);
     textedit_text->type = NK_CONSOLE_TEXTEDIT_TEXT;
     textedit_text->parent = parent;
     textedit_text->alignment = NK_TEXT_LEFT;

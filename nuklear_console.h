@@ -40,6 +40,18 @@ typedef enum {
     NK_CONSOLE_TEXTEDIT_TEXT
 } nk_console_widget_type;
 
+enum nk_console_message_type {
+    NK_CONSOLE_MESSAGE_INFO,
+    NK_CONSOLE_MESSAGE_WARNING,
+    NK_CONSOLE_MESSAGE_ERROR,
+};
+
+typedef struct nk_console_message {
+    char text[256];
+    enum nk_console_message_type type;
+    float duration;
+} nk_console_message;
+
 typedef struct nk_console {
     nk_console_widget_type type;
     void* user_data;
@@ -68,6 +80,11 @@ typedef struct nk_console {
 
     void* gamepads;
 } nk_console;
+
+typedef struct nk_console_top_data {
+    struct nk_console_message* messages;
+    float messages_default_duration;
+} nk_console_top_data;
 
 // Console
 NK_API nk_console* nk_console_init(struct nk_context* context);
@@ -108,6 +125,7 @@ NK_API int nk_console_height(nk_console* widget);
 #include "nuklear_console_row.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_console_message.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -212,6 +230,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_row.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
+#include "nuklear_console_message.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -547,6 +566,9 @@ NK_API void nk_console_render(nk_console* console) {
                 }
             }
 
+            // Render all the messages.
+            nk_console_render_messages(console);
+
             // Render all the children
             for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
                 nk_console_render(console->activeParent->children[i]);
@@ -618,6 +640,12 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
     console->render = nk_console_parent_render;
+
+    nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
+    nk_zero(data, sizeof(nk_console_top_data));
+    console->data = data;
+    cvector_init(data->messages, 3, NULL);
+
     return console;
 }
 

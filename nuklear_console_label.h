@@ -60,7 +60,15 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
-    nk_console* label = nk_console_init(parent->ctx);
+    if (parent == NULL) {
+        return NULL;
+    }
+
+    nk_handle handle;
+    nk_console* label = nk_console_malloc(handle, NULL, sizeof(nk_console));
+    nk_zero(label, sizeof(nk_console));
+    label->ctx = parent->ctx;
+    label->alignment = NK_TEXT_ALIGN_CENTERED;
     label->type = NK_CONSOLE_LABEL;
     label->label = text;
     label->parent = parent;
