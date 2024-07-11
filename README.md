@@ -77,6 +77,7 @@ nk_console* nk_console_slider_float(nk_console* parent, const char* label, float
 nk_console* nk_console_row_begin(nk_console* parent);
 void nk_console_row_end(nk_console* console);
 nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
+void nk_console_show_message(nk_console* console, const char* text);
 
 // Utilities
 void nk_console_button_back(nk_console* button);

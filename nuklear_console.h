@@ -108,6 +108,7 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
+NK_API void nk_console_free_messages(nk_console* console);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -560,8 +561,8 @@ NK_API void nk_console_render(nk_console* console) {
                 }
             }
 
-            // Render all the messages.
-            nk_console_render_messages(console);
+            // Render the active message.
+            nk_console_render_message(console);
 
             // Render all the children
             for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
@@ -621,7 +622,7 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
     return nk_rect(0, 0, 0, 0);
 }
 
-static void nk_console_top_free(nk_console* console) {
+NK_API void nk_console_free_messages(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return;
     }
@@ -651,7 +652,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
-    console->destroy = nk_console_top_free;
+    console->destroy = nk_console_free_messages;
 
     return console;
 }

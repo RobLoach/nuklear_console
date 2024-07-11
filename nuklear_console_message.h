@@ -8,22 +8,10 @@ extern "C" {
 /**
  * Displays a notification message on the screen.
  *
- * This requires ctx->delta_time_seconds to be set within the Nuklear runner.
- *
  * @param console The active console system.
  * @param text The text to display.
  */
 NK_API void nk_console_show_message(nk_console* console, const char* text);
-
-/**
- * Renders the messages that are currently set within the console.
- *
- * @param console The active console system.
- *
- * @internal
- * @private
- */
-NK_API void nk_console_render_messages(nk_console* console);
 
 #if defined(__cplusplus)
 }
@@ -75,18 +63,14 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     cvector_push_back(data->messages, message);
 }
 
-NK_API void nk_console_render_message(nk_console* console, nk_console_message* message) {
-    if (message == NULL) {
-        return;
-    }
-
-    nk_console_top_data* data = (nk_console_top_data*)console->data;
-    struct nk_context* ctx = console->ctx;
-    if (data == NULL) {
+NK_API void nk_console_message_render(nk_console* console, nk_console_message* message) {
+    if (message == NULL || console->data == NULL) {
         return;
     }
 
     // Retrieve style sizes.
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    struct nk_context* ctx = console->ctx;
     struct nk_vec2 padding = ctx->style.window.padding;
     float border = ctx->style.window.border;
     float text_height = (ctx->style.font->height + padding.y);
@@ -100,12 +84,14 @@ NK_API void nk_console_render_message(nk_console* console, nk_console_message* m
     ctx->input.mouse.pos.x = bounds.x;
     ctx->input.mouse.pos.y = bounds.y + bounds.h - text_height - padding.y * 2 - border * 2.0f;
 
-    // Animation.
-    if (message->duration <= 1.0f) {
-        ctx->input.mouse.pos.y += (int)((1.0f - message->duration) * (text_height + padding.y * 2 + border * 2.0f));
-    }
-    else if (message->duration >= data->messages_default_duration - 1.0f) {
-        ctx->input.mouse.pos.y += (int)((message->duration - data->messages_default_duration + 1.0f) * (text_height + padding.y * 2 + border * 2.0f));
+    // Animation, only if delta time is available.
+    if (ctx->delta_time_seconds > 0) {
+        if (message->duration <= 1.0f) {
+            ctx->input.mouse.pos.y += (int)((1.0f - message->duration) * (text_height + padding.y * 2 + border * 2.0f));
+        }
+        else if (message->duration >= data->messages_default_duration - 1.0f) {
+            ctx->input.mouse.pos.y += (int)((message->duration - data->messages_default_duration + 1.0f) * (text_height + padding.y * 2 + border * 2.0f));
+        }
     }
 
     // Display the tooltip
@@ -119,33 +105,38 @@ NK_API void nk_console_render_message(nk_console* console, nk_console_message* m
     ctx->input.mouse.pos = mouse_pos;
 }
 
-NK_API void nk_console_render_messages(nk_console* console) {
+NK_API void nk_console_render_message(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-
-    // The message system depends on ctx->delta_time_seconds.
-    if (data->messages == NULL || cvector_size(data->messages) == 0 || console->ctx->delta_time_seconds <= 0.0f) {
+    if (data->messages == NULL || cvector_size(data->messages) == 0) {
         return;
     }
 
-    nk_console_message* it;
+    // Loop through all messages and display the first one.
     nk_bool clear_all = nk_true;
-
     nk_console_message* end = cvector_end(data->messages);
-    for (it = cvector_begin(data->messages); it != end; it++) {
+    for (nk_console_message* it = cvector_begin(data->messages); it != end; it++) {
+        // Skip messages that have already been shown.
         if (it->duration <= 0.0f) {
             continue;
         }
 
-        it->duration -= console->ctx->delta_time_seconds;
+        // Show only one message at a time.
+        if (console->ctx->delta_time_seconds > 0) {
+            it->duration -= console->ctx->delta_time_seconds;
+        }
+        // If animations arn't an option, allow dismissing the message.
+        else if (nk_console_button_pushed(console, NK_GAMEPAD_BUTTON_B)) {
+            console->input_processed = nk_true;
+            it->duration = 0.0f;
+        }
 
-        nk_console_render_message(console, it);
         clear_all = nk_false;
+        nk_console_message_render(console, it);
         break;
 	}
 
     if (clear_all) {
-        cvector_free(data->messages);
-        data->messages = NULL;
+        nk_console_free_messages(console);
     }
 }
 
