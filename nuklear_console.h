@@ -620,6 +620,19 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
     return nk_rect(0, 0, 0, 0);
 }
 
+static void nk_console_top_free(nk_console* console) {
+    if (console == NULL || console->data == NULL) {
+        return;
+    }
+
+    // Free the messages
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    if (data->messages != NULL) {
+        cvector_free(data->messages);
+        data->messages = NULL;
+    }
+}
+
 /**
  * Initialize a new nk_console.
  *
@@ -637,7 +650,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
-    cvector_init(data->messages, 3, NULL);
+    console->destroy = nk_console_top_free;
 
     return console;
 }

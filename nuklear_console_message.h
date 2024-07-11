@@ -130,8 +130,7 @@ NK_API void nk_console_render_messages(nk_console* console) {
 	}
 
     if (clear_all) {
-        cvector_free(data->messages);
-        data->messages = NULL;
+        cvector_clear(data->messages);
     }
 }
 
