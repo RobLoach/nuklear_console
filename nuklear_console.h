@@ -37,7 +37,8 @@ typedef enum {
     NK_CONSOLE_SLIDER_FLOAT,
     NK_CONSOLE_ROW,
     NK_CONSOLE_TEXTEDIT,
-    NK_CONSOLE_TEXTEDIT_TEXT
+    NK_CONSOLE_TEXTEDIT_TEXT,
+    NK_CONSOLE_FILE
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -130,6 +131,7 @@ NK_API int nk_console_height(nk_console* widget);
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_message.h"
+#include "nuklear_console_file.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -235,6 +237,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_message.h"
+#include "nuklear_console_file.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -317,6 +320,7 @@ NK_API nk_console* nk_console_get_top(nk_console* widget) {
     while (widget->parent != NULL) {
         widget = widget->parent;
     }
+
     return widget;
 }
 
@@ -550,6 +554,9 @@ NK_API void nk_console_render(nk_console* console) {
             nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console));
         }
 
+        // Render the active message.
+        nk_console_render_message(console);
+
         // Render the active parent.
         if (console->activeParent != NULL && console->activeParent->children != NULL) {
             // Make sure there's an active widget selected.
@@ -569,9 +576,6 @@ NK_API void nk_console_render(nk_console* console) {
                     nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
                 }
             }
-
-            // Render the active message.
-            nk_console_render_message(console);
 
             // Render all the children
             for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {

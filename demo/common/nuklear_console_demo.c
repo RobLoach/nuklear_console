@@ -22,6 +22,8 @@ static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
 static int message_count = 0;
+static char file_path_buffer[1024] = {0};
+static int file_path_buffer_size = 1024;
 
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
@@ -53,6 +55,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console_label(newgame, "This would start a new game!");
         nk_console_button_onclick(newgame, "Back", nk_console_button_back);
     }
+
+    // File
+    nk_console_file(console, "Select File", file_path_buffer, file_path_buffer_size);
 
     // Widgets
     nk_console* widgets = nk_console_button(console, "Widgets");
@@ -137,6 +142,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Messages
         nk_console_button_onclick(widgets, "Show Message", nk_console_demo_show_message);
 
+        // Back Button
         nk_console_button_set_symbol(
             nk_console_button_onclick(widgets, "Back", nk_console_button_back),
             NK_SYMBOL_TRIANGLE_LEFT);
