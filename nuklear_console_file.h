@@ -86,7 +86,12 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
     int swap_columns = console->columns;
     const char* swap_label = console->label;
     console->columns = 0;
-    console->label = nk_console_file_basename(data->file_path_buffer);
+    if (data->file_path_buffer != NULL && data->file_path_buffer[0] != '\0') {
+        console->label = nk_console_file_basename(data->file_path_buffer);
+    }
+    else {
+        console->label = "[Select a File]";
+    }
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;
     console->label = swap_label;
@@ -166,6 +171,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
             nk_console_set_active_parent(file);
         break;
         case NK_SYMBOL_CIRCLE_SOLID: // File
+        {
             // Copy out the string.
             int desired_length = nk_strlen(data->directory) + 1;
             if (desired_length >= data->file_path_buffer_size) {
@@ -176,6 +182,10 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
 
             // Now that we selected a file, we can exit.
             nk_console_set_active_parent(file->parent);
+        }
+        break;
+        default:
+            nk_console_show_message(file, "Unknown file type.");
         break;
     }
 }
@@ -258,7 +268,7 @@ static void nk_console_file_enumerate_files_tinydir(nk_console* parent, const ch
         return;
     }
 
-    for (int i = 0; i < dir->n_files; i++) {
+    for (size_t i = 0; i < dir->n_files; i++) {
         tinydir_file file;
         tinydir_readfile_n(dir, &file, i);
         nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true);
