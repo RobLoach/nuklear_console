@@ -14,17 +14,30 @@ extern "C" {
 #endif  // NK_CONSOLE_FILE_PATH_MAX
 
 typedef struct nk_console_file_data {
-    nk_console_button_data button; // Inherited from button.
-    char* file_path_buffer;
-    int file_path_buffer_size;
-    char directory[NK_CONSOLE_FILE_PATH_MAX];
-    void* file_user_data;
+    nk_console_button_data button; /** Inherited from Button */
+    char* file_path_buffer; /** The string buffer for the chosen file path. */
+    int file_path_buffer_size; /** The size of the buffer. */
+    char directory[NK_CONSOLE_FILE_PATH_MAX]; /** When selecting a file, this is the current directory. */
+    void* file_user_data; /** Custom user data for the file system. */
 } nk_console_file_data;
 
+/**
+ * Creates a file widget that allows the user to select a file.
+ *
+ * @param parent The parent widget.
+ * @param label The label for the file widget. For example: "Select a file".
+ * @param file_path_buffer The buffer to store the file path.
+ * @param file_path_buffer_size The size of the buffer.
+ */
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
 NK_API struct nk_rect nk_console_file_render(nk_console* widget);
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data);
 NK_API void* nk_console_file_get_file_user_data(nk_console* file);
+
+/**
+ * Refreshes the file widget to display the contents of the current directory.
+ */
+NK_API void nk_console_file_refresh(nk_console* widget);
 
 #if defined(__cplusplus)
 }
@@ -40,12 +53,12 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
 extern "C" {
 #endif
 
-NK_API void nk_console_file_refresh(nk_console* widget);
-
 static const char* nk_console_file_basename(const char* path) {
     if (path == NULL) {
         return NULL;
     }
+
+    // TODO: Ensure UTF-8 compatibility.
     int len = nk_strlen(path);
     for (int i = len - 1; i > 0; i--) {
         if(path[i] == '\\' || path[i] == '/' ){
@@ -121,7 +134,7 @@ static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
 /**
  * Free the individual file entry buttons. This clears the label.
  */
-NK_API void nk_cosnole_file_free_entry(nk_console* button) {
+NK_API void nk_console_file_free_entry(nk_console* button) {
     if (button == NULL) {
         return;
     }
@@ -161,30 +174,33 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
     }
 
     // Concatenate the button label to the directory.
+    // TODO: file: Resolve the path properly, so the paths don't recurse. For example: folder/../folder
+    // TODO: file: Add UTF-8 support.
     NK_MEMCPY(data->directory + len, (void*)button->label, nk_strlen(button->label) + 1);
 
     enum nk_symbol_type symbol = nk_console_button_get_symbol(button);
     switch (symbol) {
+        case NK_SYMBOL_TRIANGLE_LEFT: // Back
         case NK_SYMBOL_TRIANGLE_RIGHT: // Folder
-            nk_console_file_refresh(file);
             nk_console_set_active_parent(file);
+            nk_console_file_refresh(file);
         break;
-        case NK_SYMBOL_CIRCLE_SOLID: // File
+        default:
         {
-            // Copy out the string.
-            int desired_length = nk_strlen(data->directory) + 1;
+            // Copy the string to the file buffer.
+            // TODO: Ensure UTF-8 compatibility.
+            int desired_length = nk_strlen(data->directory);
             if (desired_length >= data->file_path_buffer_size) {
-                desired_length = data->file_path_buffer_size - 1;
+                NK_ASSERT(0); // File path is too long
             }
-            NK_MEMCPY(data->file_path_buffer, data->directory, desired_length);
-            data->file_path_buffer[desired_length] = '\0';
+            else {
+                NK_MEMCPY(data->file_path_buffer, data->directory, desired_length);
+                data->file_path_buffer[desired_length] = '\0';
+            }
 
             // Now that we selected a file, we can exit.
             nk_console_set_active_parent(file->parent);
         }
-        break;
-        default:
-            nk_console_show_message(file, "Unknown file type.");
         break;
     }
 }
@@ -203,16 +219,24 @@ NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_b
 
     // Add the button.
     nk_console* button = nk_console_button(parent, NULL);
-    button->destroy = nk_cosnole_file_free_entry;
 
     // Copy the path for the Label
     button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(char) * (len + 1));
+    button->destroy = nk_console_file_free_entry;
     char* label = (char*)button->label;
     NK_MEMCPY(label, path, len);
     label[len] = '\0';
 
     // Symbol
-    nk_console_button_set_symbol(button, is_directory == nk_true ? NK_SYMBOL_TRIANGLE_RIGHT : NK_SYMBOL_CIRCLE_SOLID);
+    if (is_directory == nk_true) {
+        // Parent Directory
+        if (len == 2 && path[0] == '.' && path[1] == '.') {
+            nk_console_button_set_symbol(button, NK_SYMBOL_TRIANGLE_LEFT);
+        }
+        else {
+            nk_console_button_set_symbol(button, NK_SYMBOL_TRIANGLE_RIGHT);
+        }
+    }
 
     // Event
     nk_console_button_set_onclick(button, nk_console_file_entry_onclick);
@@ -220,6 +244,8 @@ NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_b
 
 // TODO: Allow disabling tinydir
 #ifndef NK_CONSOLE_FILE_ENUMERATE_FILES
+
+#ifdef NK_CONSOLE_ENABLE_TINYDIR
 
 #ifndef NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_H
 #define NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_H "vendor/tinydir/tinydir.h"
@@ -237,6 +263,7 @@ static void nk_console_file_destroy_tinydir(nk_console* console) {
         return;
     }
 
+    // Clear the tinydir data.
     tinydir_close((tinydir_dir*)file_user_data);
     nk_console_mfree(nk_handle_id(0), file_user_data);
     nk_console_file_set_file_user_data(console, NULL);
@@ -250,10 +277,7 @@ static void nk_console_file_enumerate_files_tinydir(nk_console* parent, const ch
         return;
     }
 
-    // Make sure the destructor is in place.
-    parent->destroy = nk_console_file_destroy_tinydir;
-
-    // Initialize the tinydir memory.
+    // Initialize the tinydir memory if needed.
     tinydir_dir* dir = (tinydir_dir*)nk_console_file_get_file_user_data(parent);
     if (dir == NULL) {
         dir = NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(tinydir_dir));
@@ -261,12 +285,21 @@ static void nk_console_file_enumerate_files_tinydir(nk_console* parent, const ch
             return;
         }
         nk_console_file_set_file_user_data(parent, dir);
+
+        // Use the destructor to close tinydir.
+        parent->destroy = nk_console_file_destroy_tinydir;
+    }
+    else {
+        // Since tinydir exists already, close the active directory.
+        tinydir_close(dir);
     }
 
+    // Open the new directory
     if (tinydir_open_sorted(dir, directory) == -1) {
         return;
     }
 
+    // Iterate through the files and add each entry.
     for (size_t i = 0; i < dir->n_files; i++) {
         tinydir_file file;
         tinydir_readfile_n(dir, &file, i);
@@ -274,7 +307,23 @@ static void nk_console_file_enumerate_files_tinydir(nk_console* parent, const ch
     }
 }
 #define NK_CONSOLE_FILE_ENUMERATE_FILES nk_console_file_enumerate_files_tinydir
-#endif
+
+#else  // NK_CONSOLE_ENABLE_TINYDIR
+
+static void nk_console_file_enumerate_files_diabled(nk_console* parent, const char* directory) {
+    (void)directory;
+
+    // Requires NK_CONSOLE_ENABLE_TINYDIR or another file system library.
+    nk_console_show_message(parent, "File system not available.");
+    parent->disabled = nk_true;
+    nk_console_button_back(parent);
+}
+
+#define NK_CONSOLE_FILE_ENUMERATE_FILES nk_console_file_enumerate_files_diabled
+
+#endif  // NK_CONSOLE_ENABLE_TINYDIR
+
+#endif  // NK_CONSOLE_FILE_ENUMERATE_FILES
 
 /**
  * Gets the directory from a given file path.
@@ -303,14 +352,16 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
 
+    // Clear out all the current entries.
     nk_console_free_children(widget);
 
-    // Back Button
+    // Add the back/cancel button
     nk_console_button_onclick(widget, "Cancel", nk_console_button_back);
 
     // Active directory label
-    nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;;
+    nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
 
+    // Iterate through the files in the directory, and add them as entries.
     NK_CONSOLE_FILE_ENUMERATE_FILES(widget, data->directory);
 }
 
@@ -339,8 +390,8 @@ static void nk_console_file_main_click(nk_console* button) {
         data->directory[1] = '\0';
     }
 
-    nk_console_file_refresh(file);
     nk_console_set_active_parent(file);
+    nk_console_file_refresh(file);
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
