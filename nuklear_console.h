@@ -132,6 +132,7 @@ NK_API int nk_console_height(nk_console* widget);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_file.h"
+#include "nuklear_console_file_system.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -237,6 +238,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_message.h"
+#include "nuklear_console_file_system.h"
 #include "nuklear_console_file.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {

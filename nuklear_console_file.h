@@ -255,87 +255,6 @@ NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_b
 
 }
 
-// TODO: Allow disabling tinydir
-#ifndef NK_CONSOLE_FILE_ADD_FILES
-#ifdef NK_CONSOLE_ENABLE_TINYDIR
-#ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
-#define NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H "vendor/tinydir/tinydir.h"
-#endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
-#ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
-#include NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
-#endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
-
-/**
- * Destroy callback; Clear the tinydir memory.
- */
-static void nk_console_file_destroy_tinydir(nk_console* console) {
-    void* file_user_data = nk_console_file_get_file_user_data(console);
-    if (file_user_data == NULL) {
-        return;
-    }
-
-    // Clear the tinydir data.
-    tinydir_close((tinydir_dir*)file_user_data);
-    nk_console_mfree(nk_handle_id(0), file_user_data);
-    nk_console_file_set_file_user_data(console, NULL);
-}
-
-/**
- * Iterate through the files in the given directory, and add the contents  with nk_console_file_add_directory and nk_console_file_add_file.
- */
-static void nk_console_file_add_files_tinydir(nk_console* parent, const char* directory) {
-    if (parent == NULL || directory == NULL) {
-        return;
-    }
-
-    // Initialize the tinydir memory if needed.
-    tinydir_dir* dir = (tinydir_dir*)nk_console_file_get_file_user_data(parent);
-    if (dir == NULL) {
-        dir = NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(tinydir_dir));
-        if (dir == NULL) {
-            return;
-        }
-        nk_console_file_set_file_user_data(parent, dir);
-
-        // Use the destructor to close tinydir.
-        parent->destroy = nk_console_file_destroy_tinydir;
-    }
-    else {
-        // Since tinydir exists already, close the active directory.
-        tinydir_close(dir);
-    }
-
-    // Open the new directory
-    if (tinydir_open_sorted(dir, directory) == -1) {
-        return;
-    }
-
-    // Iterate through the files and add each entry.
-    for (size_t i = 0; i < dir->n_files; i++) {
-        tinydir_file file;
-        tinydir_readfile_n(dir, &file, i);
-        nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true);
-    }
-}
-#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
-
-#else  // NK_CONSOLE_ENABLE_TINYDIR
-
-static void nk_console_file_add_files_diabled(nk_console* parent, const char* directory) {
-    NK_UNUSED(directory);
-    if (parent == NULL) {
-        return;
-    }
-
-    // Requires NK_CONSOLE_ENABLE_TINYDIR or another file system library.
-    nk_console_show_message(parent, "Error: File system not available.");
-    parent->disabled = nk_true;
-    nk_console_button_back(parent);
-}
-#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_diabled
-
-#endif  // NK_CONSOLE_ENABLE_TINYDIR
-#endif  // NK_CONSOLE_FILE_ADD_FILES
 
 /**
  * Gets the length of the directory string of the given file path.
@@ -376,6 +295,7 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
     // Add the parent directory button
     nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", nk_console_file_entry_onclick);
     nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
+    nk_console_set_active_widget(parent_directory_button);
 
     // Iterate through the files in the directory, and add them as entries.
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);

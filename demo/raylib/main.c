@@ -1,3 +1,5 @@
+#include "raylib.h"
+
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
 // TODO: Switch to Nuklear's allocator system.
@@ -5,40 +7,6 @@
 #include "raylib-nuklear.h"
 
 #include "../../nuklear_console.h"
-
-// File System (optional)
-void nk_console_file_destroy_raylib(nk_console* console) {
-    FilePathList* list = (FilePathList*)nk_console_file_get_file_user_data(console);
-    if (list != NULL) {
-        // Clear the directory entries.
-        UnloadDirectoryFiles(*list);
-
-        // Clear our the FilePathList data.
-        MemFree(list);
-    }
-}
-#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
-
-// Updates the list of files when selecting a file.
-void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
-    FilePathList* list = nk_console_file_get_file_user_data(console);
-    if (list == NULL) {
-        list = (FilePathList*)MemAlloc(sizeof(FilePathList));
-        nk_console_file_set_file_user_data(console, (void*)list);
-        console->destroy = nk_console_file_destroy_raylib;
-    }
-    else {
-        UnloadDirectoryFiles(*list);
-    }
-
-    TraceLog(LOG_INFO, "Loading files from directory: %s", path);
-    FilePathList filePathList = LoadDirectoryFiles(path);
-    for (int i = 0; i < filePathList.count; i++) {
-        TraceLog(LOG_INFO, "  %s", filePathList.paths[i]);
-        nk_console_file_add_entry(console, filePathList.paths[i], DirectoryExists(filePathList.paths[i]));
-    }
-    *list = filePathList;
-}
 
 #include "../common/nuklear_console_demo.c"
 
