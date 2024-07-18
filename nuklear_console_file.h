@@ -23,7 +23,6 @@ typedef struct nk_console_file_data {
 
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
 NK_API struct nk_rect nk_console_file_render(nk_console* widget);
-
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data);
 NK_API void* nk_console_file_get_file_user_data(nk_console* file);
 
@@ -308,8 +307,6 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
 
     // Back Button
     nk_console_button_onclick(widget, "Cancel", nk_console_button_back);
-
-    // TODO: Replace ".." with the parent directory.
 
     // Active directory label
     nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;;
