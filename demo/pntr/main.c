@@ -14,6 +14,7 @@
 #define WINDOW_WIDTH 400
 #define WINDOW_HEIGHT 300
 
+#define NK_CONSOLE_ENABLE_TINYDIR
 #include "../common/nuklear_console_demo.c"
 
 typedef struct AppData {

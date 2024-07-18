@@ -220,7 +220,7 @@ NK_API void nk_console_button_back(nk_console* button) {
         parent = parent->parent;
     }
     if (parent != NULL) {
-        top->activeParent = parent;
+        nk_console_set_active_parent(parent);
     }
     else {
         top->activeParent = NULL;

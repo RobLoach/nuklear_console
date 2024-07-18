@@ -37,6 +37,7 @@
  *
  * ===============================================================*/
 
+#define NK_CONSOLE_ENABLE_TINYDIR
 #include "../common/nuklear_console_demo.c"
 
 

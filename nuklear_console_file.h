@@ -35,6 +35,11 @@ NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data
 NK_API void* nk_console_file_get_file_user_data(nk_console* file);
 
 /**
+ * Adds a file entry to the file widget.
+ */
+NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
+
+/**
  * Refreshes the file widget to display the contents of the current directory.
  */
 NK_API void nk_console_file_refresh(nk_console* widget);
@@ -53,6 +58,9 @@ NK_API void nk_console_file_refresh(nk_console* widget);
 extern "C" {
 #endif
 
+/**
+ * Gets the base name of a file path.
+ */
 static const char* nk_console_file_basename(const char* path) {
     if (path == NULL) {
         return NULL;
@@ -66,6 +74,7 @@ static const char* nk_console_file_basename(const char* path) {
             break;
         }
     }
+
     return path;
 }
 
@@ -216,43 +225,45 @@ NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_b
     if (len == 1 && path[0] == '.') {
         return;
     }
+    else if (len == 2 && path[0] == '.' && path[1] == '.') {
+        // Ignore the parent directory.
+        return;
+    }
 
     // Add the button.
     nk_console* button = nk_console_button(parent, NULL);
 
     // Copy the path for the Label
+    // TODO: file: Ensure UTF-8 compatibility.
     button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(char) * (len + 1));
-    button->destroy = nk_console_file_free_entry;
+    button->destroy = nk_console_file_free_entry; // Use the button destructor to clear the label data.
     char* label = (char*)button->label;
-    NK_MEMCPY(label, path, len);
-    label[len] = '\0';
+
+    // Use the base name as the label.
+    const char* basename = nk_console_file_basename(path);
+    int basename_len = nk_strlen(basename);
+    NK_MEMCPY(label, basename, basename_len);
+    label[basename_len] = '\0';
 
     // Symbol
     if (is_directory == nk_true) {
-        // Parent Directory
-        if (len == 2 && path[0] == '.' && path[1] == '.') {
-            nk_console_button_set_symbol(button, NK_SYMBOL_TRIANGLE_LEFT);
-        }
-        else {
-            nk_console_button_set_symbol(button, NK_SYMBOL_TRIANGLE_RIGHT);
-        }
+        nk_console_button_set_symbol(button, NK_SYMBOL_TRIANGLE_RIGHT);
     }
 
     // Event
     nk_console_button_set_onclick(button, nk_console_file_entry_onclick);
+
 }
 
 // TODO: Allow disabling tinydir
-#ifndef NK_CONSOLE_FILE_ENUMERATE_FILES
-
+#ifndef NK_CONSOLE_FILE_ADD_FILES
 #ifdef NK_CONSOLE_ENABLE_TINYDIR
-
-#ifndef NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_H
-#define NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_H "vendor/tinydir/tinydir.h"
-#endif  // NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_H
-#ifndef NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_SKIP
-#include NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_H
-#endif  // NK_CONSOLE_FILE_ENUMERATE_FILES_TINYDIR_SKIP
+#ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
+#define NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H "vendor/tinydir/tinydir.h"
+#endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
+#ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
+#include NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
+#endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
 
 /**
  * Destroy callback; Clear the tinydir memory.
@@ -272,7 +283,7 @@ static void nk_console_file_destroy_tinydir(nk_console* console) {
 /**
  * Iterate through the files in the given directory, and add the contents  with nk_console_file_add_directory and nk_console_file_add_file.
  */
-static void nk_console_file_enumerate_files_tinydir(nk_console* parent, const char* directory) {
+static void nk_console_file_add_files_tinydir(nk_console* parent, const char* directory) {
     if (parent == NULL || directory == NULL) {
         return;
     }
@@ -306,27 +317,28 @@ static void nk_console_file_enumerate_files_tinydir(nk_console* parent, const ch
         nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true);
     }
 }
-#define NK_CONSOLE_FILE_ENUMERATE_FILES nk_console_file_enumerate_files_tinydir
+#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
 
 #else  // NK_CONSOLE_ENABLE_TINYDIR
 
-static void nk_console_file_enumerate_files_diabled(nk_console* parent, const char* directory) {
-    (void)directory;
+static void nk_console_file_add_files_diabled(nk_console* parent, const char* directory) {
+    NK_UNUSED(directory);
+    if (parent == NULL) {
+        return;
+    }
 
     // Requires NK_CONSOLE_ENABLE_TINYDIR or another file system library.
-    nk_console_show_message(parent, "File system not available.");
+    nk_console_show_message(parent, "Error: File system not available.");
     parent->disabled = nk_true;
     nk_console_button_back(parent);
 }
-
-#define NK_CONSOLE_FILE_ENUMERATE_FILES nk_console_file_enumerate_files_diabled
+#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_diabled
 
 #endif  // NK_CONSOLE_ENABLE_TINYDIR
-
-#endif  // NK_CONSOLE_FILE_ENUMERATE_FILES
+#endif  // NK_CONSOLE_FILE_ADD_FILES
 
 /**
- * Gets the directory from a given file path.
+ * Gets the length of the directory string of the given file path.
  */
 static int nk_console_file_get_directory_len(const char* file_path) {
     if (file_path == NULL) {
@@ -361,8 +373,12 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
     // Active directory label
     nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
 
+    // Add the parent directory button
+    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", nk_console_file_entry_onclick);
+    nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
+
     // Iterate through the files in the directory, and add them as entries.
-    NK_CONSOLE_FILE_ENUMERATE_FILES(widget, data->directory);
+    NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
 }
 
 /**
@@ -385,7 +401,7 @@ static void nk_console_file_main_click(nk_console* button) {
     data->directory[directory_len] = '\0';
 
     if (nk_strlen(data->directory) == 0) {
-        // TODO: Make get current working directory function.
+        // TODO: file: Make get current working directory function.
         data->directory[0] = '.';
         data->directory[1] = '\0';
     }
