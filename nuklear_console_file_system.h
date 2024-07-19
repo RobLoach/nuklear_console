@@ -1,3 +1,13 @@
+/**
+ * File System for nuklear_console.
+ *
+ * Configuration:
+ * - NK_CONSOLE_FILE_ADD_FILES: Callback which is used to add files to the file widget, matching the signature of nk_console_file_add_files_tinydir().
+ * - NK_CONSOLE_ENABLE_TINYDIR: Use the tinydir library to list files in a directory. https://github.com/cxong/tinydir
+ * - NK_CONSOLE_ENABLE_RAYLIB or RAYLIB_VERSION: When defined, will use raylib to enumerate the files. https://github.com/RobLoach/raylib-nuklear
+ * - When no file system is enabled, clicking on the Select File button will show an error message.
+ */
+
 #ifndef NK_CONSOLE_FILE_SYSTEM_H__
 #define NK_CONSOLE_FILE_SYSTEM_H__
 
@@ -5,6 +15,7 @@
 extern "C" {
 #endif
 
+// Nothing.
 
 #if defined(__cplusplus)
 }
@@ -27,6 +38,7 @@ extern "C" {
 #ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
 #define NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H "vendor/tinydir/tinydir.h"
 #endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
+
 #ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
 
 // tinydir uses the same memory function signatures as cvector.
@@ -41,7 +53,11 @@ extern "C" {
 #endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
 
 /**
- * Destroy callback; Clear the tinydir memory.
+ * Destroy callback; Clears the tinydir memory.
+ *
+ * @param console The file widget that holds the tinydir data.
+ *
+ * @see nk_console_file_add_files_tinydir()
  */
 static void nk_console_file_destroy_tinydir(nk_console* console) {
     void* file_user_data = nk_console_file_get_file_user_data(console);
@@ -56,7 +72,12 @@ static void nk_console_file_destroy_tinydir(nk_console* console) {
 }
 
 /**
- * Iterate through the files in the given directory, and add the contents  with nk_console_file_add_directory and nk_console_file_add_file.
+ * Iterate through the files in the given directory, and add the contents as widgets.
+ *
+ * @param parent The file widget.
+ * @param directory The directory to enumerate.
+ *
+ * @see nk_console_file_add_entry()
  */
 static void nk_console_file_add_files_tinydir(nk_console* parent, const char* directory) {
     if (parent == NULL || directory == NULL) {
@@ -92,13 +113,19 @@ static void nk_console_file_add_files_tinydir(nk_console* parent, const char* di
         nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true);
     }
 }
+
+// Tell the file widget to use the tinydir file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
 
 // Raylib support
-#elif defined(RAYLIB_VERSION)
+#elif defined(RAYLIB_VERSION) || defined(NK_CONSOLE_ENABLE_RAYLIB)
 
 /**
  * Destroy callback; Clear the raylib file system memory.
+ *
+ * @param The file widget that holds the raylib data.
+ *
+ * @see nk_console_file_add_files_raylib()
  */
 void nk_console_file_destroy_raylib(nk_console* console) {
     FilePathList* list = (FilePathList*)nk_console_file_get_file_user_data(console);
@@ -112,7 +139,12 @@ void nk_console_file_destroy_raylib(nk_console* console) {
 }
 
 /**
- * nuklear_console_file callback to iterate add an entry for each file in the given path.
+ * nuklear_console_file callback to iterate through a directory and ad all entries from the given path.
+ *
+ * @param console The parent files widget.
+ * @param path The path to enumerate.
+ *
+ * @see nk_console_file_add_entry()
  */
 void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
     FilePathList* list = nk_console_file_get_file_user_data(console);
@@ -134,12 +166,18 @@ void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
     *list = filePathList;
 }
 
+// Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
 #else  // !NK_CONSOLE_ENABLE_TINYDIR && !RAYLIB_VERSION
 
 /**
- * Since there is no file system, clicking on Select File buttons will show an error message.
+ * Since there is no file system found, clicking Select File buttons will report an error message.
+ *
+ * @param parent The file widget.
+ * @param directory The directory to enumerate.
+ *
+ * @see nk_console_file_add_entry()
  */
 static void nk_console_file_add_files_diabled(nk_console* parent, const char* directory) {
     NK_UNUSED(directory);
@@ -152,6 +190,8 @@ static void nk_console_file_add_files_diabled(nk_console* parent, const char* di
     parent->disabled = nk_true;
     nk_console_button_back(parent);
 }
+
+// Tell the file widget that the file system is disabled.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_diabled
 
 #endif  // NK_CONSOLE_ENABLE_TINYDIR

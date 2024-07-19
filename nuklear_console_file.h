@@ -28,19 +28,54 @@ typedef struct nk_console_file_data {
  * @param label The label for the file widget. For example: "Select a file".
  * @param file_path_buffer The buffer to store the file path.
  * @param file_path_buffer_size The size of the buffer.
+ *
+ * @return The new file widget.
  */
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+
+/**
+ * Render callback to display the file widget.
+ */
 NK_API struct nk_rect nk_console_file_render(nk_console* widget);
+
+/**
+ * Sets any custom user data specifically for the file widget.
+ *
+ * This can be helpful for storing additional file system data for the file widget.
+ *
+ * @param file The file widget.
+ * @param user_data The custom user data.
+ */
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data);
+
+/**
+ * Gets the custom user data specifically for the file widget.
+ *
+ * @param file The file widget.
+ *
+ * @return The custom user data.
+ */
 NK_API void* nk_console_file_get_file_user_data(nk_console* file);
 
 /**
- * Adds a file entry to the file widget.
+ * Add a individual file or directory to the given file widget as a child.
+ *
+ * This should be called from the file system callbacks. See `nuklear_console_file_system.h` for examples.
+ *
+ * @param parent The file widget.
+ * @param path The path to the file or directory.
+ * @param is_directory True if the path is a directory. False otherwise.
+ *
+ * @see nk_console_file_destroy_tinydir()
  */
 NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
 
 /**
  * Refreshes the file widget to display the contents of the current directory.
+ *
+ * @param widget The file widget to refresh.
+ *
+ * @see nk_console_file_data::directory
  */
 NK_API void nk_console_file_refresh(nk_console* widget);
 
@@ -172,6 +207,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
         data->directory[0] = '\0';
     }
     else if (len > 0) {
+        // TODO: file: Make sure this is cross-platform.
         #if defined(_WIN32) || defined(WIN32)
             data->directory[len] = '\\';
         #else
@@ -187,13 +223,13 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
     NK_MEMCPY(data->directory + len, (void*)button->label, nk_strlen(button->label) + 1);
 
     enum nk_symbol_type symbol = nk_console_button_get_symbol(button);
-    switch (symbol) {
+    switch (symbol) { // Directory
         case NK_SYMBOL_TRIANGLE_LEFT: // Back
         case NK_SYMBOL_TRIANGLE_RIGHT: // Folder
             nk_console_set_active_parent(file);
             nk_console_file_refresh(file);
         break;
-        default:
+        default: // File
         {
             // Copy the string to the file buffer.
             // TODO: Ensure UTF-8 compatibility.
@@ -251,7 +287,6 @@ NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_b
 
     // Event
     nk_console_button_set_onclick(button, nk_console_file_entry_onclick);
-
 }
 
 
