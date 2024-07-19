@@ -115,6 +115,36 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_set_height(img, image.h);
             img = nk_console_image_color(images, image, (struct nk_color){255, 0, 0, 255});
             nk_console_set_height(img, image.h);
+
+            nk_console_button_onclick(images, "Back", nk_console_button_back);
+        }
+
+        // Spacing
+        nk_console* spacing = nk_console_button(widgets, "Spacing");
+        {
+            nk_console* row = nk_console_row_begin(spacing);
+            nk_console_spacing(row, 1);
+            nk_console* b = nk_console_button(row,"");
+            nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_UP);
+            nk_console_spacing(row, 1);
+            nk_console_row_end(row);
+
+            row = nk_console_row_begin(spacing);
+            b = nk_console_button(row,"");
+            nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_LEFT);
+            nk_console_spacing(row, 1);
+            b = nk_console_button(row,"");
+            nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_RIGHT);
+            nk_console_row_end(row);
+
+            row = nk_console_row_begin(spacing);
+            nk_console_spacing(row, 1);
+            b = nk_console_button(row,"");
+            nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_DOWN);
+            nk_console_spacing(row, 1);
+            nk_console_row_end(row);
+
+            nk_console_button_onclick(spacing, "Back", nk_console_button_back);
         }
 
         // Progress Bar
