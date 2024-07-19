@@ -83,7 +83,6 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
     nk_console_file_data* data = (nk_console_file_data*)console->data;
-    //nk_console* top = nk_console_get_top(console);
 
     nk_console_layout_widget(console);
 
