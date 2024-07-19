@@ -16,3 +16,5 @@
 [submodule "vendor/tinydir"]
 	path = vendor/tinydir
 	url = https://github.com/cxong/tinydir.git
+	ignore = dirty
+	branch = master
