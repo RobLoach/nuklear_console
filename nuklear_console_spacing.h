@@ -23,26 +23,17 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_spacing_render(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
+    // Set up the layout for the widget.
     nk_console_layout_widget(widget);
 
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
-
-    if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
-        nk_widget_disable_begin(widget->ctx);
-    }
-
+    // Render the spacing.
     nk_spacing(widget->ctx, widget->columns);
 
-    if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
-        nk_widget_disable_end(widget->ctx);
-    }
-
-    if (nk_console_is_active_widget(widget)) {
-        nk_console_check_up_down(widget, widget_bounds);
-        nk_console_check_tooltip(widget);
-    }
-
-    return widget_bounds;
+    return nk_rect(0, 0, 0, 0);
 }
 
 NK_API nk_console* nk_console_spacing(nk_console* parent, int cols) {
@@ -50,6 +41,8 @@ NK_API nk_console* nk_console_spacing(nk_console* parent, int cols) {
     spacing->type = NK_CONSOLE_SPACING;
     spacing->columns = cols;
     spacing->render = nk_console_spacing_render;
+    spacing->disabled = nk_true;
+    spacing->selectable = nk_false;
     return spacing;
 }
 
