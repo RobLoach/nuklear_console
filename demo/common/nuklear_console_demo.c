@@ -103,6 +103,15 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_onclick(buttons, "Back", nk_console_button_back);
         }
 
+        // Images
+        nk_console* images = nk_console_button(widgets, "Images");
+        {
+            nk_console* img = nk_console_image(images, image);
+            nk_console_set_height(img, image.h);
+            img = nk_console_image_color(images, image, (struct nk_color){255, 0, 0, 255});
+            nk_console_set_height(img, image.h);
+        }
+
         // Progress Bar
         nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
