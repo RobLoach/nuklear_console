@@ -39,6 +39,7 @@ typedef enum {
     NK_CONSOLE_TEXTEDIT,
     NK_CONSOLE_TEXTEDIT_TEXT,
     NK_CONSOLE_IMAGE,
+    NK_CONSOLE_SPACING,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -132,6 +133,7 @@ NK_API int nk_console_height(nk_console* widget);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_image.h"
+#include "nuklear_console_spacing.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #ifdef __cplusplus
@@ -238,6 +240,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_image.h"
+#include "nuklear_console_spacing.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
