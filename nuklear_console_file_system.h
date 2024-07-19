@@ -179,16 +179,20 @@ void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
  *
  * @see nk_console_file_add_entry()
  */
-static void nk_console_file_add_files_diabled(nk_console* parent, const char* directory) {
+static void nk_console_file_add_files_diabled(nk_console* file, const char* directory) {
     NK_UNUSED(directory);
-    if (parent == NULL) {
+    if (file == NULL) {
         return;
     }
 
     // Requires NK_CONSOLE_ENABLE_TINYDIR or another file system library.
-    nk_console_show_message(parent, "Error: File system not available.");
-    parent->disabled = nk_true;
-    nk_console_button_back(parent);
+    nk_console_show_message(file, "Error: File system not available.");
+
+    // Go back to the parent widget, and disable the widget.
+    if (file->parent != NULL) {
+        file->disabled = nk_true;
+        nk_console_set_active_parent(file->parent);
+    }
 }
 
 // Tell the file widget that the file system is disabled.

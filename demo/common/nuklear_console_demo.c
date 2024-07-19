@@ -56,9 +56,6 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console_button_onclick(newgame, "Back", nk_console_button_back);
     }
 
-    // File
-    nk_console_file(console, "Select File", file_path_buffer, file_path_buffer_size);
-
     // Widgets
     nk_console* widgets = nk_console_button(console, "Widgets");
     {
@@ -177,6 +174,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Textedit
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
+
+        // File
+        nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
 
         // Messages
         nk_console_button_onclick(widgets, "Show Message", nk_console_demo_show_message);
