@@ -13,6 +13,9 @@ extern "C" {
 #endif
 #endif  // NK_CONSOLE_FILE_PATH_MAX
 
+/**
+ * Custom data for the file widget.
+ */
 typedef struct nk_console_file_data {
     nk_console_button_data button; /** Inherited from Button */
     char* file_path_buffer; /** The string buffer for the chosen file path. */
