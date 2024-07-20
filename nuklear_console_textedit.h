@@ -77,7 +77,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
     switch (symbol) {
         // Shift
         case NK_SYMBOL_TRIANGLE_UP:
-        case NK_SYMBOL_TRIANGLE_UP_OUTLINE:
+        case NK_SYMBOL_TRIANGLE_UP_OUTLINE: {
             data->shift = !data->shift;
             nk_console_button_set_symbol(key, symbol == NK_SYMBOL_TRIANGLE_UP ? NK_SYMBOL_TRIANGLE_UP_OUTLINE : NK_SYMBOL_TRIANGLE_UP);
 
@@ -182,7 +182,8 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
                     }
                 }
             }
-            break;
+        }
+        break;
 
         // Backspace
         case NK_SYMBOL_TRIANGLE_LEFT:

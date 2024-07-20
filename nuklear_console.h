@@ -168,10 +168,10 @@ NK_API int nk_console_height(nk_console* widget);
 #endif
 
 #ifndef cvector_clib_free
-#define cvector_clib_free(ptr) nk_console_mfree((nk_handle) {.id = 0}, ptr)
+#define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
 #endif
 #ifndef cvector_clib_malloc
-#define cvector_clib_malloc(size) nk_console_malloc((nk_handle) {.ptr = NULL}, NULL, size)
+#define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
 #endif
 #ifndef cvector_clib_calloc
 #define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
@@ -663,14 +663,14 @@ NK_API void nk_console_free_top(nk_console* console) {
  */
 NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_handle handle;
-    nk_console* console = nk_console_malloc(handle, NULL, sizeof(nk_console));
+    nk_console* console = (nk_console*)nk_console_malloc(handle, NULL, sizeof(nk_console));
     nk_zero(console, sizeof(nk_console));
     console->type = NK_CONSOLE_PARENT;
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
     console->render = nk_console_parent_render;
 
-    nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
+    nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
     console->destroy = nk_console_free_top;
@@ -790,7 +790,7 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
     // Check gamepads.
     #ifdef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
         nk_console_top_data* data = (nk_console_top_data*)console->data;
-        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, button)) {
+        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, (enum nk_gamepad_button)button)) {
             return nk_true;
         }
     #endif

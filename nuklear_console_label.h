@@ -65,7 +65,7 @@ NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
     }
 
     nk_handle handle;
-    nk_console* label = nk_console_malloc(handle, NULL, sizeof(nk_console));
+    nk_console* label = (nk_console*)nk_console_malloc(handle, NULL, sizeof(nk_console));
     nk_zero(label, sizeof(nk_console));
     label->ctx = parent->ctx;
     label->alignment = NK_TEXT_ALIGN_CENTERED;

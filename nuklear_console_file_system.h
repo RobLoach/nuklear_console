@@ -87,7 +87,7 @@ static void nk_console_file_add_files_tinydir(nk_console* parent, const char* di
     // Initialize the tinydir memory if needed.
     tinydir_dir* dir = (tinydir_dir*)nk_console_file_get_file_user_data(parent);
     if (dir == NULL) {
-        dir = NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(tinydir_dir));
+        dir = (tinydir_dir*)nk_console_malloc(nk_handle_id(0), NULL, sizeof(tinydir_dir));
         if (dir == NULL) {
             return;
         }
@@ -169,7 +169,11 @@ void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
-#else  // !NK_CONSOLE_ENABLE_TINYDIR && !RAYLIB_VERSION
+#elif defined(NK_CONSOLE_ENABLE_STD)
+
+// TODO: Add the std::filesystem support.
+
+#else  // !NK_CONSOLE_ENABLE_TINYDIR && !RAYLIB_VERSION && !NK_CONSOLE_ENABLE_STD
 
 /**
  * Since there is no file system found, clicking Select File buttons will report an error message.
