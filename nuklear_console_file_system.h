@@ -58,34 +58,42 @@ extern "C" {
  * @param parent The file widget.
  * @param directory The directory to enumerate.
  *
+ * @return True if there were entries added.
+ *
  * @see nk_console_file_add_entry()
  */
-static void nk_console_file_add_files_tinydir(nk_console* parent, const char* directory) {
+static nk_bool nk_console_file_add_files_tinydir(nk_console* parent, const char* directory) {
     if (parent == NULL || directory == NULL) {
-        return;
+        return nk_false;
     }
 
     tinydir_dir dir;
     if (tinydir_open_sorted(&dir, directory) == -1) {
-        return;
+        return nk_false;
     }
+
+    nk_bool result = nk_false;
 
     // Iterate through the files and add each entry.
     for (size_t i = 0; i < dir.n_files; i++) {
         tinydir_file file;
         tinydir_readfile_n(&dir, &file, i);
-        nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true);
+        if (nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true) == nk_true) {
+            result = nk_true;
+        }
     }
 
     // Close the directory.
     tinydir_close(&dir);
+
+    return result;
 }
 
 // Tell the file widget to use the tinydir file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
 
 // Raylib support
-#elif defined(RAYLIB_VERSION) || defined(NK_CONSOLE_ENABLE_RAYLIB)
+#elif defined(NK_CONSOLE_ENABLE_RAYLIB) || defined(RAYLIB_VERSION)
 
 /**
  * nuklear_console_file callback to iterate through a directory and ad all entries from the given path.
@@ -93,32 +101,42 @@ static void nk_console_file_add_files_tinydir(nk_console* parent, const char* di
  * @param console The parent files widget.
  * @param path The path to enumerate.
  *
+ * @return True if there were entries that were added.
+ *
  * @see nk_console_file_add_entry()
  */
-void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
+static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char* path) {
     FilePathList filePathList = LoadDirectoryFiles(path);
+
+    nk_bool result = nk_false;
 
     // Directories
     for (int i = 0; i < filePathList.count; i++) {
         if (DirectoryExists(filePathList.paths[i])) {
-            nk_console_file_add_entry(console, filePathList.paths[i], nk_true);
+            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_true)) {
+                result = nk_true;
+            }
         }
     }
 
     // Files
     for (int i = 0; i < filePathList.count; i++) {
         if (FileExists(filePathList.paths[i])) {
-            nk_console_file_add_entry(console, filePathList.paths[i], nk_false);
+            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_false)) {
+                result = nk_true;
+            }
         }
     }
 
     UnloadDirectoryFiles(filePathList);
+
+    return result;
 }
 
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
-#else  // !NK_CONSOLE_ENABLE_TINYDIR && !RAYLIB_VERSION
+#else  // !NK_CONSOLE_ENABLE_TINYDIR && !NK_CONSOLE_ENABLE_RAYLIB
 
 /**
  * Since there is no file system found, clicking Select File buttons will report an error message.
@@ -128,7 +146,7 @@ void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
  *
  * @see nk_console_file_add_entry()
  */
-static void nk_console_file_add_files_diabled(nk_console* file, const char* directory) {
+static nk_bool nk_console_file_add_files_diabled(nk_console* file, const char* directory) {
     NK_UNUSED(directory);
     if (file == NULL) {
         return;
@@ -142,6 +160,9 @@ static void nk_console_file_add_files_diabled(nk_console* file, const char* dire
         file->disabled = nk_true;
         nk_console_set_active_parent(file->parent);
     }
+
+    // The file system is disabled, not erroring out.
+    return nk_true;
 }
 
 // Tell the file widget that the file system is disabled.

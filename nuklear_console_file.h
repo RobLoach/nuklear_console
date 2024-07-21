@@ -69,9 +69,11 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
  * @param path The path to the file or directory.
  * @param is_directory True if the path is a directory. False otherwise.
  *
+ * @return True if the entry was added.
+ *
  * @see nk_console_file_destroy_tinydir()
  */
-NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
+NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
 
 /**
  * Refreshes the file widget to display the contents of the current directory.
@@ -252,20 +254,20 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
     }
 }
 
-NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
+NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
     if (parent == NULL || path == NULL || path[0] == '\0') {
-        return;
+        return nk_false;
     }
 
     int len = nk_strlen(path);
 
     // Ignore the current directory.
     if (len == 1 && path[0] == '.') {
-        return;
+        return nk_false;
     }
     else if (len == 2 && path[0] == '.' && path[1] == '.') {
         // Ignore the parent directory.
-        return;
+        return nk_false;
     }
 
     // Add the button.
@@ -290,6 +292,7 @@ NK_API void nk_console_file_add_entry(nk_console* parent, const char* path, nk_b
 
     // Event
     nk_console_button_set_onclick(button, nk_console_file_entry_onclick);
+    return nk_true;
 }
 
 
@@ -335,7 +338,9 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
     nk_console_set_active_widget(parent_directory_button);
 
     // Iterate through the files in the directory, and add them as entries.
-    NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
+    if (NK_CONSOLE_FILE_ADD_FILES(widget, data->directory) == nk_false) {
+        nk_console_label(widget, "No files found.")->alignment = NK_TEXT_CENTERED;
+    }
 }
 
 /**
