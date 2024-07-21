@@ -32,8 +32,7 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
     NK_ASSERT(max > 0);
 
     // Create the widget data.
-    nk_handle unused = {0};
-    nk_console_progress_data* data = (nk_console_progress_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_progress_data));
+    nk_console_progress_data* data = (nk_console_progress_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_progress_data));
     nk_zero(data, sizeof(nk_console_progress_data));
 
     nk_console* progress = nk_console_label(parent, text);

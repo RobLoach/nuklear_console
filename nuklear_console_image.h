@@ -114,9 +114,8 @@ NK_API nk_console *nk_console_image(nk_console *parent, struct nk_image image) {
 NK_API
 nk_console *nk_console_image_color(nk_console *parent, struct nk_image image,
                                    struct nk_color color) {
-  nk_handle unused = {0};
   nk_console_image_data *data =
-      (nk_console_image_data *)NK_CONSOLE_MALLOC(unused, NULL, sizeof(*data));
+      (nk_console_image_data *)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(*data));
   data->image = image;
   data->color = color;
 

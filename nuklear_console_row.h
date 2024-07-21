@@ -106,8 +106,7 @@ static nk_bool nk_console_row_pick_nearest_selectable_child(nk_console* row) {
 
 NK_API nk_console* nk_console_row_begin(nk_console* parent) {
     // Create the row data.
-    nk_handle unused = {0};
-    nk_console_row_data* data = (nk_console_row_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_row_data));
+    nk_console_row_data* data = (nk_console_row_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_row_data));
     nk_zero(data, sizeof(nk_console_row_data));
 
     // Create the row.

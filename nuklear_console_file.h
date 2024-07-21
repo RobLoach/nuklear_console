@@ -391,8 +391,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     }
 
     // Create the widget data.
-    nk_handle unused = {0};
-    nk_console_file_data* data = (nk_console_file_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_file_data));
+    nk_console_file_data* data = (nk_console_file_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_file_data));
     nk_zero(data, sizeof(nk_console_file_data));
 
     data->file_path_buffer = file_path_buffer;

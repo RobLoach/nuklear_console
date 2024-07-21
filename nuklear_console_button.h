@@ -229,8 +229,7 @@ NK_API void nk_console_button_back(nk_console* button) {
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {
     // Create the widget data.
-    nk_handle unused = {0};
-    nk_console_button_data* data = (nk_console_button_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_button_data));
+    nk_console_button_data* data = (nk_console_button_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_button_data));
     nk_zero(data, sizeof(nk_console_button_data));
 
     nk_console* button = nk_console_label(parent, text);
