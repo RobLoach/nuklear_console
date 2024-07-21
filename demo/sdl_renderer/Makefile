@@ -4,13 +4,14 @@ BIN = nuklear_console_demo_sdl
 # Flags
 
 # Use C++
-#CFLAGS += -std=c89 -pedantic -O0
-CXXFLAGS += -pedantic -O0 -fpermissive
+CFLAGS += -std=c99 -pedantic -O0
+CXXFLAGS += -pedantic -O0 -fpermissive -std=c++17
 
+CFLAGS += `sdl2-config --cflags`
 CXXFLAGS += `sdl2-config --cflags`
 
-SRC = main.cpp
-OBJ = $(SRC:.cpp=.o)
+SRC = main.c
+OBJ = $(SRC:.c=.o)
 
 ifeq ($(OS),Windows_NT)
 #TODO
@@ -26,9 +27,7 @@ else
 endif
 
 $(BIN): clean
-	$(CXX) $(SRC) $(CXXFLAGS) -o $(BIN) $(LIBS)
-
-#	$(CC) $(SRC) $(CFLAGS) -o $(BIN) $(LIBS)
+	$(CC) $(SRC) $(CFLAGS) -o $(BIN) $(LIBS)
 
 clean:
 	rm -rf $(BIN) $(OBJS)

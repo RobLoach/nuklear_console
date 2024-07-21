@@ -109,13 +109,13 @@ int main(int argc, char *argv[]) {
         /* Input */
         SDL_Event evt;
         nk_input_begin(ctx);
-        nk_gamepad_update((nk_gamepads*)nk_console_get_gamepads(console));
+        nk_gamepad_update((struct nk_gamepads*)nk_console_get_gamepads(console));
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) goto cleanup;
             if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) running = 0;
 
             nk_sdl_handle_event(&evt);
-            nk_gamepad_sdl_handle_event((nk_gamepads*)nk_console_get_gamepads(console), &evt);
+            nk_gamepad_sdl_handle_event((struct nk_gamepads*)nk_console_get_gamepads(console), &evt);
         }
         nk_input_end(ctx);
 

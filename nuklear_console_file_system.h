@@ -169,11 +169,7 @@ void nk_console_file_add_files_raylib(nk_console* console, const char* path) {
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
-#elif defined(NK_CONSOLE_ENABLE_STD)
-
-// TODO: Add the std::filesystem support.
-
-#else  // !NK_CONSOLE_ENABLE_TINYDIR && !RAYLIB_VERSION && !NK_CONSOLE_ENABLE_STD
+#else  // !NK_CONSOLE_ENABLE_TINYDIR && !RAYLIB_VERSION
 
 /**
  * Since there is no file system found, clicking Select File buttons will report an error message.
