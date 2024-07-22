@@ -24,11 +24,14 @@ static nk_bool shouldClose = nk_false;
 static int message_count = 0;
 static char file_path_buffer[1024] = {0};
 static int file_path_buffer_size = 1024;
-
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 
-static struct nk_gamepads gamepads;
+// Color
+static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
+
+// Gamepads
+static struct nk_gamepads gamepads
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
@@ -178,6 +181,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Textedit
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
+
+        // Color
+        nk_console_color(widgets, "Select Color", &color, NK_RGBA);
 
         // File
         nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
