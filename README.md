@@ -55,6 +55,7 @@ int main() {
 - Row
 - Slider
 - TextEdit
+- Color
 
 ## API
 
@@ -67,6 +68,7 @@ void nk_console_render(nk_console* console);
 // Widgets
 nk_console* nk_console_button(nk_console* parent, const char* text);
 nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active);
+nk_console* nk_console_color(nk_console* parent, const char* label, struct nk_colorf* color, enum nk_color_format format);
 nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected);
 nk_console* nk_console_label(nk_console* parent, const char* text);
 nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
