@@ -119,13 +119,13 @@ NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struc
 
     // Active Color.
     if (label != NULL && nk_strlen(label) != 1 && label[0] != '@') {
-        nk_console* back = nk_console_color(widget, "@", color, format);
-        nk_console_button_set_onclick(back, nk_console_button_back);
-        back->label = NULL;
-        back->columns = 1;
+        nk_console* color_display = nk_console_color(widget, "@", color, format);
+        nk_console_button_set_onclick(color_display, nk_console_button_back);
+        color_display->label = NULL;
+        color_display->columns = 1;
 
         // Don't need any of the children.
-        nk_console_free_children(back);
+        nk_console_free_children(color_display);
     }
 
     // Add the color components
