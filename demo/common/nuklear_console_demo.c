@@ -28,6 +28,8 @@ static int file_path_buffer_size = 1024;
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 
+static struct nk_gamepads gamepads;
+
 void button_clicked(struct nk_console* button) {
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
         shouldClose = nk_true;
@@ -46,7 +48,9 @@ void nk_console_demo_show_message(struct nk_console* button) {
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
     console = nk_console_init(ctx);
-    nk_console_set_gamepads(console, nk_gamepad_init(ctx, user_data));
+
+    nk_gamepad_init(&gamepads, ctx, user_data);
+    nk_console_set_gamepads(console, &gamepads);
 
     // New Game
     nk_console* newgame = nk_console_button(console, "New Game");
