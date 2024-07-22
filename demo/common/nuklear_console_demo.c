@@ -16,12 +16,14 @@ static int property_int_test = 20;
 static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
-static int theme = 5;
+static int theme = THEME_DRACULA;
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
 static nk_bool shouldClose = nk_false;
 static int message_count = 0;
+static char file_path_buffer[1024] = {0};
+static int file_path_buffer_size = 1024;
 
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
@@ -33,7 +35,7 @@ void button_clicked(struct nk_console* button) {
 }
 
 void theme_changed(struct nk_console* combobox) {
-    set_style(combobox->ctx, theme);
+    set_style(combobox->ctx, (enum theme)theme);
 }
 
 void nk_console_demo_show_message(struct nk_console* button) {
@@ -108,7 +110,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         {
             nk_console* img = nk_console_image(images, image);
             nk_console_set_height(img, image.h);
-            img = nk_console_image_color(images, image, (struct nk_color){255, 0, 0, 255});
+            img = nk_console_image_color(images, image, nk_rgb(255, 0, 0));
             nk_console_set_height(img, image.h);
 
             nk_console_button_onclick(images, "Back", nk_console_button_back);
@@ -173,9 +175,13 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
 
+        // File
+        nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
+
         // Messages
         nk_console_button_onclick(widgets, "Show Message", nk_console_demo_show_message);
 
+        // Back Button
         nk_console_button_set_symbol(
             nk_console_button_onclick(widgets, "Back", nk_console_button_back),
             NK_SYMBOL_TRIANGLE_LEFT);
@@ -184,7 +190,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);
     theme_options->onchange = theme_changed;
     theme_options->tooltip = "Change the theme of the console!";
-    set_style(ctx, theme);
+    set_style(ctx, (enum theme)theme);
 
     // Rows
     nk_console* calc = nk_console_button(console, "Calculator");
@@ -249,6 +255,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
-    nk_gamepad_free(nk_console_get_gamepads(console));
+    nk_gamepad_free((struct nk_gamepads*)nk_console_get_gamepads(console));
     nk_console_free(console);
 }

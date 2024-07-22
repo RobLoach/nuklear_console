@@ -38,6 +38,7 @@ typedef enum {
     NK_CONSOLE_ROW,
     NK_CONSOLE_TEXTEDIT,
     NK_CONSOLE_TEXTEDIT_TEXT,
+    NK_CONSOLE_FILE,
     NK_CONSOLE_IMAGE,
     NK_CONSOLE_SPACING,
 } nk_console_widget_type;
@@ -132,6 +133,8 @@ NK_API int nk_console_height(nk_console* widget);
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_message.h"
+#include "nuklear_console_file.h"
+#include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_spacing.h"
 #undef NK_CONSOLE_HEADER_ONLY
@@ -165,10 +168,10 @@ NK_API int nk_console_height(nk_console* widget);
 #endif
 
 #ifndef cvector_clib_free
-#define cvector_clib_free(ptr) nk_console_mfree((nk_handle) {.id = 0}, ptr)
+#define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
 #endif
 #ifndef cvector_clib_malloc
-#define cvector_clib_malloc(size) nk_console_malloc((nk_handle) {.ptr = NULL}, NULL, size)
+#define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
 #endif
 #ifndef cvector_clib_calloc
 #define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
@@ -239,6 +242,8 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_message.h"
+#include "nuklear_console_file_system.h"
+#include "nuklear_console_file.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_spacing.h"
 
@@ -323,6 +328,7 @@ NK_API nk_console* nk_console_get_top(nk_console* widget) {
     while (widget->parent != NULL) {
         widget = widget->parent;
     }
+
     return widget;
 }
 
@@ -556,6 +562,9 @@ NK_API void nk_console_render(nk_console* console) {
             nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console));
         }
 
+        // Render the active message.
+        nk_console_render_message(console);
+
         // Render the active parent.
         if (console->activeParent != NULL && console->activeParent->children != NULL) {
             // Make sure there's an active widget selected.
@@ -575,9 +584,6 @@ NK_API void nk_console_render(nk_console* console) {
                     nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
                 }
             }
-
-            // Render the active message.
-            nk_console_render_message(console);
 
             // Render all the children
             for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
@@ -657,14 +663,14 @@ NK_API void nk_console_free_top(nk_console* console) {
  */
 NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_handle handle;
-    nk_console* console = nk_console_malloc(handle, NULL, sizeof(nk_console));
+    nk_console* console = (nk_console*)nk_console_malloc(handle, NULL, sizeof(nk_console));
     nk_zero(console, sizeof(nk_console));
     console->type = NK_CONSOLE_PARENT;
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
     console->render = nk_console_parent_render;
 
-    nk_console_top_data* data = nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
+    nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
     console->destroy = nk_console_free_top;
@@ -784,7 +790,7 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
     // Check gamepads.
     #ifdef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
         nk_console_top_data* data = (nk_console_top_data*)console->data;
-        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, button)) {
+        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, (enum nk_gamepad_button)button)) {
             return nk_true;
         }
     #endif

@@ -90,8 +90,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button) {
 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
     // Create the widget data.
-    nk_handle unused = {0};
-    nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_combobox_data));
+    nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_combobox_data));
     nk_zero(data, sizeof(nk_console_combobox_data));
 
     nk_console* combobox = nk_console_label(parent, label);

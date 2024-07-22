@@ -13,3 +13,8 @@
 	url = https://github.com/Immediate-Mode-UI/Nuklear.git
 	ignore = dirty
     branch = master
+[submodule "vendor/tinydir"]
+	path = vendor/tinydir
+	url = https://github.com/cxong/tinydir.git
+	ignore = dirty
+	branch = master

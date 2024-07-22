@@ -45,9 +45,8 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     }
 
     // Create the new message.
-    nk_console_message message = {
-        .duration = NK_CONSOLE_MESSAGE_DURATION,
-    };
+    nk_console_message message = {0};
+    message.duration = NK_CONSOLE_MESSAGE_DURATION;
 
     // Copy the string.
     int len = nk_strlen(text);
@@ -112,8 +111,8 @@ NK_API void nk_console_render_message(nk_console* console) {
 
     // Loop through all messages and display the first one.
     nk_bool clear_all = nk_true;
-    nk_console_message* end = cvector_end(data->messages);
-    for (nk_console_message* it = cvector_begin(data->messages); it != end; it++) {
+    nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
+    for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
         // Skip messages that have already been shown.
         if (it->duration <= 0.0f) {
             continue;

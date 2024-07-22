@@ -119,8 +119,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active) {
     NK_ASSERT(active != NULL);
-    nk_handle unused = {0};
-    nk_console_checkbox_data* data = (nk_console_checkbox_data*)NK_CONSOLE_MALLOC(unused, NULL, sizeof(nk_console_checkbox_data));
+    nk_console_checkbox_data* data = (nk_console_checkbox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_checkbox_data));
     nk_zero(data, sizeof(nk_console_checkbox_data));
 
     nk_console* checkbox = nk_console_label(parent, text);

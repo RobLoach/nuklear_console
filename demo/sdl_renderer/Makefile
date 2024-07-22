@@ -3,11 +3,12 @@ BIN = nuklear_console_demo_sdl
 
 # Flags
 
-# TODO: Use C89
-#CFLAGS += -std=c89 -pedantic -O0
+# Use C++
 CFLAGS += -std=c99 -pedantic -O0
+CXXFLAGS += -pedantic -O0 -fpermissive -std=c++17
 
 CFLAGS += `sdl2-config --cflags`
+CXXFLAGS += `sdl2-config --cflags`
 
 SRC = main.c
 OBJ = $(SRC:.c=.o)
