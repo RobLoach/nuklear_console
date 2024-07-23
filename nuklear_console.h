@@ -321,6 +321,9 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
     nk_console* top = nk_console_get_top(new_parent);
     if (top != NULL) {
         top->activeParent = new_parent;
+        
+        // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
+        nk_window_set_scroll(new_parent->ctx, 0, 0);
     }
 }
 

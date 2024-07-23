@@ -5,14 +5,30 @@
 extern "C" {
 #endif
 
+/**
+ * Data specifically used for the input widget.
+ *
+ * @see nk_console_input()
+ */
 typedef struct nk_console_input_data {
     struct nk_console_button_data button_data; /** Inherited from button */
-    int* gamepad_number;
-    enum nk_gamepad_button* gamepad_button;
-    float timer;
-    // TODO: Input: Add Keyboard/Mouse support?
+    int* gamepad_number; /** A pointer to where to store the gamepad number the button is associated with. */
+    enum nk_gamepad_button* gamepad_button; /** A pointer to where to store the gamepad button. */
+    float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
 } nk_console_input_data;
 
+/**
+ * Create a new input widget to get a gamepad button.
+ *
+ * @param parent The parent console of where to add the widget.
+ * @param label The label to display.
+ * @param gamepad_number When the user enters a button, this is where the gamepad number will be stored.
+ * @param gamepad_button When the user enters a button, this is where the gamepad button will be stored.
+ *
+ * @todo Input: Add Keyboard support?
+ *
+ * @return The new input widget.
+ */
 NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int* gamepad_number, enum nk_gamepad_button* gamepad_button);
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 
@@ -26,10 +42,24 @@ NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 #ifndef NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
 
+#ifndef NK_CONSOLE_INPUT_TIMER
+/**
+ * The amount of time to wait for input before timing out, in seconds.
+ */
+#define NK_CONSOLE_INPUT_TIMER 6.0f
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+/**
+ * Get the name of a gamepad button.
+ *
+ * @param button The button to get the name of.
+ *
+ * @return The name of the button.
+ */
 static const char* nk_console_input_button_name(enum nk_gamepad_button button) {
     switch (button) {
         case NK_GAMEPAD_BUTTON_A: return "A";
@@ -57,6 +87,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
+    // Set up the layout
     nk_console_layout_widget(console);
 
     // Display the label
@@ -100,6 +131,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
             break;
     }
 
+    // Switch the values to have the widget display as a button.
     int swap_columns = console->columns;
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
@@ -114,50 +146,82 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     return widget_bounds;
 }
 
-NK_API struct nk_rect nk_console_input_active_render(nk_console* console) {
+/**
+ * Render the "Press a Button" prompt.
+ *
+ * @param console The console to render the prompt for.
+ *
+ * @return An empty rectangle, because there isn't a widget to interact with.
+ */
+static struct nk_rect nk_console_input_active_render(nk_console* console) {
     if (console == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    // Get the input widget.
+    // Get the parent input widget.
     nk_console* input = console->parent;
     nk_console_input_data* data = (nk_console_input_data*)input->data;
     if (data == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
+    nk_console* top = nk_console_get_top(console);
 
+    // Set up the layout
     nk_console_layout_widget(console);
 
-    // Make sure we're at the top of the window.
-    nk_window_set_scroll(console->ctx, 0, 0);
-
     // Display the label for the input
-    nk_label(console->ctx, input->label, NK_TEXT_CENTERED);
+    if (input->label != NULL && input->label[0] != '\0') {
+        if (input->label_length > 0) {
+            nk_text(console->ctx, input->label, input->label_length, NK_TEXT_CENTERED);
+        }
+        else {
+            nk_label(console->ctx, input->label, NK_TEXT_CENTERED);
+        }
+    }
 
-    // Blinking Press a Button
-    data->timer -= console->ctx->delta_time_seconds;
-    if (data->timer >= 0.0f) {
+    // Give a timer to the user.
+    data->timer += console->ctx->delta_time_seconds;
+    nk_bool finished = nk_false;
+
+    // Handle the timeout
+    if (data->timer >= NK_CONSOLE_INPUT_TIMER) {
+        finished = nk_true;
+    }
+
+    // Only display the timer if delta time is provided.
+    if (data->timer > 0.0f) {
+        // Display a progressbar, scaling the time to milliseconds.
+        nk_prog(console->ctx, (size_t)(data->timer * 1000), (size_t)(NK_CONSOLE_INPUT_TIMER * 1000), nk_false);
+    }
+
+    // Blinking press a button instructions
+    if (((int)(data->timer * 2)) % 2 == 0) {
         nk_label(console->ctx, "Press a Button", NK_TEXT_CENTERED);
     }
-    else if (data->timer <= -0.5f) {
-        data->timer = 1.0f;
+
+    // Check for input.
+    if (top->input_processed == nk_false) {
+        // Gamepad button pressed.
+        if (nk_gamepad_any_button_pressed((struct nk_gamepads*)nk_console_get_gamepads(top), -1, data->gamepad_number, data->gamepad_button)) {
+            // Trigger the onchange event and exit.
+            if (input->onchange != NULL) {
+                input->onchange(input);
+            }
+            finished = nk_true;
+        }
+        // Any other input.
+        else if (nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) ||
+                nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER) ||
+                nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_LEFT) ||
+                nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT)) {
+            finished = nk_true;
+        }
     }
 
-    // Await input.
-    nk_console* top = nk_console_get_top(console);
-    if (top->input_processed == nk_false) {
-        if (nk_gamepad_any_button_pressed((struct nk_gamepads*)nk_console_get_gamepads(top), -1, data->gamepad_number, data->gamepad_button)) {
-            top->input_processed = nk_true;
-            nk_console_button_back(console);
-        }
-        else if (nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER)) {
-            top->input_processed = nk_true;
-            nk_console_button_back(console);
-        }
-        else if (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_LEFT)) {
-            top->input_processed = nk_true;
-            nk_console_button_back(console);
-        }
+    if (finished == nk_true) {
+        top->input_processed = nk_true;
+        data->timer = 0.0f;
+        nk_console_button_back(console);
     }
 
     return nk_rect(0, 0, 0, 0);
