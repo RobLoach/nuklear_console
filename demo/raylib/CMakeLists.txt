@@ -30,7 +30,7 @@ if (NOT raylib_nuklear_FOUND)
     FetchContent_Declare(
         raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
-        GIT_TAG 3599509
+        GIT_TAG 7bfe161
     )
     FetchContent_GetProperties(raylib_nuklear)
     if (NOT raylib_nuklear_POPULATED) # Have we downloaded raylib yet?

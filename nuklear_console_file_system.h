@@ -121,7 +121,7 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 
     // Files
     for (int i = 0; i < filePathList.count; i++) {
-        if (FileExists(filePathList.paths[i])) {
+        if (FileExists(filePathList.paths[i]) && !DirectoryExists(filePathList.paths[i])) {
             if (nk_console_file_add_entry(console, filePathList.paths[i], nk_false)) {
                 result = nk_true;
             }
