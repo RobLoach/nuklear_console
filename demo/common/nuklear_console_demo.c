@@ -156,8 +156,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_onclick(progressbar, "Back", nk_console_button_back);
         }
 
-        // Input
-        nk_console_input(widgets, "Input Button", &gamepad_number, &gamepad_button);
+        // Input: From any gamepad (-1)
+        nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
