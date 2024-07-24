@@ -31,7 +31,7 @@ static char textedit_buffer[256] = "vurtun";
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
 // Gamepads
-static struct nk_gamepads gamepads
+static struct nk_gamepads gamepads;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
@@ -265,6 +265,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
-    nk_gamepad_free((struct nk_gamepads*)nk_console_get_gamepads(console));
+    nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }
