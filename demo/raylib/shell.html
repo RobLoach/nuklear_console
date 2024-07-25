@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <title>raylib-nuklear: Demo</title>
+    <meta name="description" content="Use Nuklear GUI within raylib: https://github.com/RobLoach/raylib-nuklear">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Rob Loach">
+    <style>
+        html, body  {
+            margin: 0;
+            height: 100vh;
+            max-width: 100vw;
+        }
+        body {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: white;
+            background: black;
+        }
+        #canvas {
+            max-width: 100%;
+        }
+        #console {
+            overflow: auto;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas" oncontextmenu="event.preventDefault()"></canvas>
+    <!-- <pre id="console"></pre> -->
+    <script type='text/javascript'>
+        window.Module = {
+            canvas: document.getElementById('canvas'),
+            print: (...args) => {
+                const consoleElement = document.getElementById('console')
+                const text = args.join(' ')
+                console.log(text);
+                if (consoleElement) {
+                  consoleElement.innerText += text + "\n"
+                  consoleElement.scrollTop = consoleElement.scrollHeight
+                }
+            }
+        }
+    </script>
+   {{{ SCRIPT }}}
+</body>
+</html>

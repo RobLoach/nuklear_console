@@ -77,3 +77,17 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     raylib_nuklear
     nuklear_gamepad
 )
+
+# Web Configurations
+#if (${PLATFORM} STREQUAL "Web")
+if (EMSCRIPTEN)
+    # Tell Emscripten to build an example.html file.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -sUSE_GLFW=3")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "index")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/shell.html")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file resources")
+    #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM=Web)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_BUILD_TYPE=Release)
+endif()

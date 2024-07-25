@@ -9,3 +9,8 @@ test: compile
 
 clean:
 	rm -rf build
+
+web:
+	emcmake cmake -B build -S . -DPLATFORM=Web
+	emmake make -C build
+#emcmake cmake --build build
