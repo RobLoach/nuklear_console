@@ -20,3 +20,6 @@ sdl:
 
 pntr:
 	$(MAKE) -C demo/pntr test
+
+web:
+	$(MAKE) -C demo/raylib web
