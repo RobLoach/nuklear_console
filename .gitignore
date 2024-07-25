@@ -1,6 +1,0 @@
-bin
-*.o
-build
-nuklear_console_demo_*
-*.gif
-screenshot*
