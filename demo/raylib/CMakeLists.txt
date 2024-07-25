@@ -30,7 +30,7 @@ if (NOT raylib_nuklear_FOUND)
     FetchContent_Declare(
         raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
-        GIT_TAG 7bfe161
+        GIT_TAG 845b1c1
     )
     FetchContent_GetProperties(raylib_nuklear)
     if (NOT raylib_nuklear_POPULATED) # Have we downloaded raylib yet?
@@ -47,7 +47,7 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG b8f3937
+        GIT_TAG db745b9
     )
     FetchContent_GetProperties(nuklear_gamepad)
     if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?
@@ -77,3 +77,17 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
     raylib_nuklear
     nuklear_gamepad
 )
+
+# Web Configurations
+#if (${PLATFORM} STREQUAL "Web")
+if (EMSCRIPTEN)
+    # Tell Emscripten to build an example.html file.
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -sUSE_GLFW=3")
+    set_target_properties(${PROJECT_NAME} PROPERTIES SUFFIX ".html")
+    set_target_properties(${PROJECT_NAME} PROPERTIES OUTPUT_NAME "index")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --shell-file ${CMAKE_CURRENT_SOURCE_DIR}/shell.html")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} --preload-file resources")
+    #set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s USE_GLFW=3")
+    target_compile_definitions(${PROJECT_NAME} PUBLIC PLATFORM=Web)
+    target_compile_definitions(${PROJECT_NAME} PUBLIC CMAKE_BUILD_TYPE=Release)
+endif()

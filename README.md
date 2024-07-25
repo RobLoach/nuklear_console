@@ -10,7 +10,7 @@ Console-like user interface for [Nuklear](https://github.com/Immediate-Mode-UI/N
 #define NK_IMPLEMENTATION
 #include "nukear.h"
 
-// Gamepad support optional https://github.com/robloach/nuklear_gamepad
+// Gamepad support https://github.com/robloach/nuklear_gamepad
 #define NK_GAMEPAD_IMPLEMENTATION
 #include "nuklear_gamepad.h"
 
@@ -100,8 +100,8 @@ void nk_console_set_active_widget(nk_console* widget);
 
 - C99+
 - [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear)
+- [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad)
 - [c-vector](https://github.com/eteran/c-vector/)
-- [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad) (optional)
 
 ## License
 

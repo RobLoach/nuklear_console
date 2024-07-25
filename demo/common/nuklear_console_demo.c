@@ -9,7 +9,11 @@
 #define NK_CONSOLE_IMPLEMENTATION
 #include "../../nuklear_console.h"
 
+// Demo
 static struct nk_console* console = NULL;
+static struct nk_gamepads gamepads;
+
+// Widget Data
 static nk_size progressValue = 50;
 static int weapon = 1;
 static int property_int_test = 20;
@@ -24,13 +28,10 @@ static nk_bool shouldClose = nk_false;
 static int message_count = 0;
 static char file_path_buffer[1024] = {0};
 static int file_path_buffer_size = 1024;
-
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
-
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
-
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
 void button_clicked(struct nk_console* button) {
@@ -51,7 +52,9 @@ void nk_console_demo_show_message(struct nk_console* button) {
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
     console = nk_console_init(ctx);
-    nk_console_set_gamepads(console, nk_gamepad_init(ctx, user_data));
+
+    nk_gamepad_init(&gamepads, ctx, user_data);
+    nk_console_set_gamepads(console, &gamepads);
 
     // New Game
     nk_console* newgame = nk_console_button(console, "New Game");
@@ -266,6 +269,6 @@ nk_bool nuklear_console_demo_render() {
 }
 
 void nuklear_console_demo_free() {
-    nk_gamepad_free((struct nk_gamepads*)nk_console_get_gamepads(console));
+    nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }

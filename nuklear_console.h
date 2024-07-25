@@ -92,7 +92,7 @@ typedef struct nk_console_top_data {
      * @see nk_console_get_gamepads()
      * @see nk_console_set_gamepads()
      */
-    void* gamepads;
+    struct nk_gamepads* gamepads;
 } nk_console_top_data;
 
 // Console
@@ -112,8 +112,8 @@ NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
-NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads);
-NK_API void* nk_console_get_gamepads(nk_console* console);
+NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads);
+NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
@@ -150,7 +150,7 @@ NK_API int nk_console_height(nk_console* widget);
 
 #endif  // NK_CONSOLE_H__
 
-#ifdef NK_CONSOLE_IMPLEMENTATION
+#if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_IMPLEMENTATION_ONCE
 
@@ -213,23 +213,6 @@ static void* nk_console_realloc(void* ptr, size_t size) {
 #define CVECTOR_H "vendor/c-vector/cvector.h"
 #endif
 #include CVECTOR_H
-
-#ifndef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
-#ifdef NUKLEAR_GAMEPAD_H__ // nuklear_gamepad.h
-/**
- * Check if the given button is pressed on the gamepad.
- *
- * @param gamepads The gamepad system provided at `console->gamepads`.
- * @param index The index of the gamepad to check. -1 is provided to check all gamepads.
- * @param button Which button we are to check.
- *
- * @see nk_gamepad_is_button_pressed()
- * @see nk_gamepad_button
- * @see https://github.com/RobLoach/nuklear_gamepad
- */
-#define NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(gamepads, index, button) nk_gamepad_is_button_pressed((struct nk_gamepads*)gamepads, index, button)
-#endif  // NUKLEAR_GAMEPAD_H__
-#endif  // NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
 
 #ifdef __cplusplus
 extern "C" {
@@ -759,7 +742,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     nk_layout_row_dynamic(widget->ctx, widget->height, widget->columns);
 }
 
-NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads) {
+NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads) {
     nk_console* top = nk_console_get_top(console);
     if (top == NULL) {
         return;
@@ -773,7 +756,7 @@ NK_API void nk_console_set_gamepads(nk_console* console, void* gamepads) {
     data->gamepads = gamepads;
 }
 
-NK_API void* nk_console_get_gamepads(nk_console* console) {
+NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
     if (top == NULL) {
         return NULL;
@@ -797,13 +780,11 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         console = nk_console_get_top(console);
     }
 
-    // Check gamepads.
-    #ifdef NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED
-        nk_console_top_data* data = (nk_console_top_data*)console->data;
-        if (NK_CONSOLE_GAMEPAD_IS_BUTTON_PRESSED(data->gamepads, -1, (enum nk_gamepad_button)button)) {
-            return nk_true;
-        }
-    #endif
+    // Gamepad
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    if (nk_gamepad_is_button_pressed(data->gamepads, -1, (enum nk_gamepad_button)button)) {
+        return nk_true;
+    }
 
     // Keyboard/Mouse
     switch (button) {
