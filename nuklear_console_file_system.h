@@ -149,7 +149,7 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 static nk_bool nk_console_file_add_files_diabled(nk_console* file, const char* directory) {
     NK_UNUSED(directory);
     if (file == NULL) {
-        return;
+        return nk_false;
     }
 
     // Requires NK_CONSOLE_ENABLE_TINYDIR or another file system library.
