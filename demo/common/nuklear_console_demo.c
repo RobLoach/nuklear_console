@@ -9,29 +9,50 @@
 #define NK_CONSOLE_IMPLEMENTATION
 #include "../../nuklear_console.h"
 
+// Demo
 static struct nk_console* console = NULL;
+static struct nk_gamepads gamepads;
+static nk_bool shouldClose = nk_false;
+
+// Theme
+static int theme = THEME_DRACULA;
+
+// Progress
 static nk_size progressValue = 50;
+
+// Combobox
 static int weapon = 1;
+
+// Property
 static int property_int_test = 20;
 static float property_float_test = 0.4f;
+
+// Slider
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
-static int theme = THEME_DRACULA;
+
+// Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
-static nk_bool shouldClose = nk_false;
+
+// Messages
 static int message_count = 0;
+
+// File
 static char file_path_buffer[1024] = {0};
 static int file_path_buffer_size = 1024;
+
+// Textedit
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 
+// Input
+static int gamepad_number = 0;
+static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
+
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
-
-// Gamepads
-static struct nk_gamepads gamepads;
 
 void button_clicked(struct nk_console* button) {
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
@@ -157,6 +178,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
             nk_console_button_onclick(progressbar, "Back", nk_console_button_back);
         }
+
+        // Input: From any gamepad (-1)
+        nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)

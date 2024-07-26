@@ -56,6 +56,7 @@ int main() {
 - Slider
 - TextEdit
 - Color
+- Input
 
 ## API
 
@@ -80,6 +81,7 @@ nk_console* nk_console_row_begin(nk_console* parent);
 void nk_console_row_end(nk_console* console);
 nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_num, int* out_gamepad_num, enum nk_gamepad_button* out_gamepad_button);
 void nk_console_show_message(nk_console* console, const char* text);
 
 // Utilities
