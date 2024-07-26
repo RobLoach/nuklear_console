@@ -1,18 +1,15 @@
 #define PNTR_APP_IMPLEMENTATION
 #define PNTR_ENABLE_DEFAULT_FONT
 #define PNTR_ENABLE_MATH
-#define NK_INCLUDE_DEFAULT_ALLOCATOR
 #include "pntr_app.h"
 
+#define NK_INCLUDE_DEFAULT_ALLOCATOR
 #define PNTR_NUKLEAR_IMPLEMENTATION
 #include "pntr_nuklear.h"
 
 #define NK_GAMEPAD_PNTR
 #define NK_GAMEPAD_IMPLEMENTATION
 #include "nuklear_gamepad.h"
-
-#define WINDOW_WIDTH 400
-#define WINDOW_HEIGHT 300
 
 #define NK_CONSOLE_ENABLE_TINYDIR
 #include "../common/nuklear_console_demo.c"
@@ -84,8 +81,8 @@ void Close(pntr_app* app) {
 
 pntr_app Main(int argc, char* argv[]) {
     return (pntr_app) {
-        .width = WINDOW_WIDTH,
-        .height = WINDOW_HEIGHT,
+        .width = 400,
+        .height = 300,
         .title = "nuklear_console_demo_pntr",
         .init = Init,
         .update = Update,
