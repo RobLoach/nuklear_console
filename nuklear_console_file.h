@@ -241,10 +241,16 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
             int desired_length = nk_strlen(data->directory);
             if (desired_length >= data->file_path_buffer_size) {
                 NK_ASSERT(0); // File path is too long
+                nk_console_show_message(file, "Error: File path is too long.");
             }
             else {
                 NK_MEMCPY(data->file_path_buffer, data->directory, desired_length);
                 data->file_path_buffer[desired_length] = '\0';
+
+                // Trigger the onchange event and exit.
+                if (file->onchange != NULL) {
+                    file->onchange(file);
+                }
             }
 
             // Now that we selected a file, we can exit.

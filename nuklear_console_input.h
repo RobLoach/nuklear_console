@@ -64,6 +64,7 @@ extern "C" {
  */
 static const char* nk_console_input_button_name(enum nk_gamepad_button button) {
     switch (button) {
+        case NK_GAMEPAD_BUTTON_INVALID: return "<None>";
         case NK_GAMEPAD_BUTTON_A: return "A";
         case NK_GAMEPAD_BUTTON_B: return "B";
         case NK_GAMEPAD_BUTTON_X: return "X";
