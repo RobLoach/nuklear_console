@@ -67,7 +67,6 @@ typedef struct nk_console {
     struct nk_console* parent;
     struct nk_context* ctx;
     struct nk_console** children;
-    struct nk_console* activeParent;
     struct nk_console* activeWidget;
     nk_bool input_processed;
 
@@ -78,6 +77,14 @@ typedef struct nk_console {
 } nk_console;
 
 typedef struct nk_console_top_data {
+    /**
+     * The parent widget that will be actively rendered.
+     */
+    struct nk_console* active_parent;
+
+    /**
+     * A cvector of messages to display.
+     */
     struct nk_console_message* messages;
 
     /**
@@ -115,6 +122,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
 NK_API void nk_console_set_active_widget(nk_console* widget);
+NK_API void* nk_console_active_parent(nk_console* widget);
 NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void *ptr);
@@ -321,17 +329,17 @@ NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
 }
 
 NK_API void nk_console_set_active_parent(nk_console* new_parent) {
-    if (new_parent == NULL) {
+    nk_console* top = nk_console_get_top(new_parent);
+    if (top == NULL || top->data == NULL) {
         return;
     }
 
-    nk_console* top = nk_console_get_top(new_parent);
-    if (top != NULL) {
-        top->activeParent = new_parent;
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    data->active_parent = new_parent;
 
-        // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
-        nk_window_set_scroll(new_parent->ctx, 0, 0);
-    }
+    // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
+    // TODO: Detemine if scrolling the window on switching is actually needed.
+    nk_window_set_scroll(new_parent->ctx, 0, 0);
 }
 
 /**
@@ -465,19 +473,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         }
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
-            if (top->activeParent == NULL) {
-                return;
-            }
-
-            if (widget->parent != NULL) {
-                if (widget->parent == top) {
-                    top->activeParent = top;
-                }
-                else if (widget->parent->parent != NULL) {
-                    top->activeParent = widget->parent->parent;
-                }
-            }
-
+            nk_console_button_back(widget);
             top->input_processed = nk_true;
         }
     }
@@ -559,6 +555,15 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
     }
 }
 
+NK_API void* nk_console_active_parent(nk_console* widget) {
+    nk_console* top = nk_console_get_top(widget);
+    if (top == NULL || top->data == NULL) {
+        return NULL;
+    }
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    return data->active_parent;
+}
+
 /**
  * Render the given console widget.
  *
@@ -573,38 +578,39 @@ NK_API void nk_console_render(nk_console* console) {
     if (console->parent == NULL) {
         // Reset the input state.
         console->input_processed = nk_false;
+        nk_console* active_parent = nk_console_active_parent(console);
 
         // Make sure there is an active widget.
         if (console->activeWidget == NULL) {
-            nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent != NULL ? console->activeParent : console));
+            nk_console_set_active_widget(nk_console_find_first_selectable(active_parent != NULL ? active_parent : console));
         }
 
         // Render the active message.
         nk_console_render_message(console);
 
         // Render the active parent.
-        if (console->activeParent != NULL && console->activeParent->children != NULL) {
+        if (active_parent != NULL && active_parent->children != NULL) {
             // Make sure there's an active widget selected.
-            if (console->activeParent->activeWidget == NULL) {
-                nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
+            if (active_parent->activeWidget == NULL) {
+                nk_console_set_active_widget(nk_console_find_first_selectable(active_parent));
             }
             else {
                 nk_bool widgetFound = nk_false;
-                for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
-                    if (console->activeParent->children[i] == console->activeParent->activeWidget) {
+                for (size_t i = 0; i < cvector_size(active_parent->children); ++i) {
+                    if (active_parent->children[i] == active_parent->activeWidget) {
                         widgetFound = nk_true;
                         break;
                     }
                 }
 
                 if (widgetFound == nk_false) {
-                    nk_console_set_active_widget(nk_console_find_first_selectable(console->activeParent));
+                    nk_console_set_active_widget(nk_console_find_first_selectable(active_parent));
                 }
             }
 
             // Render all the children
-            for (size_t i = 0; i < cvector_size(console->activeParent->children); ++i) {
-                nk_console_render(console->activeParent->children[i]);
+            for (size_t i = 0; i < cvector_size(active_parent->children); ++i) {
+                nk_console_render(active_parent->children[i]);
             }
             return;
         }

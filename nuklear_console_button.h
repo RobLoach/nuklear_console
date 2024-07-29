@@ -173,7 +173,6 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
         // If there's no onclick action and there are children...
         if (data->onclick == NULL) {
             if (console->children != NULL) {
-                //top->activeParent = console;
                 nk_console_set_active_parent(console);
             }
         }
@@ -219,11 +218,13 @@ NK_API void nk_console_button_back(nk_console* button) {
     if (parent != NULL) {
         parent = parent->parent;
     }
+
     if (parent != NULL) {
         nk_console_set_active_parent(parent);
     }
     else {
-        top->activeParent = NULL;
+        nk_console_top_data* data = (nk_console_top_data*)top->data;
+        data->active_parent = NULL;
     }
 }
 

@@ -85,7 +85,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button) {
     }
 
     // Switch to show all the children.
-    top->activeParent = button;
+    nk_console_set_active_parent(button);
 }
 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
