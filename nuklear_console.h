@@ -53,6 +53,7 @@ typedef struct nk_console_message {
 
 typedef struct nk_console {
     nk_console_widget_type type;
+    void* user_data;
     const char* label;
     int label_length;
     int alignment;
@@ -92,14 +93,6 @@ typedef struct nk_console_top_data {
      * @see nk_console_set_gamepads()
      */
     struct nk_gamepads* gamepads;
-
-    /**
-     * Custom user data. This is only applied to the top-level console.
-     *
-     * @see nk_console_user_data()
-     * @see nk_console_set_user_data()
-     */
-    void* user_data;
 } nk_console_top_data;
 
 // Console
@@ -131,23 +124,6 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
-
-/**
- * Get the user data for the top-level console.
- *
- * @param console Any widget within the console family.
- *
- * @return The custom user data.
- */
-NK_API void* nk_console_user_data(nk_console* console);
-
-/**
- * Set the user data for the top-level console.
- *
- * @param console Any widget within the console family.
- * @param user_data The custom user data to set.
- */
-NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -328,7 +304,7 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
     nk_console* top = nk_console_get_top(new_parent);
     if (top != NULL) {
         top->activeParent = new_parent;
-
+        
         // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
         nk_window_set_scroll(new_parent->ctx, 0, 0);
     }
@@ -718,25 +694,6 @@ NK_API void nk_console_free(nk_console* console) {
     nk_console_free_children(console);
 
     nk_console_mfree(handle, console);
-}
-
-NK_API void* nk_console_user_data(nk_console* console) {
-    nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return NULL;
-    }
-
-    return ((nk_console_top_data*)top->data)->user_data;
-}
-
-NK_API void nk_console_set_user_data(nk_console* console, void* user_data) {
-    nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return;
-    }
-
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
-    data->user_data = user_data;
 }
 
 NK_API void nk_console_free_children(nk_console* console) {
