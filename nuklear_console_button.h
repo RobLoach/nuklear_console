@@ -80,7 +80,7 @@ NK_API void nk_console_button_set_onclick_handler(nk_console* button, nk_console
 
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     nk_console_event_handler_destroy(&data->onclick, button);
-      
+
     data->onclick = onclick;
 }
 
