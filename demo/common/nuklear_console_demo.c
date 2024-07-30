@@ -222,7 +222,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     }
 
     nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);
-    theme_options->onchange = theme_changed;
+    nk_console_set_onchange(theme_options, &theme_changed);
     theme_options->tooltip = "Change the theme of the console!";
     set_style(ctx, (enum theme)theme);
 

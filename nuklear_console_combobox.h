@@ -63,9 +63,7 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
     nk_console_button_back(button);
 
     // Invoke the onchange callback.
-    if (combobox->onchange != NULL) {
-        combobox->onchange(combobox);
-    }
+    nk_console_onchange(combobox);
 }
 
 /**
@@ -169,9 +167,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
             if (changed) {
                 console->label = console->children[*data->selected + 1]->label;
                 console->label_length = console->children[*data->selected + 1]->label_length;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
         }
     }

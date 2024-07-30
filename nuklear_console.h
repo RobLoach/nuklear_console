@@ -6,13 +6,33 @@ extern "C" {
 #endif
 
 struct nk_console;
+struct nk_console_event_handler;
 
 /**
- * Event handler for a console widget.
+ * Basic event handler for a console widget.
  *
  * @param widget The widget that was acted upon.
  */
 typedef void (*nk_console_event)(struct nk_console* widget);
+
+typedef union nk_console_event_data {
+    void* user; /** Arbitrary user data to be used in 'callback' and/or 'destructor'. */
+    nk_console_event event; /** Used when forwarding to a basic event handler. */
+} nk_console_event_data;
+
+/**
+ * Event handler for a console widget. Supports user-specified state and a destructor.
+ *
+ * @param data Arbitrary data passed through on behalf of the user.
+ * @param widget The widget that was acted upon.
+ */
+typedef void (*nk_console_event_handler_fn)(nk_console_event_data data, struct nk_console* widget);
+
+typedef struct nk_console_event_handler {
+    nk_console_event_handler_fn callback; /** Invoked when this handler is triggered. */
+    nk_console_event_data data; /** Passed to both 'callback' and 'destructor'. */
+    nk_console_event_handler_fn destructor; /** Invoked when this handler is destroyed or overwritten. */
+} nk_console_event_handler;
 
 /**
  * An event handler for rendering the given widget.
@@ -72,7 +92,7 @@ typedef struct nk_console {
     nk_bool input_processed;
 
     // Events
-    nk_console_event onchange; /** Invoked when there is a change in the value for the widget. */
+    nk_console_event_handler onchange_handler; /** Invoked when there is a change in the value for the widget. */
     nk_console_render_event render; /** Render the widget. */
     nk_console_event destroy; /** Destroy the widget. */
 } nk_console;
@@ -123,6 +143,7 @@ NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gam
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
+NK_API void nk_console_set_onchange_handler(nk_console* widget, nk_console_event_handler onchange);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
 NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
@@ -131,6 +152,8 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
+NK_API void nk_console_event_handler_destroy(nk_console_event_handler* handler, nk_console* widget);
+NK_API void nk_console_onchange(nk_console* widget);
 
 /**
  * Get the user data for the top-level console.
@@ -170,6 +193,37 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 
 #ifdef __cplusplus
 }
+#endif
+
+#ifdef __cplusplus
+
+#include <utility>
+
+template <typename T>
+void nk_console_event_handler_call(nk_console_event_data data, nk_console* widget) {
+    T* t = reinterpret_cast<T*>(data.user);
+    (*t)(widget);
+}
+
+template <typename T>
+void nk_console_event_handler_destroy(nk_console_event_data data, nk_console*) {
+    T* t = reinterpret_cast<T*>(data.user);
+    t->~T();
+    nk_console_mfree(nk_handle_id(0), data.user);
+}
+
+template <typename T>
+void nk_console_set_onchange_handler(nk_console* widget, T&& t) {
+    void* memory = nk_console_malloc(nk_handle_id(0), NULL, sizeof(T));
+    new (memory) T(std::move(t));
+    nk_console_event_handler handler = {
+        &nk_console_event_handler_call<T>,
+        memory,
+        &nk_console_event_handler_destroy<T>,
+    };
+    nk_console_set_onchange_handler(widget, handler);
+}
+
 #endif
 
 #endif  // NK_CONSOLE_H__
@@ -286,12 +340,43 @@ NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
     widget->tooltip = tooltip;
 }
 
+NK_API void nk_console_event_handler_destroy(nk_console_event_handler* handler, nk_console* widget) {
+    if (handler->destructor) {
+        handler->destructor(handler->data, widget);
+        handler->destructor = NULL;
+    }
+    handler->callback = NULL;
+}
+
+NK_API void nk_console_onchange(nk_console* widget) {
+    if (widget->onchange_handler.callback) {
+        widget->onchange_handler.callback(widget->onchange_handler.data, widget);
+    }
+}
+
+static void nk_console_call_event(nk_console_event_data data, nk_console* widget) {
+    data.event(widget);
+}
+
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange) {
     if (widget == NULL) {
         return;
     }
 
-    widget->onchange = onchange;
+    nk_console_event_handler handler = {0};
+    handler.callback = &nk_console_call_event;
+    handler.data.event = onchange;
+    nk_console_set_onchange_handler(widget, handler);
+}
+
+NK_API void nk_console_set_onchange_handler(nk_console* widget, nk_console_event_handler onchange) {
+    if (widget == NULL) {
+        return;
+    }
+
+    nk_console_event_handler_destroy(&widget->onchange_handler, widget);
+
+    widget->onchange_handler = onchange;
 }
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
@@ -703,6 +788,8 @@ NK_API void nk_console_free(nk_console* console) {
         return;
     }
     nk_handle handle = {0};
+
+    nk_console_event_handler_destroy(&console->onchange_handler, console);
 
     if (console->destroy) {
         console->destroy(console);

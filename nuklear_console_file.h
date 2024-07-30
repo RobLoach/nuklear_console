@@ -248,9 +248,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
                 data->file_path_buffer[desired_length] = '\0';
 
                 // Trigger the onchange event and exit.
-                if (file->onchange != NULL) {
-                    file->onchange(file);
-                }
+                nk_console_onchange(file);
             }
 
             // Now that we selected a file, we can exit.
