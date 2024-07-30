@@ -35,6 +35,8 @@ static float slider_float_test = 0.4f;
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
+static nk_bool checkbox4 = nk_false;
+static nk_bool checkbox5 = nk_false;
 
 // Messages
 static int message_count = 0;
@@ -62,6 +64,12 @@ void button_clicked(struct nk_console* button) {
 
 void theme_changed(struct nk_console* combobox) {
     set_style(combobox->ctx, (enum theme)theme);
+}
+
+void exlude_other_checkbox(nk_console_event_data data, nk_console* unused) {
+    NK_UNUSED(unused);
+    nk_console* other = (nk_console*)data.user;
+    other->disabled = !other->disabled;
 }
 
 void nk_console_demo_show_message(struct nk_console* button) {
@@ -115,6 +123,17 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
                 ->alignment = NK_TEXT_RIGHT;
             nk_console_checkbox(checkbox_button, "Disabled Checkbox", &checkbox2)
                 ->disabled = nk_true;
+
+            // Onchange callbacks can be used to implement custom logic.
+            // These two checkboxes disable each other when checked.
+            nk_console* exclude_a = nk_console_checkbox(checkbox_button, "Exclusive A (disables B)", &checkbox4);
+            nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
+            nk_console_event_handler handler = { &exlude_other_checkbox };
+            handler.data.user = exclude_b;
+            nk_console_set_onchange_handler(exclude_a, handler);
+            handler.data.user = exclude_a;
+            nk_console_set_onchange_handler(exclude_b, handler);
+
             nk_console_button_onclick(checkbox_button, "Back", nk_console_button_back);
         }
 
