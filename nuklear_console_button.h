@@ -37,14 +37,7 @@ NK_API struct nk_image nk_console_button_get_image(nk_console* button);
 template <typename T>
 void nk_console_button_onclick_handler(nk_console* parent, const char* text,
                                        T&& t) {
-    void* memory = nk_console_malloc(nk_handle_id(0), NULL, sizeof(T));
-    T* data = new (memory) T(std::move(t));
-    nk_console_event_handler handler = {
-        &nk_console_event_handler_call<T>,
-        data,
-        &nk_console_event_handler_destroy<T>,
-    };
-    nk_console_button_onclick_handler(parent, text, handler);
+    nk_console_button_onclick_handler(parent, text, nk_console_create_event_handler(std::move(t)));
 }
 
 #endif

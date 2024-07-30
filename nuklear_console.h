@@ -195,7 +195,7 @@ void nk_console_event_handler_destroy(nk_console_event_data data, nk_console*) {
 }
 
 template <typename T>
-void nk_console_set_onchange_handler(nk_console* widget, T&& t) {
+nk_console_event_handler nk_console_create_event_handler(T&& t) {
     void* memory = nk_console_malloc(nk_handle_id(0), NULL, sizeof(T));
     T* data = new (memory) T(std::move(t));
     nk_console_event_handler handler = {
@@ -203,7 +203,12 @@ void nk_console_set_onchange_handler(nk_console* widget, T&& t) {
         data,
         &nk_console_event_handler_destroy<T>,
     };
-    nk_console_set_onchange_handler(widget, handler);
+    return handler;
+}
+
+template <typename T>
+void nk_console_set_onchange_handler(nk_console* widget, T&& t) {
+    nk_console_set_onchange_handler(widget, nk_console_create_event_handler(std::move(t)));
 }
 
 #endif
