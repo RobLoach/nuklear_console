@@ -128,7 +128,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             // These two checkboxes disable each other when checked.
             nk_console* exclude_a = nk_console_checkbox(checkbox_button, "Exclusive A (disables B)", &checkbox4);
             nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
-            nk_console_event_handler handler = { &exlude_other_checkbox };
+            nk_console_event_handler handler = {0};
+            handler.callback = &exlude_other_checkbox;
             handler.data.user = exclude_b;
             nk_console_set_onchange_handler(exclude_a, handler);
             handler.data.user = exclude_a;

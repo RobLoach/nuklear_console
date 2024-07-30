@@ -1,7 +1,7 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
@@ -173,30 +173,11 @@ NK_API void* nk_console_user_data(nk_console* console);
  */
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 
-#define NK_CONSOLE_HEADER_ONLY
-#include "nuklear_console_label.h"
-#include "nuklear_console_button.h"
-#include "nuklear_console_checkbox.h"
-#include "nuklear_console_progress.h"
-#include "nuklear_console_combobox.h"
-#include "nuklear_console_property.h"
-#include "nuklear_console_row.h"
-#include "nuklear_console_textedit.h"
-#include "nuklear_console_textedit_text.h"
-#include "nuklear_console_message.h"
-#include "nuklear_console_file.h"
-#include "nuklear_console_file_system.h"
-#include "nuklear_console_image.h"
-#include "nuklear_console_spacing.h"
-#include "nuklear_console_color.h"
-#include "nuklear_console_input.h"
-#undef NK_CONSOLE_HEADER_ONLY
-
-#ifdef __cplusplus
+#if defined(__cplusplus)
 }
 #endif
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 
 #include <utility>
 
@@ -226,6 +207,25 @@ void nk_console_set_onchange_handler(nk_console* widget, T&& t) {
 }
 
 #endif
+
+#define NK_CONSOLE_HEADER_ONLY
+#include "nuklear_console_label.h"
+#include "nuklear_console_button.h"
+#include "nuklear_console_checkbox.h"
+#include "nuklear_console_progress.h"
+#include "nuklear_console_combobox.h"
+#include "nuklear_console_property.h"
+#include "nuklear_console_row.h"
+#include "nuklear_console_textedit.h"
+#include "nuklear_console_textedit_text.h"
+#include "nuklear_console_message.h"
+#include "nuklear_console_file.h"
+#include "nuklear_console_file_system.h"
+#include "nuklear_console_image.h"
+#include "nuklear_console_spacing.h"
+#include "nuklear_console_color.h"
+#include "nuklear_console_input.h"
+#undef NK_CONSOLE_HEADER_ONLY
 
 #endif  // NK_CONSOLE_H__
 

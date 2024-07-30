@@ -30,6 +30,25 @@ NK_API struct nk_image nk_console_button_get_image(nk_console* button);
 }
 #endif
 
+#if defined(__cplusplus)
+
+#include <utility>
+
+template <typename T>
+void nk_console_button_onclick_handler(nk_console* parent, const char* text,
+                                       T&& t) {
+    void* memory = nk_console_malloc(nk_handle_id(0), NULL, sizeof(T));
+    T* data = new (memory) T(std::move(t));
+    nk_console_event_handler handler = {
+        &nk_console_event_handler_call<T>,
+        data,
+        &nk_console_event_handler_destroy<T>,
+    };
+    nk_console_button_onclick_handler(parent, text, handler);
+}
+
+#endif
+
 #endif // NK_CONSOLE_BUTTON_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
