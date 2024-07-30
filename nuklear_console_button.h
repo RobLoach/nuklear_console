@@ -241,6 +241,14 @@ NK_API void nk_console_button_back(nk_console* button) {
     }
 }
 
+static void nk_console_button_destroy(nk_console* button) {
+    nk_console_button_data* data = (nk_console_button_data*)button->data;
+    if (data == NULL) {
+        return;
+    }
+    nk_console_event_handler_destroy(&data->onclick, button);
+}
+
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {
     nk_console_event_handler handler = {0};
     if (onclick) {
@@ -261,6 +269,7 @@ NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const c
     button->selectable = nk_true;
     button->columns = 1;
     button->render = nk_console_button_render;
+    button->destroy = &nk_console_button_destroy;
     nk_console_button_set_onclick_handler(button, onclick);
     return button;
 }
