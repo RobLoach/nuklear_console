@@ -7,7 +7,7 @@ extern "C" {
 
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
-    nk_console_event onclick;
+    nk_console_event_handler onclick;
     struct nk_image image;
 } nk_console_button_data;
 
@@ -15,11 +15,13 @@ NK_API nk_console* nk_console_button(nk_console* parent, const char* text);
 NK_API struct nk_rect nk_console_button_render(nk_console* console);
 NK_API void nk_console_button_back(nk_console* button);
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick);
+NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const char* text, nk_console_event_handler onclick);
 
 NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button);
 NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol);
 NK_API nk_console_event nk_console_button_get_onclick(nk_console* button);
 NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_event onclick);
+NK_API void nk_console_button_set_onclick_handler(nk_console* button, nk_console_event_handler onclick);
 
 NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image);
 NK_API struct nk_image nk_console_button_get_image(nk_console* button);
@@ -59,14 +61,26 @@ NK_API nk_console_event nk_console_button_get_onclick(nk_console* button) {
         return NULL;
     }
     nk_console_button_data* data = (nk_console_button_data*)button->data;
-    return data->onclick;
+    return data->onclick.data.event;
 }
 
 NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_event onclick) {
+    nk_console_event_handler handler = {0};
+    if (onclick) {
+        handler.callback = &nk_console_call_event;
+        handler.data.event = onclick;
+    }
+    nk_console_button_set_onclick_handler(button, handler);
+}
+
+NK_API void nk_console_button_set_onclick_handler(nk_console* button, nk_console_event_handler onclick) {
     if (button == NULL || button->data == NULL) {
         return;
     }
+
     nk_console_button_data* data = (nk_console_button_data*)button->data;
+    nk_console_event_handler_destroy(&data->onclick, button);
+      
     data->onclick = onclick;
 }
 
@@ -171,14 +185,14 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
         top->input_processed = nk_true;
 
         // If there's no onclick action and there are children...
-        if (data->onclick == NULL) {
+        if (data->onclick.callback == NULL) {
             if (console->children != NULL) {
                 //top->activeParent = console;
                 nk_console_set_active_parent(console);
             }
         }
         else {
-            data->onclick(console);
+            data->onclick.callback(data->onclick.data, console);
         }
     }
 
@@ -228,6 +242,15 @@ NK_API void nk_console_button_back(nk_console* button) {
 }
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {
+    nk_console_event_handler handler = {0};
+    if (onclick) {
+        handler.callback = &nk_console_call_event;
+        handler.data.event = onclick;
+    }
+    return nk_console_button_onclick_handler(parent, text, handler);
+}
+
+NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const char* text, nk_console_event_handler onclick) {
     // Create the widget data.
     nk_console_button_data* data = (nk_console_button_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_button_data));
     nk_zero(data, sizeof(nk_console_button_data));
@@ -238,7 +261,7 @@ NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* tex
     button->selectable = nk_true;
     button->columns = 1;
     button->render = nk_console_button_render;
-    nk_console_button_set_onclick(button, onclick);
+    nk_console_button_set_onclick_handler(button, onclick);
     return button;
 }
 

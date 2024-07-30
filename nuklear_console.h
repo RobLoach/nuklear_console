@@ -92,7 +92,7 @@ typedef struct nk_console {
     nk_bool input_processed;
 
     // Events
-    nk_console_event_handler onchange_handler; /** Invoked when there is a change in the value for the widget. */
+    nk_console_event_handler onchange; /** Invoked when there is a change in the value for the widget. */
     nk_console_render_event render; /** Render the widget. */
     nk_console_event destroy; /** Destroy the widget. */
 } nk_console;
@@ -154,6 +154,7 @@ NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
 NK_API void nk_console_event_handler_destroy(nk_console_event_handler* handler, nk_console* widget);
 NK_API void nk_console_onchange(nk_console* widget);
+NK_API void nk_console_call_event(nk_console_event_data data, nk_console* widget);
 
 /**
  * Get the user data for the top-level console.
@@ -349,23 +350,21 @@ NK_API void nk_console_event_handler_destroy(nk_console_event_handler* handler, 
 }
 
 NK_API void nk_console_onchange(nk_console* widget) {
-    if (widget->onchange_handler.callback) {
-        widget->onchange_handler.callback(widget->onchange_handler.data, widget);
+    if (widget->onchange.callback) {
+        widget->onchange.callback(widget->onchange.data, widget);
     }
 }
 
-static void nk_console_call_event(nk_console_event_data data, nk_console* widget) {
+NK_API void nk_console_call_event(nk_console_event_data data, nk_console* widget) {
     data.event(widget);
 }
 
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange) {
-    if (widget == NULL) {
-        return;
-    }
-
     nk_console_event_handler handler = {0};
-    handler.callback = &nk_console_call_event;
-    handler.data.event = onchange;
+    if (onchange) {
+        handler.callback = &nk_console_call_event;
+        handler.data.event = onchange;
+    }
     nk_console_set_onchange_handler(widget, handler);
 }
 
@@ -374,9 +373,9 @@ NK_API void nk_console_set_onchange_handler(nk_console* widget, nk_console_event
         return;
     }
 
-    nk_console_event_handler_destroy(&widget->onchange_handler, widget);
+    nk_console_event_handler_destroy(&widget->onchange, widget);
 
-    widget->onchange_handler = onchange;
+    widget->onchange = onchange;
 }
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
@@ -789,7 +788,7 @@ NK_API void nk_console_free(nk_console* console) {
     }
     nk_handle handle = {0};
 
-    nk_console_event_handler_destroy(&console->onchange_handler, console);
+    nk_console_event_handler_destroy(&console->onchange, console);
 
     if (console->destroy) {
         console->destroy(console);
