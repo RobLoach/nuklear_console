@@ -4,24 +4,23 @@
 #include <utility>
 
 template <typename T>
-void nk_console_event_handler_call(nk_console* widget, nk_console_event_data data) {
-    T* t = reinterpret_cast<T*>(data.user);
+void nk_console_event_handler_call(nk_console* widget, void* user_data) {
+    T* t = reinterpret_cast<T*>(user_data);
     (*t)(widget);
 }
 
 template <typename T>
-void nk_console_event_handler_destroy(nk_console*, nk_console_event_data data) {
-    T* t = reinterpret_cast<T*>(data.user);
+void nk_console_event_handler_destroy(nk_console*, void* user_data) {
+    T* t = reinterpret_cast<T*>(user_data);
     t->~T();
-    nk_console_mfree(nk_handle_id(0), data.user);
+    nk_console_mfree(nk_handle_id(0), user_data);
 }
 
 template <typename T>
 void nk_console_set_event_handler(nk_console* widget, nk_console_event_handler* handler, T&& t) {
     void* memory = nk_console_malloc(nk_handle_id(0), NULL, sizeof(T));
-    nk_console_event_data data;
-    data.user = new (memory) T(std::move(t));
-    nk_console_set_event_handler(widget, handler, &nk_console_event_handler_call<T>, data, &nk_console_event_handler_destroy<T>);
+    T* user_data = new (memory) T(std::move(t));
+    nk_console_set_event_handler(widget, handler, &nk_console_event_handler_call<T>, user_data, &nk_console_event_handler_destroy<T>);
 }
 
 template <typename T>

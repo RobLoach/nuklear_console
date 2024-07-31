@@ -222,7 +222,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     if (finished == nk_true) {
         top->input_processed = nk_true;
         data->timer = 0.0f;
-        nk_console_button_back(console);
+        nk_console_button_back(console, NULL);
     }
 
     return nk_rect(0, 0, 0, 0);

@@ -56,23 +56,26 @@ static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
-void button_clicked(struct nk_console* button) {
+void button_clicked(struct nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
         shouldClose = nk_true;
     }
 }
 
-void theme_changed(struct nk_console* combobox) {
+void theme_changed(struct nk_console* combobox, void* user_data) {
+    NK_UNUSED(user_data);
     set_style(combobox->ctx, (enum theme)theme);
 }
 
-void exclude_other_checkbox(nk_console* unused, nk_console_event_data data) {
+void exclude_other_checkbox(nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
-    nk_console* other = (nk_console*)data.user;
+    nk_console* other = (nk_console*)user_data;
     other->disabled = !other->disabled;
 }
 
-void nk_console_demo_show_message(struct nk_console* button) {
+void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     char message[128];
     snprintf(message, 128, "This is message #%d!", ++message_count);
     nk_console_show_message(button, message);
