@@ -648,6 +648,8 @@ NK_API void nk_console_render(nk_console* console) {
                 nk_bool widgetFound = nk_false;
                 for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
                     if (data->active_parent->children[i] == data->active_parent->activeWidget) {
+                        // Ensure the widget is still selectable.
+                        // TODO: If the widget got disabled, find the next selectable widget.
                         if (data->active_parent->activeWidget->selectable && !data->active_parent->activeWidget->disabled) {
                             widgetFound = nk_true;
                         }
