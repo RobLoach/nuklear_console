@@ -52,9 +52,9 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button) {
     // Invoke the back button behavior on the button.
     nk_console_button_back(button);
 
-    // Clear out the on-screen keyboard keys
-    nk_console* enter_textedit_button = button->parent;
-    nk_console_free_children(enter_textedit_button);
+    // TODO: Clear out the on-screen keyboard keys, after rendering the rest of the related children.
+    // nk_console* enter_textedit_button = button->parent;
+    // nk_console_free_children(enter_textedit_button);
 }
 
 NK_API void nk_console_textedit_key_click(nk_console* key) {
