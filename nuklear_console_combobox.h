@@ -76,7 +76,6 @@ NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data
 NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_combobox_data* data = (nk_console_combobox_data*)button->data;
-    nk_console* top = nk_console_get_top(button);
     int selected = data->selected == NULL ? 0 : *data->selected;
     if (button->children != NULL) {
         if ((int)cvector_size(button->children) > selected + 1) {
@@ -85,7 +84,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user
     }
 
     // Switch to show all the children.
-    top->activeParent = button;
+    nk_console_set_active_parent(button);
 }
 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
