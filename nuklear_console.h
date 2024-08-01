@@ -609,7 +609,8 @@ NK_API void nk_console_render(nk_console* console) {
             }
 
             // Render all the children
-            for (size_t i = 0; i < cvector_size(active_parent->children); ++i) {
+            size_t children_num = cvector_size(active_parent->children);
+            for (size_t i = 0; i < children_num; i++) {
                 nk_console_render(active_parent->children[i]);
             }
             return;
