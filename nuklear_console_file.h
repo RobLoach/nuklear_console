@@ -182,7 +182,8 @@ static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
 /**
  * Free the individual file entry buttons. This clears the label.
  */
-NK_API void nk_console_file_free_entry(nk_console* button) {
+NK_API void nk_console_file_free_entry(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     if (button == NULL) {
         return;
     }
@@ -193,7 +194,8 @@ NK_API void nk_console_file_free_entry(nk_console* button) {
     }
 }
 
-NK_API void nk_console_file_entry_onclick(nk_console* button) {
+NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     if (button == NULL || button->label == NULL) {
         return;
     }
@@ -248,9 +250,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button) {
                 data->file_path_buffer[desired_length] = '\0';
 
                 // Trigger the onchange event and exit.
-                if (file->onchange != NULL) {
-                    file->onchange(file);
-                }
+                nk_console_onchange(file);
             }
 
             // Now that we selected a file, we can exit.
@@ -282,7 +282,7 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     // Copy the path for the Label
     // TODO: file: Ensure UTF-8 compatibility.
     button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(char) * (len + 1));
-    button->destroy = nk_console_file_free_entry; // Use the button destructor to clear the label data.
+    button->destroy = &nk_console_file_free_entry; // Use the button destructor to clear the label data.
     char* label = (char*)button->label;
 
     // Use the base name as the label.
@@ -352,7 +352,8 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
 /**
  * Button callback for the main file button.
  */
-static void nk_console_file_main_click(nk_console* button) {
+static void nk_console_file_main_click(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     if (button == NULL || button->data == NULL) {
         return;
     }

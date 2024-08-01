@@ -45,7 +45,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         // Allow using ENTER to go back
         if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
             nk_console_get_top(widget)->input_processed = nk_true;
-            nk_console_textedit_button_back_click(widget);
+            nk_console_textedit_button_back_click(widget, NULL);
             return nk_rect(0, 0, 0, 0);
         }
         // Allow changing up/down only if they're not pressing backspace

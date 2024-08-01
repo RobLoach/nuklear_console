@@ -1,18 +1,25 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
-#ifdef __cplusplus
+#if defined(__cplusplus)
 extern "C" {
 #endif
 
 struct nk_console;
+struct nk_console_event_handler;
 
 /**
  * Event handler for a console widget.
  *
  * @param widget The widget that was acted upon.
  */
-typedef void (*nk_console_event)(struct nk_console* widget);
+typedef void (*nk_console_event)(struct nk_console* widget, void* user_data);
+
+typedef struct nk_console_event_handler {
+    nk_console_event callback; /** Invoked when this handler is triggered. */
+    void* user_data; /** Passed to both 'callback' and 'destructor'. */
+    nk_console_event destructor; /** Invoked when this handler is destroyed or overwritten. */
+} nk_console_event_handler;
 
 /**
  * An event handler for rendering the given widget.
@@ -71,7 +78,7 @@ typedef struct nk_console {
     nk_bool input_processed;
 
     // Events
-    nk_console_event onchange; /** Invoked when there is a change in the value for the widget. */
+    nk_console_event_handler onchange; /** Invoked when there is a change in the value for the widget. */
     nk_console_render_event render; /** Render the widget. */
     nk_console_event destroy; /** Destroy the widget. */
 } nk_console;
@@ -131,6 +138,7 @@ NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gam
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange);
+NK_API void nk_console_set_onchange_handler(nk_console* widget, nk_console_event callback, void* data, nk_console_event destructor);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
 NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
@@ -139,6 +147,11 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
+NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_event_handler* handler);
+NK_API void nk_console_onchange(nk_console* widget);
+NK_API void nk_console_set_event(nk_console* widget, nk_console_event_handler* handler, nk_console_event callback);
+NK_API void nk_console_set_event_handler(nk_console* widget, nk_console_event_handler* handler, nk_console_event callback, void* user_data, nk_console_event destructor);
+NK_API void nk_console_trigger_event(nk_console* widget, nk_console_event_handler* handler);
 
 /**
  * Get the user data for the top-level console.
@@ -156,6 +169,10 @@ NK_API void* nk_console_user_data(nk_console* console);
  * @param user_data The custom user data to set.
  */
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
+
+#if defined(__cplusplus)
+}
+#endif
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_label.h"
@@ -176,8 +193,10 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #include "nuklear_console_input.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
-#ifdef __cplusplus
-}
+#if defined(__cplusplus)
+
+#include "nuklear_console.hpp"
+
 #endif
 
 #endif  // NK_CONSOLE_H__
@@ -214,23 +233,9 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
 #endif
 #ifndef cvector_clib_realloc
-static void* nk_console_realloc(void* ptr, size_t size) {
-	if (size == 0) {
-        cvector_clib_free(ptr);
-        return NULL;
-    }
-    if (ptr == NULL) {
-        return cvector_clib_malloc(size);
-    }
-    void* output = cvector_clib_malloc(size);
-    if (output == NULL) {
-        return NULL;
-    }
-    NK_MEMCPY(output, ptr, size); // TODO: This memory copy is unsafe, and slow.
-    cvector_clib_free(ptr);
-	return output;
-}
-#define cvector_clib_realloc(ptr, size) nk_console_realloc(ptr, size)
+// TODO: Implement our own realloc() using Nuklear's allocator.
+#include <stdlib.h>
+#define cvector_clib_realloc(ptr, size) realloc(ptr, size)
 #endif
 #ifndef cvector_clib_assert
 #define cvector_clib_assert(expression) NK_ASSERT(expression)
@@ -294,12 +299,44 @@ NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
     widget->tooltip = tooltip;
 }
 
-NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange) {
-    if (widget == NULL) {
-        return;
+NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_event_handler* handler) {
+    if (handler->destructor) {
+        handler->destructor(widget, handler->user_data);
+        handler->destructor = NULL;
     }
+    handler->callback = NULL;
+}
 
-    widget->onchange = onchange;
+NK_API void nk_console_onchange(nk_console* widget) {
+    nk_console_trigger_event(widget, &widget->onchange);
+}
+
+NK_API void nk_console_set_event(nk_console* widget, nk_console_event_handler* handler, nk_console_event callback) {
+    nk_console_set_event_handler(widget, handler, callback, NULL, NULL);
+}
+
+NK_API void nk_console_set_event_handler(nk_console* widget, nk_console_event_handler* handler, nk_console_event callback, void* user_data, nk_console_event destructor) {
+    nk_console_event_handler_destroy(widget, handler);
+
+    *handler = (nk_console_event_handler){
+        .callback = callback,
+        .user_data = user_data,
+        .destructor = destructor,
+    };
+}
+
+NK_API void nk_console_trigger_event(nk_console* widget, nk_console_event_handler* handler) {
+    if (widget && handler && handler->callback) {
+        handler->callback(widget, handler->user_data);
+    }
+}
+
+NK_API void nk_console_set_onchange(nk_console* widget, nk_console_event onchange) {
+   nk_console_set_event(widget, &widget->onchange, onchange);
+}
+
+NK_API void nk_console_set_onchange_handler(nk_console* widget, nk_console_event callback, void* user_data, nk_console_event destructor) {
+    nk_console_set_event_handler(widget, &widget->onchange, callback, user_data, destructor);
 }
 
 NK_API void nk_console_set_active_widget(nk_console* widget) {
@@ -667,7 +704,8 @@ NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
     return nk_rect(0, 0, 0, 0);
 }
 
-NK_API void nk_console_free_top(nk_console* console) {
+NK_API void nk_console_free_top(nk_console* console, void* user_data) {
+    NK_UNUSED(user_data);
     if (console == NULL || console->data == NULL) {
         return;
     }
@@ -697,7 +735,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
-    console->destroy = nk_console_free_top;
+    console->destroy = &nk_console_free_top;
 
     return console;
 }
@@ -711,8 +749,10 @@ NK_API void nk_console_free(nk_console* console) {
     }
     nk_handle handle = {0};
 
+    nk_console_event_handler_destroy(console, &console->onchange);
+
     if (console->destroy) {
-        console->destroy(console);
+        console->destroy(console, NULL);
     }
 
     // Clear any component-specific data.

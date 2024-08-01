@@ -83,9 +83,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                     // Nothing.
                     break;
             }
-            if (console->onchange != NULL) {
-                console->onchange(console);
-            }
+            nk_console_onchange(console);
             top->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
@@ -108,9 +106,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                     // Nothing
                     break;
             }
-            if (console->onchange != NULL) {
-                console->onchange(console);
-            }
+            nk_console_onchange(console);
             top->input_processed = nk_true;
         }
     }
