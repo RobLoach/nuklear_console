@@ -728,7 +728,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     console->data = data;
-    console->destroy = nk_console_free_top;
+    console->destroy = &nk_console_free_top;
 
     return console;
 }
