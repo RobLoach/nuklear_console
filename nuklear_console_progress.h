@@ -65,9 +65,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             if (data->value_size != NULL && *data->value_size > 0) {
                 *data->value_size = *data->value_size - 1;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
             active = nk_true;
             top->input_processed = nk_true;
@@ -75,9 +73,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (data->value_size != NULL && *data->value_size < data->max_size) {
                 *data->value_size = *data->value_size + 1;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
             active = nk_true;
             top->input_processed = nk_true;
@@ -116,9 +112,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
 
     // Display the widget
     if (nk_progress(console->ctx, data->value_size, data->max_size, nk_true)) {
-        if (console->onchange != NULL) {
-            console->onchange(console);
-        }
+        nk_console_onchange(console);
     }
 
     // Restore the styles

@@ -35,6 +35,8 @@ static float slider_float_test = 0.4f;
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
+static nk_bool checkbox4 = nk_false;
+static nk_bool checkbox5 = nk_false;
 
 // Messages
 static int message_count = 0;
@@ -54,17 +56,26 @@ static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
-void button_clicked(struct nk_console* button) {
+void button_clicked(struct nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
         shouldClose = nk_true;
     }
 }
 
-void theme_changed(struct nk_console* combobox) {
+void theme_changed(struct nk_console* combobox, void* user_data) {
+    NK_UNUSED(user_data);
     set_style(combobox->ctx, (enum theme)theme);
 }
 
-void nk_console_demo_show_message(struct nk_console* button) {
+void exclude_other_checkbox(nk_console* unused, void* user_data) {
+    NK_UNUSED(unused);
+    nk_console* other = (nk_console*)user_data;
+    other->disabled = !other->disabled;
+}
+
+void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     char message[128];
     snprintf(message, 128, "This is message #%d!", ++message_count);
     nk_console_show_message(button, message);
@@ -115,6 +126,14 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
                 ->alignment = NK_TEXT_RIGHT;
             nk_console_checkbox(checkbox_button, "Disabled Checkbox", &checkbox2)
                 ->disabled = nk_true;
+
+            // Onchange callbacks can be used to implement custom logic.
+            // These two checkboxes disable each other when checked.
+            nk_console* exclude_a = nk_console_checkbox(checkbox_button, "Exclusive A (disables B)", &checkbox4);
+            nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
+            nk_console_set_onchange_handler(exclude_a, &exclude_other_checkbox, exclude_b, NULL);
+            nk_console_set_onchange_handler(exclude_b, &exclude_other_checkbox, exclude_a, NULL);
+
             nk_console_button_onclick(checkbox_button, "Back", nk_console_button_back);
         }
 
@@ -222,7 +241,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     }
 
     nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);
-    theme_options->onchange = theme_changed;
+    nk_console_set_onchange(theme_options, &theme_changed);
     theme_options->tooltip = "Change the theme of the console!";
     set_style(ctx, (enum theme)theme);
 

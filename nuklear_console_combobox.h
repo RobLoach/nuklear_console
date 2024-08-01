@@ -19,8 +19,8 @@ typedef struct nk_console_combobox_data {
 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected);
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console);
-NK_API void nk_console_combobox_button_click(nk_console* button);
-NK_API void nk_console_combobox_button_main_click(nk_console* button);
+NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data);
+NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user_data);
 
 #if defined(__cplusplus)
 }
@@ -39,14 +39,15 @@ extern "C" {
 /**
  * Handle the click event for combobox's children items.
  */
-NK_API void nk_console_combobox_button_click(nk_console* button) {
+NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     nk_console* combobox = button->parent;
     nk_console_combobox_data* data = (nk_console_combobox_data*)combobox->data;
 
     // Find which option was selected.
     int selected = nk_console_get_widget_index(button);
     if (selected <= 0 || selected >= (int)cvector_size(combobox->children)) {
-        nk_console_button_back(button);
+        nk_console_button_back(button, NULL);
         return;
     }
 
@@ -60,12 +61,10 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
     combobox->label_length = button->label_length;
 
     // Go back
-    nk_console_button_back(button);
+    nk_console_button_back(button, NULL);
 
     // Invoke the onchange callback.
-    if (combobox->onchange != NULL) {
-        combobox->onchange(combobox);
-    }
+    nk_console_onchange(combobox);
 }
 
 /**
@@ -74,7 +73,8 @@ NK_API void nk_console_combobox_button_click(nk_console* button) {
  * @see nk_console_combobox
  * @internal
  */
-NK_API void nk_console_combobox_button_main_click(nk_console* button) {
+NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     nk_console_combobox_data* data = (nk_console_combobox_data*)button->data;
     nk_console* top = nk_console_get_top(button);
     int selected = data->selected == NULL ? 0 : *data->selected;
@@ -169,9 +169,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
             if (changed) {
                 console->label = console->children[*data->selected + 1]->label;
                 console->label_length = console->children[*data->selected + 1]->label_length;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
         }
     }

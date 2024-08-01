@@ -22,9 +22,9 @@ typedef struct nk_console_textedit_data {
  */
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
-NK_API void nk_console_textedit_button_main_click(nk_console* button);
-NK_API void nk_console_textedit_button_back_click(nk_console* button);
-NK_API void nk_console_textedit_key_click(nk_console* key);
+NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data);
+NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data);
+NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 
 #if defined(__cplusplus)
 }
@@ -43,21 +43,23 @@ extern "C" {
 /**
  * Handle the click event for textedit's children items.
  */
-NK_API void nk_console_textedit_button_back_click(nk_console* button) {
+NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     // Make sure we're not going back to a row.
     if (button->parent->type == NK_CONSOLE_ROW) {
         button = button->parent;
     }
 
     // Invoke the back button behavior on the button.
-    nk_console_button_back(button);
+    nk_console_button_back(button, NULL);
 
     // TODO: Clear out the on-screen keyboard keys, after rendering the rest of the related children.
     // nk_console* enter_textedit_button = button->parent;
     // nk_console_free_children(enter_textedit_button);
 }
 
-NK_API void nk_console_textedit_key_click(nk_console* key) {
+NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
+    NK_UNUSED(user_data);
     if (key == NULL) {
         return;
     }
@@ -229,7 +231,8 @@ NK_API void nk_console_textedit_key_click(nk_console* key) {
  * @see nk_console_textedit
  * @internal
  */
-NK_API void nk_console_textedit_button_main_click(nk_console* button) {
+NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
     if (button == NULL || button->data == NULL) {
         return;
     }

@@ -43,9 +43,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = !*data->value_bool;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
             active = nk_true;
             top->input_processed = nk_true;
@@ -53,9 +51,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = nk_false;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
             active = nk_true;
             top->input_processed = nk_true;
@@ -63,9 +59,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = nk_true;
-                if (console->onchange != NULL) {
-                    console->onchange(console);
-                }
+                nk_console_onchange(console);
             }
             active = nk_true;
             top->input_processed = nk_true;
@@ -97,8 +91,8 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     }
 
     // Invoke onchanged event.
-    if (changed && console->onchange != NULL) {
-        console->onchange(console);
+    if (changed) {
+        nk_console_onchange(console);
     }
 
     if (console->disabled || !nk_console_is_active_widget(console)) {
