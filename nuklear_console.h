@@ -510,7 +510,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         }
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
-            nk_console_button_back(widget);
+            nk_console_button_back(widget, NULL);
             top->input_processed = nk_true;
         }
     }

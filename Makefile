@@ -9,17 +9,22 @@ clean:
 	$(MAKE) -C demo/pntr clean
 	rm -rf build
 
-raylib:
+raylib: submodules
 	$(MAKE) -C demo/raylib test
 
-glfw:
+glfw: submodules
 	$(MAKE) -C demo/glfw test
 
-sdl:
+sdl: submodules
 	$(MAKE) -C demo/sdl_renderer test
 
-pntr:
+pntr: submodules
 	$(MAKE) -C demo/pntr test
 
-web:
+web: submodules
 	$(MAKE) -C demo/raylib web
+
+vendor/Nuklear/nuklear.h:
+	git submodule update --init --recursive
+
+submodules: vendor/Nuklear/nuklear.h
