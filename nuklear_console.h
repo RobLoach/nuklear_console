@@ -206,23 +206,9 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
 #endif
 #ifndef cvector_clib_realloc
-static void* nk_console_realloc(void* ptr, size_t size) {
-	if (size == 0) {
-        cvector_clib_free(ptr);
-        return NULL;
-    }
-    if (ptr == NULL) {
-        return cvector_clib_malloc(size);
-    }
-    void* output = cvector_clib_malloc(size);
-    if (output == NULL) {
-        return NULL;
-    }
-    NK_MEMCPY(output, ptr, size); // TODO: This memory copy is unsafe, and slow.
-    cvector_clib_free(ptr);
-	return output;
-}
-#define cvector_clib_realloc(ptr, size) nk_console_realloc(ptr, size)
+// TODO: Implement our own realloc() using Nuklear's allocator.
+#include <stdlib.h>
+#define cvector_clib_realloc(ptr, size) realloc(ptr, size)
 #endif
 #ifndef cvector_clib_assert
 #define cvector_clib_assert(expression) NK_ASSERT(expression)
