@@ -62,52 +62,55 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
 
     // Allow changing the value with left/right
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
-            switch (console->type) {
-                case NK_CONSOLE_SLIDER_INT:
-                case NK_CONSOLE_PROPERTY_INT:
-                    *data->val_int = *data->val_int - data->step_int;
-                    if (*data->val_int < data->min_int) {
-                        *data->val_int = data->min_int;
-                    }
-                    break;
-                case NK_CONSOLE_SLIDER_FLOAT:
-                case NK_CONSOLE_PROPERTY_FLOAT:
-                    *data->val_float = *data->val_float - data->step_float;
-                    if (*data->val_float < data->min_float) {
-                        *data->val_float = data->min_float;
-                    }
-                    break;
-                default:
-                    // Nothing.
-                    break;
+    if (!console->disabled && nk_console_is_active_widget(console)) {
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (!top_data->input_processed) {
+            if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
+                switch (console->type) {
+                    case NK_CONSOLE_SLIDER_INT:
+                    case NK_CONSOLE_PROPERTY_INT:
+                        *data->val_int = *data->val_int - data->step_int;
+                        if (*data->val_int < data->min_int) {
+                            *data->val_int = data->min_int;
+                        }
+                        break;
+                    case NK_CONSOLE_SLIDER_FLOAT:
+                    case NK_CONSOLE_PROPERTY_FLOAT:
+                        *data->val_float = *data->val_float - data->step_float;
+                        if (*data->val_float < data->min_float) {
+                            *data->val_float = data->min_float;
+                        }
+                        break;
+                    default:
+                        // Nothing.
+                        break;
+                }
+                nk_console_onchange(console);
+                top_data->input_processed = nk_true;
             }
-            nk_console_onchange(console);
-            top->input_processed = nk_true;
-        }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
-            switch (console->type) {
-                case NK_CONSOLE_SLIDER_INT:
-                case NK_CONSOLE_PROPERTY_INT:
-                    *data->val_int = *data->val_int + data->step_int;
-                    if (*data->val_int > data->max_int) {
-                        *data->val_int = data->max_int;
-                    }
-                    break;
-                case NK_CONSOLE_SLIDER_FLOAT:
-                case NK_CONSOLE_PROPERTY_FLOAT:
-                    *data->val_float = *data->val_float + data->step_float;
-                    if (*data->val_float > data->max_float) {
-                        *data->val_float = data->max_float;
-                    }
-                    break;
-                default:
-                    // Nothing
-                    break;
+            else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
+                switch (console->type) {
+                    case NK_CONSOLE_SLIDER_INT:
+                    case NK_CONSOLE_PROPERTY_INT:
+                        *data->val_int = *data->val_int + data->step_int;
+                        if (*data->val_int > data->max_int) {
+                            *data->val_int = data->max_int;
+                        }
+                        break;
+                    case NK_CONSOLE_SLIDER_FLOAT:
+                    case NK_CONSOLE_PROPERTY_FLOAT:
+                        *data->val_float = *data->val_float + data->step_float;
+                        if (*data->val_float > data->max_float) {
+                            *data->val_float = data->max_float;
+                        }
+                        break;
+                    default:
+                        // Nothing
+                        break;
+                }
+                nk_console_onchange(console);
+                top_data->input_processed = nk_true;
             }
-            nk_console_onchange(console);
-            top->input_processed = nk_true;
         }
     }
 
