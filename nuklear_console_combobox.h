@@ -153,8 +153,9 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     nk_console_layout_widget(console);
 
     // Allow changing the value with left/right
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (data->selected != NULL && console->children != NULL) {
+    if (!console->disabled && nk_console_is_active_widget(console)) {
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (!top_data->input_processed && data->selected != NULL && console->children != NULL) {
             nk_bool changed = nk_false;
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && *data->selected > 0) {
                 *data->selected = *data->selected - 1;
@@ -166,6 +167,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
             }
 
             if (changed) {
+                top_data->input_processed = nk_true;
                 console->label = console->children[*data->selected + 1]->label;
                 console->label_length = console->children[*data->selected + 1]->label_length;
                 nk_console_onchange(console);

@@ -203,7 +203,8 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     }
 
     // Check for input.
-    if (top->input_processed == nk_false) {
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+    if (top_data->input_processed == nk_false) {
         // Gamepad button pressed.
         if (nk_gamepad_any_button_pressed((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
             // Trigger the onchange event and exit.
@@ -220,7 +221,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     }
 
     if (finished == nk_true) {
-        top->input_processed = nk_true;
+        top_data->input_processed = nk_true;
         data->timer = 0.0f;
         nk_console_button_back(console, NULL);
     }

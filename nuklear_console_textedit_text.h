@@ -39,12 +39,13 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
 
     nk_console* textedit = widget->parent;
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
+    nk_console_top_data* top_data = (nk_console_top_data*)nk_console_get_top(widget)->data;
 
     // Process checking the up/down switching in widgets before processing showing the widget itself
-    if (nk_console_is_active_widget(widget)) {
+    if (nk_console_is_active_widget(widget) && top_data->input_processed == nk_false) {
         // Allow using ENTER to go back
         if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
-            nk_console_get_top(widget)->input_processed = nk_true;
+            top_data->input_processed = nk_true;
             nk_console_textedit_button_back_click(widget, NULL);
             return nk_rect(0, 0, 0, 0);
         }

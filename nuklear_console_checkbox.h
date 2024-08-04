@@ -36,17 +36,18 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
     nk_console* top = nk_console_get_top(console);
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
     // Allow changing the checkbox value.
     nk_bool active = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
+    if (!console->disabled && nk_console_is_active_widget(console) && !top_data->input_processed) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = !*data->value_bool;
                 nk_console_onchange(console);
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             if (data->value_bool != NULL) {
@@ -54,7 +55,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 nk_console_onchange(console);
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (data->value_bool != NULL) {
@@ -62,7 +63,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 nk_console_onchange(console);
             }
             active = nk_true;
-            top->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
     }
 

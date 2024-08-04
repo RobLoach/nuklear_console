@@ -61,22 +61,25 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
 
     // Allow changing the value.
     nk_bool active = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed) {
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
-            if (data->value_size != NULL && *data->value_size > 0) {
-                *data->value_size = *data->value_size - 1;
-                nk_console_onchange(console);
+    if (!console->disabled && nk_console_is_active_widget(console)) {
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (!top_data->input_processed) {
+            if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
+                if (data->value_size != NULL && *data->value_size > 0) {
+                    *data->value_size = *data->value_size - 1;
+                    nk_console_onchange(console);
+                }
+                active = nk_true;
+                top_data->input_processed = nk_true;
             }
-            active = nk_true;
-            top->input_processed = nk_true;
-        }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
-            if (data->value_size != NULL && *data->value_size < data->max_size) {
-                *data->value_size = *data->value_size + 1;
-                nk_console_onchange(console);
+            else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
+                if (data->value_size != NULL && *data->value_size < data->max_size) {
+                    *data->value_size = *data->value_size + 1;
+                    nk_console_onchange(console);
+                }
+                active = nk_true;
+                top_data->input_processed = nk_true;
             }
-            active = nk_true;
-            top->input_processed = nk_true;
         }
     }
 

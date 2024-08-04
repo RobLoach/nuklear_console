@@ -98,6 +98,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     nk_console* top = nk_console_get_top(console);
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
     nk_console_layout_widget(console);
 
@@ -109,7 +110,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Check the button state.
     nk_bool selected = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top->input_processed && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
+    if (!console->disabled && nk_console_is_active_widget(console) && !top_data->input_processed && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
         selected = nk_true;
     }
 
@@ -169,7 +170,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Act on the button
     if (selected) {
-        top->input_processed = nk_true;
+        top_data->input_processed = nk_true;
 
         // If there's no onclick action and there are children...
         if (data->onclick.callback == NULL) {

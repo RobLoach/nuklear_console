@@ -75,7 +75,6 @@ typedef struct nk_console {
     struct nk_context* ctx;
     struct nk_console** children;
     struct nk_console* activeWidget;
-    nk_bool input_processed;
 
     // Events
     nk_console_event_handler onchange; /** Invoked when there is a change in the value for the widget. */
@@ -84,10 +83,8 @@ typedef struct nk_console {
 } nk_console;
 
 typedef struct nk_console_top_data {
-    /**
-     * The parent that is currently being displayed.
-     */
-    nk_console* active_parent;
+    nk_console* active_parent; /** The parent that is currently being displayed. */
+    nk_bool input_processed; /** Whether or not user input has been processed. */
 
     /**
      * Message queue that is to be shown.
@@ -451,6 +448,7 @@ NK_API int nk_console_get_widget_index(nk_console* widget) {
  */
 NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
     nk_console* top = nk_console_get_top(widget);
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
 
     // Scroll to the active widget if needed.
     struct nk_rect content_region = nk_window_get_content_region(widget->ctx);
@@ -466,7 +464,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     }
 
     // Only process an active input once.
-    if (top->input_processed == nk_false) {
+    if (data->input_processed == nk_false) {
         // Page Up
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
@@ -480,7 +478,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     }
                 }
             }
-            top->input_processed = nk_true;
+            data->input_processed = nk_true;
         }
         // Page Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
@@ -495,7 +493,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     }
                 }
             }
-            top->input_processed = nk_true;
+            data->input_processed = nk_true;
         }
         // Up
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP)) {
@@ -507,7 +505,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     break;
                 }
             }
-            top->input_processed = nk_true;
+            data->input_processed = nk_true;
         }
         // Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN)) {
@@ -519,7 +517,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     break;
                 }
             }
-            top->input_processed = nk_true;
+            data->input_processed = nk_true;
         }
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
@@ -536,7 +534,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                 }
             }
 
-            top->input_processed = nk_true;
+            data->input_processed = nk_true;
         }
     }
 }
@@ -632,7 +630,7 @@ NK_API void nk_console_render(nk_console* console) {
         nk_console_top_data* data = (nk_console_top_data*)console->data;
 
         // Reset the input state.
-        console->input_processed = nk_false;
+        data->input_processed = nk_false;
 
         // Render the active message.
         nk_console_render_message(console);
@@ -682,11 +680,12 @@ NK_API void nk_console_render(nk_console* console) {
         widget_bounds.y -= (float)window_scroll_y;
 
         nk_console* top = nk_console_get_top(console);
-        if (top->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
+        nk_console_top_data* data = (nk_console_top_data*)top->data;
+        if (data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             // Select the widget, if possible.
             if (!console->disabled && console->selectable) {
                 nk_console_set_active_widget(console);
-                top->input_processed = nk_true;
+                data->input_processed = nk_true;
             }
         }
     }

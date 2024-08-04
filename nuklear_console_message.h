@@ -124,7 +124,7 @@ NK_API void nk_console_render_message(nk_console* console) {
         }
         // If animations arn't an option, allow dismissing the message.
         else if (nk_console_button_pushed(console, NK_GAMEPAD_BUTTON_B)) {
-            console->input_processed = nk_true;
+            data->input_processed = nk_true;
             it->duration = 0.0f;
         }
 
