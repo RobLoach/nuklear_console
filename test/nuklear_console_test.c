@@ -1,30 +1,40 @@
+// This test suite uses pntr_nuklear to render the Nuklear Context to an image.
+// https://github.com/RobLoach/pntr_nuklear
+
 #include <assert.h>
+#include <stdio.h>
+
+#define PNTR_ENABLE_DEFAULT_FONT
+#define PNTR_IMPLEMENTATION
+#include "pntr.h"
 
 #define NK_INCLUDE_FIXED_TYPES
-#define NK_INCLUDE_STANDARD_IO
 #define NK_INCLUDE_STANDARD_VARARGS
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
-#define NK_IMPLEMENTATION
-#include "../vendor/Nuklear/nuklear.h"
+#define PNTR_NUKLEAR_IMPLEMENTATION
+#include "pntr_nuklear.h"
 
 #define NK_GAMEPAD_NONE
 #define NK_GAMEPAD_IMPLEMENTATION
-#include "../vendor/nuklear_gamepad/nuklear_gamepad.h"
+#include "nuklear_gamepad.h"
 
 #define NK_CONSOLE_IMPLEMENTATION
 #include "nuklear_console.h"
 
 int main() {
-    struct nk_context ctx;
-    nk_init_default(&ctx, 0);
+    // Load Nuklear
+    pntr_font* font = pntr_load_font_default();
+    assert(font != NULL);
+    struct nk_context* ctx = pntr_load_nuklear(font);
+    assert(ctx != NULL);
 
     // nk_console_init()
-    struct nk_console* console = nk_console_init(&ctx);
+    struct nk_console* console = nk_console_init(ctx);
     assert(console != NULL);
 
     // Gamepad
     struct nk_gamepads gamepads;
-    assert(nk_gamepad_init(&gamepads, &ctx, NULL) == nk_true);
+    assert(nk_gamepad_init(&gamepads, ctx, NULL) == nk_true);
     nk_console_set_gamepads(console, &gamepads);
 
     // nk_console_label()
@@ -41,7 +51,8 @@ int main() {
     assert(checkbox != NULL);
 
     // nk_console_spacing()
-    nk_console* spacing = nk_console_spacing(console, 5);
+    nk_console_label(console, "Spacing:");
+    nk_console* spacing = nk_console_spacing(console, 3);
     assert(spacing != NULL);
 
     // nk_console_progress()
@@ -70,7 +81,7 @@ int main() {
 
     // slider_float/int()
     float slider_float_test = 1.0f;
-    int slider_int_test = 10;
+    int slider_int_test = 15;
     nk_console* slider_float = nk_console_slider_float(console, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f);
     nk_console* slider_int = nk_console_slider_int(console, "Slider Int", 0, &slider_int_test, 20, 1);
     assert(slider_float != NULL);
@@ -93,6 +104,28 @@ int main() {
     nk_console* file = nk_console_file(console, "File", file_path_buffer, file_path_buffer_size);
     assert(file != NULL);
 
-    nk_console_free(console);
-}
+    // Create the screen buffer
+    pntr_image* screen = pntr_new_image(300, 800);
+    assert(screen != NULL);
 
+    // nk_console_render()
+    assert(nk_begin(ctx, "nuklear_console_test", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE) == nk_true);
+        nk_console_render(console);
+    nk_end(ctx);
+
+    // Draw the nuklear context on the screen.
+    pntr_draw_nuklear(screen, ctx);
+
+    // Save the output test image.
+    pntr_save_image(screen, "nuklear_console_test.png");
+
+    // Unload
+    nk_console_free(console);
+    pntr_unload_nuklear(ctx);
+    pntr_unload_image(screen);
+    pntr_unload_font(font);
+
+    printf("nuklear_console_test: Tests passed.\n");
+
+    return 0;
+}
