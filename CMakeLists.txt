@@ -34,3 +34,19 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
 else()
     set(NUKLEAR_CONSOLE_IS_MAIN FALSE)
 endif()
+
+option(NUKLEAR_CONSOLE_BUILD_TESTS "Tests" ${NUKLEAR_CONSOLE_IS_MAIN})
+
+# Examples
+if (NUKLEAR_CONSOLE_BUILD_TESTS)
+    include(CTest)
+    enable_testing()
+    if (BUILD_TESTING)
+        # set(CTEST_CUSTOM_TESTS_IGNORE
+        #     pkg-config--static
+        # )
+        # Always print verbose output when tests fail if run using `make test`.
+        list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+        add_subdirectory(test)
+    endif()
+endif()
