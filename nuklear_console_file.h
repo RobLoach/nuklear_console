@@ -227,7 +227,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     // Concatenate the button label to the directory.
     // TODO: file: Resolve the path properly, so the paths don't recurse. For example: folder/../folder
     // TODO: file: Add UTF-8 support.
-    NK_MEMCPY(data->directory + len, (void*)button->label, nk_strlen(button->label) + 1);
+    NK_MEMCPY(data->directory + len, (void*)button->label, (nk_size)(nk_strlen(button->label) + 1));
 
     enum nk_symbol_type symbol = nk_console_button_get_symbol(button);
     switch (symbol) { // Directory
@@ -246,7 +246,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
                 nk_console_show_message(file, "Error: File path is too long.");
             }
             else {
-                NK_MEMCPY(data->file_path_buffer, data->directory, desired_length);
+                NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
                 data->file_path_buffer[desired_length] = '\0';
 
                 // Trigger the onchange event and exit.
@@ -281,13 +281,13 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
 
     // Copy the path for the Label
     // TODO: file: Ensure UTF-8 compatibility.
-    button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(char) * (len + 1));
+    button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, (nk_size)(sizeof(char)) * (nk_size)(len + 1));
     button->destroy = &nk_console_file_free_entry; // Use the button destructor to clear the label data.
     char* label = (char*)button->label;
 
     // Use the base name as the label.
     const char* basename = nk_console_file_basename(path);
-    int basename_len = nk_strlen(basename);
+    nk_size basename_len = (nk_size)nk_strlen(basename);
     NK_MEMCPY(label, basename, basename_len);
     label[basename_len] = '\0';
 
@@ -366,7 +366,7 @@ static void nk_console_file_main_click(nk_console* button, void* user_data) {
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
     int directory_len = nk_console_file_get_directory_len(data->file_path_buffer);
-    NK_MEMCPY(data->directory, data->file_path_buffer, directory_len);
+    NK_MEMCPY(data->directory, data->file_path_buffer, (nk_size)directory_len);
     data->directory[directory_len] = '\0';
 
     if (nk_strlen(data->directory) == 0) {

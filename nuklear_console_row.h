@@ -185,7 +185,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
     // Rows use the advanced layout system to render their children.
-    nk_layout_row_begin(console->ctx, NK_DYNAMIC, console->height, console->columns);
+    nk_layout_row_begin(console->ctx, NK_DYNAMIC, (float)console->height, console->columns);
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
@@ -239,7 +239,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 
             // Determine the new active child based on the desired destination percent.
             float x = 0.0f;
-            int active_children_size = cvector_size(active->children);
+            int active_children_size = (int)cvector_size(active->children);
             for (active_data->activeChild = 0; active_data->activeChild < active_children_size; active_data->activeChild++) {
                 x += (float)active->children[active_data->activeChild]->columns / (float)active->columns;
                 if (x > desired_destination_percent) {

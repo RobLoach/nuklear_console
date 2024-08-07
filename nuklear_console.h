@@ -62,7 +62,7 @@ typedef struct nk_console {
     nk_console_widget_type type;
     const char* label;
     int label_length;
-    int alignment;
+    nk_flags alignment;
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
     nk_bool disabled; /** Whether or not the widget is currently disabled. */
@@ -433,8 +433,8 @@ NK_API int nk_console_get_widget_index(nk_console* widget) {
         return -1;
     }
 
-    size_t i;
-    for (i = 0; i < cvector_size(parent->children); i++) {
+    int count = (int)cvector_size(parent->children);
+    for (int i = 0; i < count; i++) {
         if (parent->children[i] == widget) {
             return i;
         }
@@ -454,13 +454,11 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     struct nk_rect content_region = nk_window_get_content_region(widget->ctx);
     nk_uint offsetx, offsety;
     nk_window_get_scroll(widget->ctx, &offsetx, &offsety);
-    if (bounds.y + bounds.h > content_region.y + content_region.h + offsety) {
-        nk_uint dest = bounds.y + bounds.h - content_region.y - content_region.h;
-        nk_window_set_scroll(widget->ctx, offsetx, dest);
+    if (bounds.y + bounds.h > content_region.y + content_region.h + (float)offsety) {
+        nk_window_set_scroll(widget->ctx, offsetx, (nk_uint)(bounds.y + bounds.h - content_region.y - content_region.h));
     }
-    else if (bounds.y < content_region.y + offsety) {
-        nk_uint dest = bounds.y - content_region.y;
-        nk_window_set_scroll(widget->ctx, offsetx, dest);
+    else if (bounds.y < content_region.y + (float)offsety) {
+        nk_window_set_scroll(widget->ctx, offsetx, (nk_uint)(bounds.y - content_region.y));
     }
 
     // Only process an active input once.
@@ -586,15 +584,15 @@ static void nk_console_tooltip_display(struct nk_context *ctx, const char *text)
     padding = style->window.padding;
 
     float text_height = (style->font->height + padding.y);
-    int x = ctx->input.mouse.pos.x;
-    int y = ctx->input.mouse.pos.y;
+    float x = ctx->input.mouse.pos.x;
+    float y = ctx->input.mouse.pos.y;
 
     // Display the tooltip at the bottom of the window, manipulating the mouse position
     struct nk_rect windowbounds = nk_window_get_bounds(ctx);
     ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2;
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f;
 
-    if (nk_tooltip_begin(ctx, (float)windowbounds.w)) {
+    if (nk_tooltip_begin(ctx, windowbounds.w)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_text_wrap(ctx, text, nk_strlen(text));
         nk_tooltip_end(ctx);
@@ -845,7 +843,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     }
 
     // Since we're not within a row, the widget owns the whole row.
-    nk_layout_row_dynamic(widget->ctx, widget->height, widget->columns);
+    nk_layout_row_dynamic(widget->ctx, (float)widget->height, widget->columns);
 }
 
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads) {
