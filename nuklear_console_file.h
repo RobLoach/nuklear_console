@@ -279,10 +279,11 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     // Add the button.
     nk_console* button = nk_console_button(parent, NULL);
 
-    // Copy the path for the Label
+    // Copy the path for the label, and register an event to destroy it.
     // TODO: file: Ensure UTF-8 compatibility.
     button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, (nk_size)(sizeof(char)) * (nk_size)(len + 1));
-    button->destroy = &nk_console_file_free_entry; // Use the button destructor to clear the label data.
+    nk_console_add_event(button, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_free_entry);
+
     char* label = (char*)button->label;
 
     // Use the base name as the label.

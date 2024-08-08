@@ -131,8 +131,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             // These two checkboxes disable each other when checked.
             nk_console* exclude_a = nk_console_checkbox(checkbox_button, "Exclusive A (disables B)", &checkbox4);
             nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
-            nk_console_set_onchange_handler(exclude_a, &exclude_other_checkbox, exclude_b, NULL);
-            nk_console_set_onchange_handler(exclude_b, &exclude_other_checkbox, exclude_a, NULL);
+
+            nk_console_add_event_handler(exclude_a, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_b, NULL);
+            nk_console_add_event_handler(exclude_b, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_a, NULL);
 
             nk_console_button_onclick(checkbox_button, "Back", nk_console_button_back);
         }
@@ -241,7 +242,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     }
 
     nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);
-    nk_console_set_onchange(theme_options, &theme_changed);
+    nk_console_add_event(theme_options, NK_CONSOLE_EVENT_CHANGED, &theme_changed);
     theme_options->tooltip = "Change the theme of the console!";
     set_style(ctx, (enum theme)theme);
 
