@@ -829,18 +829,14 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data) {
 }
 
 NK_API void nk_console_free_children(nk_console* console) {
-    if (console == NULL) {
+    if (console == NULL || console->children == NULL) {
         return;
     }
 
     // Since there won't be any children, make sure to unselect any active child.
     console->activeWidget = NULL;
 
-    // Clear all the children
-    if (console->children == NULL) {
-        return;
-    }
-
+    // Clear them all.
     size_t count = cvector_size(console->children);
     for (size_t i = 0; i < count; i++) {
         nk_console_free(console->children[i]);
