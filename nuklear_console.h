@@ -9,9 +9,9 @@ struct nk_console;
 struct nk_console_event_handler;
 
 typedef enum {
-    NK_CONSOLE_EVENT_DESTROYED,
-    NK_CONSOLE_EVENT_CHANGED,
-    NK_CONSOLE_EVENT_CLICKED
+    NK_CONSOLE_EVENT_DESTROYED, /** Triggered when the widget is destroyed. */
+    NK_CONSOLE_EVENT_CHANGED, /** Triggered when the value for the widget is changed. */
+    NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
 } nk_console_event_type;
 
 /**
@@ -322,7 +322,7 @@ NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_ty
         return;
     }
 
-    nk_console_event_handler handler = {
+    nk_console_event_handler handler = (nk_console_event_handler) {
         .type = type,
         .callback = callback,
         .user_data = user_data,
