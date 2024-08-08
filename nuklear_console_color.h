@@ -145,7 +145,7 @@ NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struc
     }
 
     // Back Button
-    nk_console_button_onclick(widget, "Back", nk_console_button_back);
+    nk_console_button_onclick(widget, "Back", &nk_console_button_back);
 
     return widget;
 }

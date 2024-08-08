@@ -92,7 +92,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     {
         nk_console_button_set_symbol(newgame, NK_SYMBOL_PLUS);
         nk_console_label(newgame, "This would start a new game!");
-        nk_console_button_onclick(newgame, "Back", nk_console_button_back);
+        nk_console_button_onclick(newgame, "Back", &nk_console_button_back);
     }
 
     // Widgets
@@ -115,7 +115,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
                 ->alignment = NK_TEXT_CENTERED;
             nk_console_label(label_button, "Right Aligned Label!")
                 ->alignment = NK_TEXT_RIGHT;
-            nk_console_button_onclick(label_button, "Back", nk_console_button_back);
+            nk_console_button_onclick(label_button, "Back", &nk_console_button_back);
         }
 
         nk_console* checkbox_button = nk_console_button(widgets, "Checkboxes");
@@ -134,7 +134,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_add_event_handler(exclude_a, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_b, NULL);
             nk_console_add_event_handler(exclude_b, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_a, NULL);
 
-            nk_console_button_onclick(checkbox_button, "Back", nk_console_button_back);
+            nk_console_button_onclick(checkbox_button, "Back", &nk_console_button_back);
         }
 
         nk_console* buttons = nk_console_button(widgets, "Buttons");
@@ -149,7 +149,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_set_image(image_button, image);
             image_button->height = 128;
 
-            nk_console_button_onclick(buttons, "Back", nk_console_button_back);
+            nk_console_button_onclick(buttons, "Back", &nk_console_button_back);
         }
 
         // Images
@@ -160,7 +160,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             img = nk_console_image_color(images, image, nk_rgb(255, 0, 0));
             nk_console_set_height(img, image.h);
 
-            nk_console_button_onclick(images, "Back", nk_console_button_back);
+            nk_console_button_onclick(images, "Back", &nk_console_button_back);
         }
 
         // Spacing
@@ -188,14 +188,14 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_spacing(row, 1);
             nk_console_row_end(row);
 
-            nk_console_button_onclick(spacing, "Back", nk_console_button_back);
+            nk_console_button_onclick(spacing, "Back", &nk_console_button_back);
         }
 
         // Progress Bar
         nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
-            nk_console_button_onclick(progressbar, "Back", nk_console_button_back);
+            nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
         // Input: From any gamepad (-1)
@@ -210,7 +210,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         {
             nk_console_property_int(properties, "Property Int", 10, &property_int_test, 30, 1, 1);
             nk_console_property_float(properties, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
-            nk_console_button_onclick(properties, "Back", nk_console_button_back);
+            nk_console_button_onclick(properties, "Back", &nk_console_button_back);
         }
 
         // Sliders
@@ -218,7 +218,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         {
             nk_console_slider_float(sliders, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
             nk_console_slider_int(sliders, "Slider Int", 0, &slider_int_test, 20, 1);
-            nk_console_button_onclick(sliders, "Back", nk_console_button_back);
+            nk_console_button_onclick(sliders, "Back", &nk_console_button_back);
         }
 
         // Textedit
@@ -232,11 +232,11 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
 
         // Messages
-        nk_console_button_onclick(widgets, "Show Message", nk_console_demo_show_message);
+        nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
 
         // Back Button
         nk_console_button_set_symbol(
-            nk_console_button_onclick(widgets, "Back", nk_console_button_back),
+            nk_console_button_onclick(widgets, "Back", &nk_console_button_back),
             NK_SYMBOL_TRIANGLE_LEFT);
     }
 
@@ -289,14 +289,14 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
       nk_console_row_end(row);
 
       nk_console_button_set_symbol(
-        nk_console_button_onclick(calc, "Back", nk_console_button_back),
+        nk_console_button_onclick(calc, "Back", &nk_console_button_back),
         NK_SYMBOL_TRIANGLE_LEFT);
 
       calc->tooltip = "Demo rows and grids!";
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
-    nk_console_button_onclick(console, "Quit Game", button_clicked);
+    nk_console_button_onclick(console, "Quit Game", &button_clicked);
 
     return console;
 }

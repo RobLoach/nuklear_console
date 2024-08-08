@@ -334,13 +334,13 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
     nk_console_free_children(widget);
 
     // Add the back/cancel button
-    nk_console_button_onclick(widget, "Cancel", nk_console_button_back);
+    nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
 
     // Active directory label
     nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
 
     // Add the parent directory button
-    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", nk_console_file_entry_onclick);
+    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", &nk_console_file_entry_onclick);
     nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_set_active_widget(parent_directory_button);
 
