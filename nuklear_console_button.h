@@ -153,7 +153,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     if (selected) {
         top_data->input_processed = nk_true;
 
-        // Trigger the click event, and if no event was invoked, switch the parent.
+        // Trigger the click event. If no event was invoked, switch the parent.
         if (nk_console_trigger_event(console, NK_CONSOLE_EVENT_CLICKED) == nk_false) {
             if (console->children != NULL) {
                 nk_console_set_active_parent(console);

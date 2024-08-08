@@ -151,6 +151,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     NK_MEMCPY(name + 2, console->label, (nk_size)(nk_strlen(console->label) + 1));
     name[0] = '#';
     name[1] = '#';
+
     switch (console->type) {
         case NK_CONSOLE_PROPERTY_INT:
             nk_property_int(console->ctx, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);

@@ -149,7 +149,6 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
 
-// Events
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type);
 NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback);
 NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data, nk_console_event destructor);
@@ -333,6 +332,14 @@ NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_ty
     cvector_push_back(widget->events, handler);
 }
 
+/**
+ * Trigger an event for the given widget.
+ *
+ * @param widget The widget to trigger the event on.
+ * @param type The type of event to trigger.
+ *
+ * @return nk_true if an event was triggered, nk_false otherwise.
+ */
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type) {
     if (widget == NULL || widget->events == NULL) {
         return nk_false;
@@ -779,17 +786,11 @@ NK_API void nk_console_free(nk_console* console) {
 
     // Clean up the events
     if (console->events != NULL) {
-        // Destroy all event handlers, handling the destroy events last.
-        for (size_t i = 0; i < cvector_size(console->events); ++i) {
-            if (console->events[i].type != NK_CONSOLE_EVENT_DESTROYED) {
-                nk_console_event_handler_destroy(console, &console->events[i]);
-            }
-        }
+        nk_console_trigger_event(console, NK_CONSOLE_EVENT_DESTROYED);
 
+        // Destroy all event handlers.
         for (size_t i = 0; i < cvector_size(console->events); ++i) {
-            if (console->events[i].type == NK_CONSOLE_EVENT_DESTROYED) {
-                nk_console_event_handler_destroy(console, &console->events[i]);
-            }
+            nk_console_event_handler_destroy(console, &console->events[i]);
         }
 
         cvector_free(console->events);
