@@ -13,7 +13,7 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG bd006c6f452209b59ac43d0d27e042c108c9198d
+        GIT_TAG b51fb11
     )
     FetchContent_GetProperties(nuklear_gamepad)
     if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?
@@ -33,4 +33,20 @@ if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")
     set(NUKLEAR_CONSOLE_IS_MAIN TRUE)
 else()
     set(NUKLEAR_CONSOLE_IS_MAIN FALSE)
+endif()
+
+option(NUKLEAR_CONSOLE_BUILD_TESTS "Tests" ${NUKLEAR_CONSOLE_IS_MAIN})
+
+# Examples
+if (NUKLEAR_CONSOLE_BUILD_TESTS)
+    include(CTest)
+    enable_testing()
+    if (BUILD_TESTING)
+        # set(CTEST_CUSTOM_TESTS_IGNORE
+        #     pkg-config--static
+        # )
+        # Always print verbose output when tests fail if run using `make test`.
+        list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+        add_subdirectory(test)
+    endif()
 endif()

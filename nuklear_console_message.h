@@ -53,7 +53,7 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     if (len > 255) {
         len = 255;
     }
-    NK_MEMCPY(message.text, text, len);
+    NK_MEMCPY(message.text, text, (nk_size)len);
     message.text[len] = '\0'; // Make sure it's null-terminated
 
     // Add the new message to the message queue.
