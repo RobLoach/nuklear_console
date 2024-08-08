@@ -62,7 +62,7 @@ int main() {
 
     // nk_console_input()
     int gamepad_number = 0;
-    enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
+    enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
     nk_console* input = nk_console_input(console, "Input Button", -1, &gamepad_number, &gamepad_button);
     assert(input != NULL);
 
@@ -90,12 +90,12 @@ int main() {
     // nk_console_textedit()
     static const int textedit_buffer_size = 256;
     static char textedit_buffer[256] = "brianwatling";
-    nk_console* textedit = nk_console_textedit(console, "Username", textedit_buffer, textedit_buffer_size);
+    nk_console* textedit = nk_console_textedit(console, "Textedit", textedit_buffer, textedit_buffer_size);
     assert(textedit != NULL);
 
     // nk_console_color()
     struct nk_colorf color_value = {0.31f, 1.0f, 0.48f, 1.0f};
-    nk_console* color = nk_console_color(console, "Select Color", &color_value, NK_RGBA);
+    nk_console* color = nk_console_color(console, "Color", &color_value, NK_RGBA);
     assert(color != NULL);
 
     // nk_console_file()
@@ -103,6 +103,23 @@ int main() {
     static char file_path_buffer[256] = "";
     nk_console* file = nk_console_file(console, "File", file_path_buffer, file_path_buffer_size);
     assert(file != NULL);
+
+    // nk_console_image()
+    pntr_image* image_value = pntr_load_image("resources/image.png");
+    assert(image_value != NULL);
+    nk_console* image = nk_console_image(console, pntr_image_nk(image_value));
+    nk_console_set_height(image, image_value->height);
+    assert(image != NULL);
+
+    // nk_console_show_message()
+    nk_console_show_message(console, "This is an info message");
+
+    // nk_console_row()
+    nk_console* row = nk_console_row_begin(console);
+    assert(row != NULL);
+    nk_console_label(row, "Row Column 1")->alignment = NK_TEXT_CENTERED;
+    nk_console_label(row, "Row Column 2")->alignment = NK_TEXT_CENTERED;
+    nk_console_row_end(row);
 
     // Create the screen buffer
     pntr_image* screen = pntr_new_image(300, 800);
@@ -122,6 +139,7 @@ int main() {
     // Unload
     nk_console_free(console);
     pntr_unload_nuklear(ctx);
+    pntr_unload_image(image_value);
     pntr_unload_image(screen);
     pntr_unload_font(font);
 
