@@ -279,10 +279,11 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     // Add the button.
     nk_console* button = nk_console_button(parent, NULL);
 
-    // Copy the path for the Label
+    // Copy the path for the label, and register an event to destroy it.
     // TODO: file: Ensure UTF-8 compatibility.
     button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, (nk_size)(sizeof(char)) * (nk_size)(len + 1));
-    button->destroy = &nk_console_file_free_entry; // Use the button destructor to clear the label data.
+    nk_console_add_event(button, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_free_entry);
+
     char* label = (char*)button->label;
 
     // Use the base name as the label.
@@ -333,13 +334,13 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
     nk_console_free_children(widget);
 
     // Add the back/cancel button
-    nk_console_button_onclick(widget, "Cancel", nk_console_button_back);
+    nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
 
     // Active directory label
     nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
 
     // Add the parent directory button
-    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", nk_console_file_entry_onclick);
+    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", &nk_console_file_entry_onclick);
     nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_set_active_widget(parent_directory_button);
 
