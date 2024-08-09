@@ -107,7 +107,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     nk_console_button_set_onclick(combobox, nk_console_combobox_button_main_click);
 
     // Back button
-    nk_console* backbutton = nk_console_button_onclick(combobox, label, nk_console_combobox_button_click);
+    nk_console* backbutton = nk_console_button_onclick(combobox, label, &nk_console_combobox_button_click);
     nk_console_button_set_symbol(backbutton, NK_SYMBOL_TRIANGLE_UP);
 
     // Add all the sub-page buttons
@@ -116,7 +116,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     for (int i = 0; items_separated_by_separator[i] != 0; i++) {
         text_length++;
         if (items_separated_by_separator[i] == (char)separator) {
-            nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
+            nk_console_button_onclick(combobox, button_text_start, &nk_console_combobox_button_click)
                 ->label_length = text_length - 1;
             text_length = 0;
             button_text_start = items_separated_by_separator + i + 1;
@@ -124,7 +124,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     }
 
     // Add the last item
-    nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
+    nk_console_button_onclick(combobox, button_text_start, &nk_console_combobox_button_click)
                 ->label_length = text_length;
 
     if (selected != NULL) {
