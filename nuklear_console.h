@@ -12,6 +12,7 @@ typedef enum {
     NK_CONSOLE_EVENT_DESTROYED, /** Triggered when the widget is destroyed. */
     NK_CONSOLE_EVENT_CHANGED, /** Triggered when the value for the widget is changed. */
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
+    NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered only once after all the widgets have rendered. */
 } nk_console_event_type;
 
 /**
@@ -322,13 +323,24 @@ NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_ty
         return;
     }
 
+    // Manage the top level events.
+    if (type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
+        nk_console_event_handler handler = (nk_console_event_handler) {
+            .type = type,
+            .callback = callback,
+            .user_data = (void*)widget,
+            .destructor = destructor,
+        };
+        cvector_push_back(nk_console_get_top(widget)->events, handler);
+        return;
+    }
+
     nk_console_event_handler handler = (nk_console_event_handler) {
         .type = type,
         .callback = callback,
         .user_data = user_data,
         .destructor = destructor,
     };
-
     cvector_push_back(widget->events, handler);
 }
 
@@ -682,6 +694,15 @@ NK_API void nk_console_render(nk_console* console) {
             // Render all the children
             for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
                 nk_console_render(data->active_parent->children[i]);
+            }
+
+            // Invoke the post-render event.
+            size_t count = cvector_size(console->events);
+            for (size_t i = 0; i < count; i++) {
+                if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE && console->events[i].callback) {
+                    console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
+                    console->events[i].callback = NULL;
+                }
             }
             return;
         }

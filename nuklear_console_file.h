@@ -82,7 +82,7 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
  *
  * @see nk_console_file_data::directory
  */
-NK_API void nk_console_file_refresh(nk_console* widget);
+NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 
 #if defined(__cplusplus)
 }
@@ -234,7 +234,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
         case NK_SYMBOL_TRIANGLE_LEFT: // Back
         case NK_SYMBOL_TRIANGLE_RIGHT: // Folder
             nk_console_set_active_parent(file);
-            nk_console_file_refresh(file);
+            nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
         break;
         default: // File
         {
@@ -322,7 +322,8 @@ static int nk_console_file_get_directory_len(const char* file_path) {
 /**
  * Fills the files array with the files in the current directory.
  */
-NK_API void nk_console_file_refresh(nk_console* widget) {
+NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
     widget = nk_console_file_button_get_file_widget(widget);
     if (widget == NULL || widget->data == NULL) {
         return;
@@ -377,7 +378,8 @@ static void nk_console_file_main_click(nk_console* button, void* user_data) {
     }
 
     nk_console_set_active_parent(file);
-    nk_console_file_refresh(file);
+    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
+    //nk_console_file_refresh(file);
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
