@@ -699,7 +699,6 @@ NK_API void nk_console_render(nk_console* console) {
         if (count > 0) {
             nk_bool can_erase = nk_true;
             for (size_t i = 0; i < count; i++) {
-                // Manage only the post-render events.
                 if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
                     // Call the callback if it's set.
                     if (console->events[i].callback != NULL) {
