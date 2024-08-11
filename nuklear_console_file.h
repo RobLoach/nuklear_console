@@ -377,9 +377,9 @@ static void nk_console_file_main_click(nk_console* button, void* user_data) {
         data->directory[1] = '\0';
     }
 
+    // Set the active parent to the file widget, and refresh it after rendering everything else.
     nk_console_set_active_parent(file);
     nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
-    //nk_console_file_refresh(file);
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
