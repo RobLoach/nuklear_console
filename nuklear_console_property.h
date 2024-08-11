@@ -151,6 +151,10 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     NK_MEMCPY(name + 2, console->label, (nk_size)(nk_strlen(console->label) + 1));
     name[0] = '#';
     name[1] = '#';
+
+    int original_val_int = data->val_int != NULL ? *data->val_int : 0;
+    float original_val_float = data->val_float != NULL ? *data->val_float : 0;
+
     switch (console->type) {
         case NK_CONSOLE_PROPERTY_INT:
             nk_property_int(console->ctx, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);
@@ -167,6 +171,11 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         default:
             // Nothing
             break;
+    }
+
+    // Invoke the onchange callback if needed.
+    if (original_val_int != ((data->val_int == NULL) ? 0 : *data->val_int) || original_val_float != ((data->val_float == NULL) ? 0 : *data->val_float)) {
+        nk_console_onchange(console);
     }
 
     // Style Restoration

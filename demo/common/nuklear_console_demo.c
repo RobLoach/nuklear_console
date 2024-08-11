@@ -103,8 +103,10 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console* label_button = nk_console_button(widgets, "Labels");
         {
             nk_console_label(label_button, "Simple label.");
-            nk_console_label(label_button, "Selectable label #1")
-                ->selectable = nk_true;
+            nk_console* label1 = nk_console_label(label_button, "Selectable label #1");
+            label1->selectable = nk_true;
+            nk_console_add_event(label1, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message);
+
             nk_console_label(label_button, "Selectable label #2.")
                 ->selectable = nk_true;
             nk_console_label(label_button, "This is a label that will wrap across multiple lines.")

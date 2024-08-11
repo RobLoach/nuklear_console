@@ -29,8 +29,13 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
 
     nk_console_layout_widget(widget);
 
+    nk_bool selected = nk_false;
+    if (!widget->disabled && widget->selectable) {
+        selected = nk_console_is_active_widget(widget);
+    }
+
     // Toggle it as disabled if needed.
-    if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
+    if (widget->disabled || (widget->selectable && !selected)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -43,7 +48,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     }
 
     // Release the disabled state if needed.
-    if (widget->disabled || (widget->selectable && nk_console_get_active_widget(widget) != widget)) {
+    if (widget->disabled || (widget->selectable && !selected)) {
         nk_widget_disable_end(widget->ctx);
     }
 
@@ -51,8 +56,13 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
 
     // Allow switching up/down in widgets
-    if (nk_console_is_active_widget(widget)) {
-        nk_console_check_up_down(widget, widget_bounds);
+    if (selected) {
+        if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A) || nk_input_mouse_clicked(&widget->ctx->input, NK_BUTTON_LEFT, widget_bounds)) {
+            nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
+        }
+        else {
+            nk_console_check_up_down(widget, widget_bounds);
+        }
         nk_console_check_tooltip(widget);
     }
 

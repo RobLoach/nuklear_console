@@ -204,6 +204,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                 int len = nk_strlen(data->buffer);
                 if (len > 0) {
                     data->buffer[len - 1] = '\0';
+                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
                 }
             }
             break;
@@ -215,6 +216,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                 if (len < data->buffer_size - 1) {
                     data->buffer[len] = ' ';
                     data->buffer[len + 1] = '\0';
+                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
                 }
             }
             break;
@@ -227,6 +229,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                 if (len < data->buffer_size - 1) {
                     data->buffer[len] = key->label[0];
                     data->buffer[len + 1] = '\0';
+                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
                 }
             }
             break;
