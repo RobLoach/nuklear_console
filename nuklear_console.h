@@ -145,7 +145,6 @@ NK_API void nk_console_set_label(nk_console* widget, const char* label, int labe
 NK_API const char* nk_console_get_label(nk_console* widget);
 NK_API void nk_console_free_children(nk_console* console);
 NK_API void nk_console_layout_widget(nk_console* widget);
-NK_API struct nk_rect nk_console_parent_render(nk_console* parent);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
@@ -678,14 +677,12 @@ NK_API void nk_console_render(nk_console* console) {
                 for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
                     if (data->active_parent->children[i] == data->active_parent->activeWidget) {
                         // Ensure the widget is still selectable.
-                        // TODO: If the widget got disabled, find the next selectable widget.
                         if (data->active_parent->activeWidget->selectable && !data->active_parent->activeWidget->disabled) {
                             widgetFound = nk_true;
                         }
                         break;
                     }
                 }
-
                 if (widgetFound == nk_false) {
                     nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
                 }
@@ -695,17 +692,30 @@ NK_API void nk_console_render(nk_console* console) {
             for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
                 nk_console_render(data->active_parent->children[i]);
             }
+        }
 
-            // Invoke the post-render event.
-            size_t count = cvector_size(console->events);
+        // Invoke the post-render events.
+        size_t count = cvector_size(console->events);
+        if (count > 0) {
+            nk_bool can_erase = nk_true;
             for (size_t i = 0; i < count; i++) {
-                if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE && console->events[i].callback) {
-                    console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
-                    console->events[i].callback = NULL;
+                // Manage only the post-render events.
+                if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
+                    // Call the callback if it's set.
+                    if (console->events[i].callback != NULL) {
+                        console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
+                        console->events[i].callback = NULL;
+                    }
+                }
+                else {
+                    can_erase = nk_false;
                 }
             }
-            return;
+            if (can_erase) {
+                cvector_clear(console->events);
+            }
         }
+        return;
     }
 
     // Render the widget and get its bounds.
@@ -743,37 +753,6 @@ NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
 }
 
 /**
- * Render all the children of the given parent.
- */
-NK_API struct nk_rect nk_console_parent_render(nk_console* parent) {
-    if (parent == NULL || parent->children == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
-
-    // // Render the children
-    int children_size = (int)cvector_size(parent->children);
-    for (int i = 0; i < children_size; i++) {
-        nk_console_render(parent->children[i]);
-    }
-
-    return nk_rect(0, 0, 0, 0);
-}
-
-NK_API void nk_console_free_top(nk_console* console, void* user_data) {
-    NK_UNUSED(user_data);
-    if (console == NULL || console->data == NULL) {
-        return;
-    }
-
-    // Free the messages
-    nk_console_top_data* data = (nk_console_top_data*)console->data;
-    if (data->messages != NULL) {
-        cvector_free(data->messages);
-        data->messages = NULL;
-    }
-}
-
-/**
  * Initialize a new nk_console.
  *
  * @param context The associated Nuklear context.
@@ -785,13 +764,11 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->type = NK_CONSOLE_PARENT;
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
-    console->render = nk_console_parent_render;
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
     data->active_parent = console;
     console->data = data;
-    nk_console_add_event(console, NK_CONSOLE_EVENT_DESTROYED, &nk_console_free_top);
 
     return console;
 }
@@ -820,6 +797,15 @@ NK_API void nk_console_free(nk_console* console) {
 
     // Clear any component-specific data.
     if (console->data != NULL) {
+        // Free the top data.
+        if (console->parent == NULL) {
+            nk_console_top_data* data = (nk_console_top_data*)console->data;
+            if (data->messages != NULL) {
+                cvector_free(data->messages);
+                data->messages = NULL;
+            }
+        }
+
         nk_console_mfree(handle, console->data);
         console->data = NULL;
     }

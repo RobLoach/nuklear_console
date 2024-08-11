@@ -3,7 +3,7 @@ BIN = nuklear_console_demo_glfw
 
 # Flags
 #CFLAGS += -std=c89 -Wall -Wextra -pedantic -O2
-CFLAGS += -std=c99 -Wall -Wextra -pedantic -O2
+CFLAGS += -std=c99 -Wall -Wextra -pedantic -g -O0
 
 SRC = main.c
 OBJ = $(SRC:.c=.o)

@@ -40,11 +40,23 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 extern "C" {
 #endif
 
+static void nk_console_textedit_free_children(nk_console* textedit, void* user_data) {
+    if (textedit == NULL) {
+        return;
+    }
+    NK_UNUSED(user_data);
+    nk_console_free_children(textedit);
+}
+
 /**
  * Handle the click event for textedit's children items.
  */
 NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data) {
+    if (button == NULL) {
+        return;
+    }
     NK_UNUSED(user_data);
+
     // Make sure we're not going back to a row.
     if (button->parent->type == NK_CONSOLE_ROW) {
         button = button->parent;
@@ -53,9 +65,8 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user
     // Invoke the back button behavior on the button.
     nk_console_button_back(button, NULL);
 
-    // TODO: Clear out the on-screen keyboard keys, after rendering the rest of the related children.
-    // nk_console* enter_textedit_button = button->parent;
-    // nk_console_free_children(enter_textedit_button);
+    // Clear out all the children for the textedit, after it finishes rendering.
+    nk_console_add_event(button->parent, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
 NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
