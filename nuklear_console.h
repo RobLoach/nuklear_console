@@ -8,17 +8,27 @@ extern "C" {
 struct nk_console;
 struct nk_console_event_handler;
 
+/**
+ * The type of events that can be triggered.
+ *
+ * @see nk_console_add_event()
+ */
 typedef enum {
     NK_CONSOLE_EVENT_DESTROYED, /** Triggered when the widget is destroyed. */
     NK_CONSOLE_EVENT_CHANGED, /** Triggered when the value for the widget is changed. */
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
-    NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered only once after all the widgets have rendered. */
+    NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered after all the widgets have rendered, and the event is removed. */
 } nk_console_event_type;
 
 /**
  * Event handler for a console widget.
  *
  * @param widget The widget that was acted upon.
+ * @param user_data Custom user data that is associated with the event.
+ *
+ * @see nk_console_add_event()
+ * @see nk_console_add_event_handler()
+ * @see nk_console_trigger_event()
  */
 typedef void (*nk_console_event)(struct nk_console* widget, void* user_data);
 
@@ -30,7 +40,7 @@ typedef struct nk_console_event_handler {
 } nk_console_event_handler;
 
 /**
- * An event handler for rendering the given widget.
+ * A callback to render the given widget.
  *
  * @param widget The widget that is being rendered.
  *
@@ -377,6 +387,9 @@ NK_API void nk_console_set_active_widget(nk_console* widget) {
     parent->activeWidget = widget;
 }
 
+/**
+ * Retrieves the given widget's parent's active widget.
+ */
 NK_API nk_console* nk_console_get_active_widget(nk_console* widget) {
     if (widget == NULL) {
         return NULL;
@@ -797,7 +810,7 @@ NK_API void nk_console_free(nk_console* console) {
     // Clear any component-specific data.
     if (console->data != NULL) {
         // Free the top data.
-        if (console->parent == NULL) {
+        if (console->type == NK_CONSOLE_PARENT) {
             nk_console_top_data* data = (nk_console_top_data*)console->data;
             if (data->messages != NULL) {
                 cvector_free(data->messages);
