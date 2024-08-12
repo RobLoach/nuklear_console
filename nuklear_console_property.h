@@ -85,7 +85,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         // Nothing.
                         break;
                 }
-                nk_console_onchange(console);
+                nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
                 top_data->input_processed = nk_true;
             }
             else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
@@ -108,7 +108,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         // Nothing
                         break;
                 }
-                nk_console_onchange(console);
+                nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
                 top_data->input_processed = nk_true;
             }
         }
@@ -175,7 +175,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 
     // Invoke the onchange callback if needed.
     if (original_val_int != ((data->val_int == NULL) ? 0 : *data->val_int) || original_val_float != ((data->val_float == NULL) ? 0 : *data->val_float)) {
-        nk_console_onchange(console);
+        nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
     }
 
     // Style Restoration

@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
         }
         nk_input_end(ctx);
 
-        int flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE;
+        int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
 
         /* GUI */
         if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {

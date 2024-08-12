@@ -36,7 +36,7 @@ void nk_console_button_set_onclick_handler(nk_console* button, T&& t) {
 template <typename T>
 nk_console* nk_console_button_onclick_handler(nk_console* parent, const char* text, T&& t) {
     nk_console* button = nk_console_button(parent, text);
-    nk_console_button_set_onclick_handler(button, std::move(t));
+    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED,  std::move(t))
     return button;
 }
 

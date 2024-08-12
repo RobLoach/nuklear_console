@@ -58,7 +58,7 @@ void UpdateDrawFrame(void) {
 
     nk_gamepad_update(nk_console_get_gamepads(console));
 
-    int flags = NK_WINDOW_NO_SCROLLBAR | NK_WINDOW_TITLE;
+    int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
     int padding = 0;
 
     // Nuklear GUI Code

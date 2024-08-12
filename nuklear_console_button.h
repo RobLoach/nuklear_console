@@ -217,13 +217,13 @@ NK_API void nk_console_button_back(nk_console* button, void* user_data) {
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {
     nk_console* button = nk_console_button(parent, text);
-    nk_console_button_set_onclick(button, onclick);
+    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, onclick);
     return button;
 }
 
 NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const char* text, nk_console_event callback, void* data, nk_console_event destructor) {
     nk_console* button = nk_console_button(parent, text);
-    nk_console_button_set_onclick_handler(button, callback, data, destructor);
+    nk_console_add_event_handler(button, NK_CONSOLE_EVENT_CLICKED, callback, data, destructor);
     return button;
 }
 

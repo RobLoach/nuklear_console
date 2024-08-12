@@ -358,7 +358,7 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     textedit->render = nk_console_textedit_render;
     textedit->data = data;
 
-    nk_console_button_set_onclick(textedit, nk_console_textedit_button_main_click);
+    nk_console_add_event(textedit, NK_CONSOLE_EVENT_CLICKED, &nk_console_textedit_button_main_click);
 
     return textedit;
 }

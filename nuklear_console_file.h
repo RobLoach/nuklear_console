@@ -250,7 +250,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
                 data->file_path_buffer[desired_length] = '\0';
 
                 // Trigger the onchange event and exit.
-                nk_console_onchange(file);
+                nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
             }
 
             // Now that we selected a file, we can exit.
@@ -298,7 +298,7 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     }
 
     // Event
-    nk_console_button_set_onclick(button, nk_console_file_entry_onclick);
+    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, nk_console_file_entry_onclick);
     return nk_true;
 }
 
@@ -419,7 +419,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->selectable = nk_true;
     widget->data = data;
 
-    nk_console_button_set_onclick(widget, nk_console_file_main_click);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
     return widget;
 }
 
