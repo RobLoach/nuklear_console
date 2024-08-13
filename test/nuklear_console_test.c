@@ -125,10 +125,8 @@ int main() {
     pntr_image* screen = pntr_new_image(300, 800);
     assert(screen != NULL);
 
-    // nk_console_render()
-    assert(nk_begin(ctx, "nuklear_console_test", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE) == nk_true);
-        nk_console_render(console);
-    nk_end(ctx);
+    // nk_console_rener_window()
+    nk_console_render_window(console, "nuklear_console_test", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
 
     // Draw the nuklear context on the screen.
     pntr_draw_nuklear(screen, ctx);

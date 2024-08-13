@@ -65,6 +65,7 @@ int main() {
 nk_console* nk_console_init(struct nk_context* context);
 void nk_console_free(nk_console* console);
 void nk_console_render(nk_console* console);
+void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
 // Widgets
 nk_console* nk_console_button(nk_console* parent, const char* text);
