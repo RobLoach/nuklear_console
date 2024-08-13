@@ -531,7 +531,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int count = 0;
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && nk_console_selectable(target)) {
+                if (nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     if (++count > 4) {
                         break;
@@ -545,7 +545,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && nk_console_selectable(target)) {
+                if (nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     break;
                 }
@@ -557,7 +557,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && nk_console_selectable(target)) {
+                if (nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     break;
                 }
