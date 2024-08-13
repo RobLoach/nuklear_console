@@ -121,6 +121,22 @@ int main() {
     nk_console_label(row, "Row Column 2")->alignment = NK_TEXT_CENTERED;
     nk_console_row_end(row);
 
+    // nk_console_selectable()
+    nk_console* widget = nk_console_label(console, "Selectable");
+    widget->selectable = nk_false;
+    widget->disabled = nk_false;
+    assert(nk_console_selectable(widget) == nk_false);
+    widget->selectable = nk_true;
+    assert(nk_console_selectable(widget) == nk_true);
+    widget->disabled = nk_true;
+    assert(nk_console_selectable(widget) == nk_false);
+    widget->selectable = nk_true;
+    widget->disabled = nk_false;
+    widget->visible = nk_true;
+    assert(nk_console_selectable(widget) == nk_true);
+    widget->visible = nk_false;
+    assert(nk_console_selectable(widget) == nk_false);
+
     // Create the screen buffer
     pntr_image* screen = pntr_new_image(300, 800);
     assert(screen != NULL);

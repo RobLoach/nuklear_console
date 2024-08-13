@@ -37,6 +37,7 @@ static nk_bool checkbox2 = nk_false;
 static nk_bool checkbox3 = nk_false;
 static nk_bool checkbox4 = nk_false;
 static nk_bool checkbox5 = nk_false;
+static nk_bool checkbox6 = nk_true;
 
 // Messages
 static int message_count = 0;
@@ -72,6 +73,12 @@ void exclude_other_checkbox(nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
     nk_console* other = (nk_console*)user_data;
     other->disabled = !other->disabled;
+}
+
+void toggle_visibility(nk_console* unused, void* user_data) {
+    NK_UNUSED(unused);
+    nk_console* other = (nk_console*)user_data;
+    other->visible = !other->visible;
 }
 
 void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
@@ -135,6 +142,11 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
             nk_console_add_event_handler(exclude_a, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_b, NULL);
             nk_console_add_event_handler(exclude_b, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_a, NULL);
+
+            // Checkbox that will show/hide the below label.
+            nk_console* checkbox_show_label = nk_console_checkbox(checkbox_button, "Show Label", &checkbox6);
+            nk_console* label_to_show = nk_console_label(checkbox_button, "This label is only shown when the checkbox is checked.");
+            nk_console_add_event_handler(checkbox_show_label, NK_CONSOLE_EVENT_CHANGED, &toggle_visibility, label_to_show, NULL);
 
             nk_console_button_onclick(checkbox_button, "Back", &nk_console_button_back);
         }
