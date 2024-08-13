@@ -33,9 +33,7 @@ int main() {
     nk_console_button(console, "Save Game");
 
     // Render the console in a window
-    nk_begin();
-        nk_console_render(console);
-    nk_end();
+    nk_console_render_window(console, "nuklear_console", nk_rect(0, 0, 400, 300), NK_WINDOW_TITLE);
 
     // Clean it up
     nk_console_free(console);
