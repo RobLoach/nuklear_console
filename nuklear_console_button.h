@@ -7,7 +7,6 @@ extern "C" {
 
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
-    nk_console_event_handler onclick;
     struct nk_image image;
 } nk_console_button_data;
 
@@ -19,8 +18,6 @@ NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const c
 
 NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button);
 NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol);
-NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_event onclick);
-NK_API void nk_console_button_set_onclick_handler(nk_console* button, nk_console_event callback, void* data, nk_console_event destructor);
 
 NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image);
 NK_API struct nk_image nk_console_button_get_image(nk_console* button);
@@ -53,22 +50,6 @@ NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type
     }
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     data->symbol = symbol;
-}
-
-NK_API void nk_console_button_set_onclick(nk_console* button, nk_console_event onclick) {
-    if (button == NULL || button->data == NULL) {
-        return;
-    }
-    nk_console_button_data* data = (nk_console_button_data*)button->data;
-    nk_console_set_event(button, &data->onclick, onclick);
-}
-
-NK_API void nk_console_button_set_onclick_handler(nk_console* button, nk_console_event callback, void* user_data, nk_console_event destructor) {
-    if (button == NULL || button->data == NULL) {
-        return;
-    }
-    nk_console_button_data* data = (nk_console_button_data*)button->data;
-    nk_console_set_event_handler(button, &data->onclick, callback, user_data, destructor);
 }
 
 NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image) {
@@ -172,14 +153,11 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     if (selected) {
         top_data->input_processed = nk_true;
 
-        // If there's no onclick action and there are children...
-        if (data->onclick.callback == NULL) {
+        // Trigger the click event. If no event was invoked, switch the parent.
+        if (nk_console_trigger_event(console, NK_CONSOLE_EVENT_CLICKED) == nk_false) {
             if (console->children != NULL) {
                 nk_console_set_active_parent(console);
             }
-        }
-        else {
-            nk_console_trigger_event(console, &data->onclick);
         }
     }
 
@@ -196,15 +174,6 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     return widget_bounds;
 }
 
-static void nk_console_button_destroy(nk_console* button, void* unused) {
-    NK_UNUSED(unused);
-    nk_console_button_data* data = (nk_console_button_data*)button->data;
-    if (data == NULL) {
-        return;
-    }
-    nk_console_event_handler_destroy(button, &data->onclick);
-}
-
 /**
  * Create a button.
  */
@@ -219,7 +188,6 @@ NK_API nk_console* nk_console_button(nk_console* parent, const char* text) {
     button->selectable = nk_true;
     button->columns = 1;
     button->render = nk_console_button_render;
-    button->destroy = &nk_console_button_destroy;
     return button;
 }
 
@@ -249,13 +217,13 @@ NK_API void nk_console_button_back(nk_console* button, void* user_data) {
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {
     nk_console* button = nk_console_button(parent, text);
-    nk_console_button_set_onclick(button, onclick);
+    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, onclick);
     return button;
 }
 
 NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const char* text, nk_console_event callback, void* data, nk_console_event destructor) {
     nk_console* button = nk_console_button(parent, text);
-    nk_console_button_set_onclick_handler(button, callback, data, destructor);
+    nk_console_add_event_handler(button, NK_CONSOLE_EVENT_CLICKED, callback, data, destructor);
     return button;
 }
 

@@ -40,11 +40,23 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 extern "C" {
 #endif
 
+static void nk_console_textedit_free_children(nk_console* textedit, void* user_data) {
+    if (textedit == NULL) {
+        return;
+    }
+    NK_UNUSED(user_data);
+    nk_console_free_children(textedit);
+}
+
 /**
  * Handle the click event for textedit's children items.
  */
 NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data) {
+    if (button == NULL) {
+        return;
+    }
     NK_UNUSED(user_data);
+
     // Make sure we're not going back to a row.
     if (button->parent->type == NK_CONSOLE_ROW) {
         button = button->parent;
@@ -53,9 +65,8 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user
     // Invoke the back button behavior on the button.
     nk_console_button_back(button, NULL);
 
-    // TODO: Clear out the on-screen keyboard keys, after rendering the rest of the related children.
-    // nk_console* enter_textedit_button = button->parent;
-    // nk_console_free_children(enter_textedit_button);
+    // Clear out all the children for the textedit, after it finishes rendering.
+    nk_console_add_event(button->parent, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
 NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
@@ -193,6 +204,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                 int len = nk_strlen(data->buffer);
                 if (len > 0) {
                     data->buffer[len - 1] = '\0';
+                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
                 }
             }
             break;
@@ -204,6 +216,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                 if (len < data->buffer_size - 1) {
                     data->buffer[len] = ' ';
                     data->buffer[len + 1] = '\0';
+                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
                 }
             }
             break;
@@ -216,6 +229,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                 if (len < data->buffer_size - 1) {
                     data->buffer[len] = key->label[0];
                     data->buffer[len + 1] = '\0';
+                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
                 }
             }
             break;
@@ -249,64 +263,64 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
 
     // First row: 1 - 0
     nk_console* row = nk_console_row_begin(button);
-        nk_console_button_onclick(row, data->shift ? "!" : "1", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "@" : "2", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "#" : "3", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "$" : "4", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "%" : "5", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "^" : "6", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "&" : "7", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "*" : "8", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "(" : "9", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? ")" : "0", nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "!" : "1", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "@" : "2", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "#" : "3", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "$" : "4", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "%" : "5", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "^" : "6", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "&" : "7", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "*" : "8", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "(" : "9", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? ")" : "0", &nk_console_textedit_key_click);
     nk_console_row_end(row);
 
     // Second row: Q - P
     row = nk_console_row_begin(button);
-        nk_console_button_onclick(row, data->shift ? "Q" : "q", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "W" : "w", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "E" : "e", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "R" : "r", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "T" : "t", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "Y" : "y", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "U" : "u", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "I" : "i", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "O" : "o", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "P" : "p", nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "Q" : "q", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "W" : "w", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "E" : "e", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "R" : "r", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "T" : "t", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "Y" : "y", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "U" : "u", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "I" : "i", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "O" : "o", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "P" : "p", &nk_console_textedit_key_click);
     nk_console_row_end(row);
 
     // Third row: A - L
     row = nk_console_row_begin(button);
-        nk_console_button_onclick(row, data->shift ? "A" : "a", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "S" : "s", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "D" : "d", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "F" : "f", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "G" : "g", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "H" : "h", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "J" : "j", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "K" : "k", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "L" : "l", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? ">" : ".", nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "A" : "a", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "S" : "s", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "D" : "d", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "F" : "f", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "G" : "g", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "H" : "h", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "J" : "j", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "K" : "k", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "L" : "l", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? ">" : ".", &nk_console_textedit_key_click);
     nk_console_row_end(row);
 
     // Fourth row: Z - M
     row = nk_console_row_begin(button);
-        key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click);
+        key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click);
         if (data->shift) {
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP);
         }
         else {
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP_OUTLINE);
         }
-        nk_console_button_onclick(row, data->shift ? "Z" : "z", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "X" : "x", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "C" : "c", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "V" : "v", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "B" : "b", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "N" : "n", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "M" : "m", nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "<" : ",", nk_console_textedit_key_click);
-        key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click); // Backspace
+        nk_console_button_onclick(row, data->shift ? "Z" : "z", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "X" : "x", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "C" : "c", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "V" : "v", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "B" : "b", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "N" : "n", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "M" : "m", &nk_console_textedit_key_click);
+        nk_console_button_onclick(row, data->shift ? "<" : ",", &nk_console_textedit_key_click);
+        key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click); // Backspace
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_row_end(row);
 
@@ -314,13 +328,13 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
     row = nk_console_row_begin(button);
     {
         // Space
-        key = nk_console_button_onclick(row, NULL, nk_console_textedit_key_click); // Space
+        key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click); // Space
         key->columns = 3;
         nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
 
         // Back
         // TODO: textedit: Replace "Back" with a RETURN symbol?
-        key = nk_console_button_onclick(row, "Back", nk_console_textedit_button_back_click);
+        key = nk_console_button_onclick(row, "Back", &nk_console_textedit_button_back_click);
         key->columns = 1;
     }
     nk_console_row_end(row);
@@ -344,7 +358,7 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     textedit->render = nk_console_textedit_render;
     textedit->data = data;
 
-    nk_console_button_set_onclick(textedit, nk_console_textedit_button_main_click);
+    nk_console_add_event(textedit, NK_CONSOLE_EVENT_CLICKED, &nk_console_textedit_button_main_click);
 
     return textedit;
 }

@@ -82,7 +82,7 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
  *
  * @see nk_console_file_data::directory
  */
-NK_API void nk_console_file_refresh(nk_console* widget);
+NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 
 #if defined(__cplusplus)
 }
@@ -234,7 +234,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
         case NK_SYMBOL_TRIANGLE_LEFT: // Back
         case NK_SYMBOL_TRIANGLE_RIGHT: // Folder
             nk_console_set_active_parent(file);
-            nk_console_file_refresh(file);
+            nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
         break;
         default: // File
         {
@@ -250,7 +250,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
                 data->file_path_buffer[desired_length] = '\0';
 
                 // Trigger the onchange event and exit.
-                nk_console_onchange(file);
+                nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
             }
 
             // Now that we selected a file, we can exit.
@@ -279,10 +279,11 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     // Add the button.
     nk_console* button = nk_console_button(parent, NULL);
 
-    // Copy the path for the Label
+    // Copy the path for the label, and register an event to destroy it.
     // TODO: file: Ensure UTF-8 compatibility.
     button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, (nk_size)(sizeof(char)) * (nk_size)(len + 1));
-    button->destroy = &nk_console_file_free_entry; // Use the button destructor to clear the label data.
+    nk_console_add_event(button, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_free_entry);
+
     char* label = (char*)button->label;
 
     // Use the base name as the label.
@@ -297,7 +298,7 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     }
 
     // Event
-    nk_console_button_set_onclick(button, nk_console_file_entry_onclick);
+    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, nk_console_file_entry_onclick);
     return nk_true;
 }
 
@@ -321,7 +322,8 @@ static int nk_console_file_get_directory_len(const char* file_path) {
 /**
  * Fills the files array with the files in the current directory.
  */
-NK_API void nk_console_file_refresh(nk_console* widget) {
+NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
     widget = nk_console_file_button_get_file_widget(widget);
     if (widget == NULL || widget->data == NULL) {
         return;
@@ -333,13 +335,13 @@ NK_API void nk_console_file_refresh(nk_console* widget) {
     nk_console_free_children(widget);
 
     // Add the back/cancel button
-    nk_console_button_onclick(widget, "Cancel", nk_console_button_back);
+    nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
 
     // Active directory label
     nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
 
     // Add the parent directory button
-    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", nk_console_file_entry_onclick);
+    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", &nk_console_file_entry_onclick);
     nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_set_active_widget(parent_directory_button);
 
@@ -375,8 +377,9 @@ static void nk_console_file_main_click(nk_console* button, void* user_data) {
         data->directory[1] = '\0';
     }
 
+    // Set the active parent to the file widget, and refresh it after rendering everything else.
     nk_console_set_active_parent(file);
-    nk_console_file_refresh(file);
+    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
@@ -416,7 +419,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->selectable = nk_true;
     widget->data = data;
 
-    nk_console_button_set_onclick(widget, nk_console_file_main_click);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
     return widget;
 }
 

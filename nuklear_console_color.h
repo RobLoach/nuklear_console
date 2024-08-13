@@ -99,6 +99,14 @@ NK_API struct nk_rect nk_console_color_render(nk_console* console) {
     return widget_bounds;
 }
 
+static void nk_console_color_event_changed(nk_console* property, void* user_data) {
+    if (property == NULL || property->parent == NULL) {
+        return;
+    }
+    NK_UNUSED(user_data);
+    nk_console_trigger_event(property->parent, NK_CONSOLE_EVENT_CHANGED);
+}
+
 NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struct nk_colorf* color, enum nk_color_format format) {
     if (parent == NULL || color == NULL) {
         return NULL;
@@ -120,7 +128,7 @@ NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struc
     // Active Color.
     if (label != NULL && nk_strlen(label) != 1 && label[0] != '@') {
         nk_console* color_display = nk_console_color(widget, "@", color, format);
-        nk_console_button_set_onclick(color_display, nk_console_button_back);
+        nk_console_add_event(color_display, NK_CONSOLE_EVENT_CLICKED, &nk_console_button_back);
         color_display->label = NULL;
         color_display->columns = 1;
 
@@ -129,15 +137,15 @@ NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struc
     }
 
     // Add the color components
-    nk_console_slider_float(widget, "Red", 0.0f, &color->r, 1.0f, 0.05f);
-    nk_console_slider_float(widget, "Green", 0.0f, &color->g, 1.0f, 0.05f);
-    nk_console_slider_float(widget, "Blue", 0.0f, &color->b, 1.0f, 0.05f);
+    nk_console_add_event(nk_console_slider_float(widget, "Red", 0.0f, &color->r, 1.0f, 0.05f), NK_CONSOLE_EVENT_CHANGED, &nk_console_color_event_changed);
+    nk_console_add_event(nk_console_slider_float(widget, "Green", 0.0f, &color->g, 1.0f, 0.05f), NK_CONSOLE_EVENT_CHANGED, &nk_console_color_event_changed);
+    nk_console_add_event(nk_console_slider_float(widget, "Blue", 0.0f, &color->b, 1.0f, 0.05f), NK_CONSOLE_EVENT_CHANGED, &nk_console_color_event_changed);
     if (format == NK_RGBA) {
-        nk_console_slider_float(widget, "Alpha", 0.0f, &color->a, 1.0f, 0.05f);
+        nk_console_add_event(nk_console_slider_float(widget, "Alpha", 0.0f, &color->a, 1.0f, 0.05f), NK_CONSOLE_EVENT_CHANGED, &nk_console_color_event_changed);
     }
 
     // Back Button
-    nk_console_button_onclick(widget, "Back", nk_console_button_back);
+    nk_console_button_onclick(widget, "Back", &nk_console_button_back);
 
     return widget;
 }

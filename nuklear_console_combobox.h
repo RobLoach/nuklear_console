@@ -64,7 +64,7 @@ NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data
     nk_console_button_back(button, NULL);
 
     // Invoke the onchange callback.
-    nk_console_onchange(combobox);
+    nk_console_trigger_event(combobox, NK_CONSOLE_EVENT_CHANGED);
 }
 
 /**
@@ -104,10 +104,10 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     combobox->data = data;
 
     nk_console_button_set_symbol(combobox, NK_SYMBOL_TRIANGLE_DOWN);
-    nk_console_button_set_onclick(combobox, nk_console_combobox_button_main_click);
+    nk_console_add_event(combobox, NK_CONSOLE_EVENT_CLICKED, nk_console_combobox_button_main_click);
 
     // Back button
-    nk_console* backbutton = nk_console_button_onclick(combobox, label, nk_console_combobox_button_click);
+    nk_console* backbutton = nk_console_button_onclick(combobox, label, &nk_console_combobox_button_click);
     nk_console_button_set_symbol(backbutton, NK_SYMBOL_TRIANGLE_UP);
 
     // Add all the sub-page buttons
@@ -116,7 +116,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     for (int i = 0; items_separated_by_separator[i] != 0; i++) {
         text_length++;
         if (items_separated_by_separator[i] == (char)separator) {
-            nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
+            nk_console_button_onclick(combobox, button_text_start, &nk_console_combobox_button_click)
                 ->label_length = text_length - 1;
             text_length = 0;
             button_text_start = items_separated_by_separator + i + 1;
@@ -124,7 +124,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     }
 
     // Add the last item
-    nk_console_button_onclick(combobox, button_text_start, nk_console_combobox_button_click)
+    nk_console_button_onclick(combobox, button_text_start, &nk_console_combobox_button_click)
                 ->label_length = text_length;
 
     if (selected != NULL) {
@@ -170,7 +170,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
                 top_data->input_processed = nk_true;
                 console->label = console->children[*data->selected + 1]->label;
                 console->label_length = console->children[*data->selected + 1]->label_length;
-                nk_console_onchange(console);
+                nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
             }
         }
     }
