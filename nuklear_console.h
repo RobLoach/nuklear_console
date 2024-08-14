@@ -135,6 +135,7 @@ typedef struct nk_console_top_data {
 NK_API nk_console* nk_console_init(struct nk_context* context);
 NK_API void nk_console_free(nk_console* console);
 NK_API void nk_console_render(nk_console* console);
+NK_API void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
 // Utilities
 NK_API nk_console* nk_console_get_top(nk_console* widget);
@@ -794,6 +795,24 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->data = data;
 
     return console;
+}
+
+/**
+ * Renders the given console to a new window with the given properties.
+ *
+ * @param console The console to render.
+ * @param title The title of the window.
+ * @param bounds The bounds of the window.
+ * @param flags The flags to apply to the window.
+ */
+NK_API void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags) {
+    if (console == NULL) {
+        return;
+    }
+
+    nk_begin(console->ctx, title, bounds, flags);
+    nk_console_render(console);
+    nk_end(console->ctx);
 }
 
 /**
