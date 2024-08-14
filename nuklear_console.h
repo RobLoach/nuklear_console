@@ -84,6 +84,7 @@ typedef struct nk_console {
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
     nk_bool disabled; /** Whether or not the widget is currently disabled. */
+    nk_bool visible; /** When false, the widget will not be displayed. */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
     int height; /** When set, will determine the height of the row. */
     const char* tooltip; /** Tooltip */
@@ -158,6 +159,7 @@ NK_API void nk_console_layout_widget(nk_console* widget);
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
+NK_API nk_bool nk_console_selectable(nk_console* widget);
 
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type);
 NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback);
@@ -514,7 +516,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int count = 0;
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable && !target->disabled) {
+                if (target != NULL && nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     if (++count > 4) {
                         break;
@@ -529,7 +531,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int count = 0;
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable && !target->disabled) {
+                if (nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     if (++count > 4) {
                         break;
@@ -543,7 +545,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable && !target->disabled) {
+                if (nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     break;
                 }
@@ -555,7 +557,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && target->selectable && !target->disabled) {
+                if (nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     break;
                 }
@@ -595,7 +597,7 @@ static nk_console* nk_console_find_first_selectable(nk_console* parent) {
     // Iterate through the children to find the first selectable widget.
     for (size_t i = 0; i < cvector_size(parent->children); i++) {
         if (parent->children[i] != NULL) {
-            if (parent->children[i]->selectable && !parent->children[i]->disabled) {
+            if (nk_console_selectable(parent->children[i])) {
                 return parent->children[i];
             }
         }
@@ -613,6 +615,14 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
     }
 
     return input->mouse.delta.x != 0 || input->mouse.delta.y != 0;
+}
+
+NK_API nk_bool nk_console_selectable(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_false;
+    }
+
+    return widget->selectable && widget->visible && !widget->disabled;
 }
 
 /**
@@ -664,7 +674,7 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
  * @param console The console widget to display.
  */
 NK_API void nk_console_render(nk_console* console) {
-    if (console == NULL) {
+    if (console == NULL || console->visible == nk_false) {
         return;
     }
 
@@ -690,7 +700,7 @@ NK_API void nk_console_render(nk_console* console) {
                 for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
                     if (data->active_parent->children[i] == data->active_parent->activeWidget) {
                         // Ensure the widget is still selectable.
-                        if (data->active_parent->activeWidget->selectable && !data->active_parent->activeWidget->disabled) {
+                        if (nk_console_selectable(data->active_parent->activeWidget)) {
                             widgetFound = nk_true;
                         }
                         break;
@@ -745,7 +755,7 @@ NK_API void nk_console_render(nk_console* console) {
         nk_console_top_data* data = (nk_console_top_data*)top->data;
         if (data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             // Select the widget, if possible.
-            if (!console->disabled && console->selectable) {
+            if (nk_console_selectable(console)) {
                 nk_console_set_active_widget(console);
                 data->input_processed = nk_true;
             }
@@ -776,6 +786,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->type = NK_CONSOLE_PARENT;
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
+    console->visible = nk_true;
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));

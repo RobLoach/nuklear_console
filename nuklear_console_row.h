@@ -263,7 +263,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     // Render all the children
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = console->children[i];
-        if (child->render != NULL) {
+        if (child->render != NULL && child->visible == nk_true) {
             // If the row is disabled, then temporarily disable the child when rendering.
             if (console->disabled) {
                 nk_bool child_disabled = child->disabled;
