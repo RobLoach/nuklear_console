@@ -31,6 +31,10 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 
+// Radio
+static int radio_option = 1;
+static int radio_option2 = 0;
+
 // Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
@@ -164,6 +168,27 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             image_button->height = 128;
 
             nk_console_button_onclick(buttons, "Back", &nk_console_button_back);
+        }
+
+        // Radio Buttons
+        nk_console* radios = nk_console_button(widgets, "Radios");
+        {
+            nk_console_label(radios, "Option A:");
+            nk_console_radio(radios, "Radio #1", &radio_option);
+            nk_console_radio(radios, "Radio #2", &radio_option);
+            nk_console_radio(radios, "Radio #3", &radio_option);
+            nk_console_radio(radios, "Radio #4", &radio_option);
+            nk_console_radio(radios, "Radio #5", &radio_option);
+            nk_console_radio(radios, "Radio #6", &radio_option);
+
+            nk_console_label(radios, "Option B:");
+            nk_console_radio(radios, "Radio #1", &radio_option2);
+            nk_console_radio(radios, "Radio #2", &radio_option2);
+            nk_console_radio(radios, "Radio #3", &radio_option2);
+            nk_console_radio(radios, "Radio #4", &radio_option2);
+            nk_console_radio(radios, "Radio #5", &radio_option2);
+
+            nk_console_button_onclick(radios, "Back", &nk_console_button_back);
         }
 
         // Images
