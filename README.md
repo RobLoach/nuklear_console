@@ -44,17 +44,18 @@ int main() {
 
 ## Widgets
 
-- Button
-- Checkbox
-- Combobox
-- File
-- Label
-- Property
-- Row
-- Slider
+- Buttons
+- Checkboxes
+- Color Select
+- Comboboxes
+- Files
+- Gamepad Input Buttons
+- Labels
+- Properties
+- Radio Buttons
+- Rows
+- Sliders
 - TextEdit
-- Color
-- Input
 
 ## API
 

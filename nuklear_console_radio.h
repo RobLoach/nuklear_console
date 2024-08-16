@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_RADIO_H__
 #define NK_CONSOLE_RADIO_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data for the radio button.
  *
@@ -13,6 +9,10 @@ extern "C" {
 typedef struct nk_console_radio_data {
     int* selected;
 } nk_console_radio_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* selected);
 NK_API struct nk_rect nk_console_radio_render(nk_console* widget);
@@ -82,14 +82,15 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
 
     nk_console* top = nk_console_get_top(widget);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-
     nk_console_radio_data* data = (nk_console_radio_data*)widget->data;
+
+    // Set up the layout
     nk_console_layout_widget(widget);
 
+    // Grab some initial contexts for the radio button
+    int current_value = *data->selected;
     nk_bool active = nk_console_selectable(widget) && nk_console_is_active_widget(widget);
     int index = nk_console_radio_index(widget);
-
-    // Find if it's the active selected raio.
     nk_bool selected = nk_console_radio_is_selected(widget);
 
     // Allow changing the radio value.
@@ -98,12 +99,13 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
             *data->selected = index;
             selected = nk_true;
             top_data->input_processed = nk_true;
+            nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
         }
     }
 
     // Release the disabled state if needed.
-    if (!active) {
-        nk_widget_disable_end(widget->ctx);
+    if (widget->disabled) {
+        nk_widget_disable_begin(widget->ctx);
     }
 
     // Style
@@ -119,18 +121,61 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
 
     // Display the ratio button
     nk_bool radio_active = selected;
-    nk_radio_label(widget->ctx, widget->label, &radio_active);
+    if (widget->alignment != 0) {
+        nk_flags text_alignment = 0;
+        nk_flags widget_alignment = 0;
+        switch (widget->alignment) {
+        case NK_TEXT_LEFT:
+            text_alignment = NK_TEXT_ALIGN_LEFT;
+            widget_alignment = NK_WIDGET_ALIGN_RIGHT;
+            printf("left\n");
+            break;
+        case NK_TEXT_RIGHT:
+            text_alignment = NK_TEXT_ALIGN_RIGHT;
+            widget_alignment = NK_WIDGET_ALIGN_LEFT;
+            printf("right\n");
+            break;
+        case NK_TEXT_CENTERED:
+            text_alignment = NK_TEXT_ALIGN_CENTERED;
+            widget_alignment = NK_WIDGET_ALIGN_CENTERED;
+            printf("center\n");
+            break;
+        }
+
+        if (widget->label_length > 0) {
+            nk_radio_text_align(widget->ctx, widget->label, widget->label_length, &radio_active, widget_alignment, text_alignment);
+        }
+        else {
+            nk_radio_label_align(widget->ctx, widget->label, &radio_active, widget_alignment, text_alignment);
+        }
+    }
+    else {
+        if (widget->label_length > 0) {
+            nk_radio_text(widget->ctx, widget->label, widget->label_length, &radio_active);
+        }
+        else {
+            nk_radio_label(widget->ctx, widget->label, &radio_active);
+        }
+    }
+
     if (radio_active == nk_true && radio_active != selected) {
         *data->selected = index;
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
         top_data->input_processed = nk_true;
     }
 
+    // Restore styles
+    widget->ctx->style.option.normal = style;
+
     // Release the disabled state if needed.
-    if (!active) {
+    if (widget->disabled) {
         nk_widget_disable_end(widget->ctx);
     }
 
-    widget->ctx->style.option.normal = style;
+    // Trigger the value changed event
+    if (current_value != *data->selected) {
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
+    }
 
     // Since labels don't really have widget bounds, we get the bounds after the label is displayed as a work-around.
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
@@ -156,9 +201,10 @@ NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* 
     nk_console* widget = nk_console_label(parent, label);
     widget->type = NK_CONSOLE_RADIO;
     widget->selectable = nk_true;
-    widget->columns = label != NULL ? 2 : 1;
+    widget->columns = 1;
     widget->data = data;
     widget->render = nk_console_radio_render;
+    widget->alignment = 0;
     return widget;
 }
 
