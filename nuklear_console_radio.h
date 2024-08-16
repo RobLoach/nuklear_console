@@ -128,17 +128,14 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
         case NK_TEXT_LEFT:
             text_alignment = NK_TEXT_ALIGN_LEFT;
             widget_alignment = NK_WIDGET_ALIGN_RIGHT;
-            printf("left\n");
             break;
         case NK_TEXT_RIGHT:
             text_alignment = NK_TEXT_ALIGN_RIGHT;
             widget_alignment = NK_WIDGET_ALIGN_LEFT;
-            printf("right\n");
             break;
         case NK_TEXT_CENTERED:
             text_alignment = NK_TEXT_ALIGN_CENTERED;
             widget_alignment = NK_WIDGET_ALIGN_CENTERED;
-            printf("center\n");
             break;
         }
 
