@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_FILE_H__
 #define NK_CONSOLE_FILE_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 #ifndef NK_CONSOLE_FILE_PATH_MAX
 #ifdef PATH_MAX
 #define NK_CONSOLE_FILE_PATH_MAX PATH_MAX
@@ -23,6 +19,10 @@ typedef struct nk_console_file_data {
     char directory[NK_CONSOLE_FILE_PATH_MAX]; /** When selecting a file, this is the current directory. */
     void* file_user_data; /** Custom user data for the file system. */
 } nk_console_file_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Creates a file widget that allows the user to select a file.
@@ -344,10 +344,21 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
     nk_console_set_active_widget(parent_directory_button);
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
     // Iterate through the files in the directory, and add them as entries.
     if (NK_CONSOLE_FILE_ADD_FILES(widget, data->directory) == nk_false) {
         nk_console_label(widget, "No files found.")->alignment = NK_TEXT_CENTERED;
     }
+#else
+    // NK_CONSOLE_FILE_ADD_FILES is undefined, so back out.
+    nk_console_show_message(widget, "Error: File system not available.");
+
+    // Go back to the parent widget, and disable the widget.
+    if (widget->parent != NULL) {
+        widget->disabled = nk_true;
+        nk_console_set_active_parent(widget->parent);
+    }
+#endif
 }
 
 /**

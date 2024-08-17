@@ -1,14 +1,14 @@
 #ifndef NK_CONSOLE_IMAGE_H__
 #define NK_CONSOLE_IMAGE_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_image_data {
     struct nk_image image;
     struct nk_color color;
 } nk_console_image_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_image(nk_console* parent, struct nk_image image);
 NK_API nk_console* nk_console_image_color(nk_console* parent, struct nk_image image, struct nk_color color);
