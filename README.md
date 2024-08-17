@@ -104,6 +104,13 @@ void nk_console_set_active_widget(nk_console* widget);
 - [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad)
 - [c-vector](https://github.com/eteran/c-vector/)
 
+## Development
+
+Use [clang-format](https://clang.llvm.org/docs/ClangFormat.html) to apply coding standards.
+``` sh
+clang-format -i *.h
+```
+
 ## License
 
 [MIT](LICENSE)
