@@ -94,6 +94,8 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 #ifndef NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
 
+#include "nuklear_console_file_system.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
