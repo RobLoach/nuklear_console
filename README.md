@@ -77,6 +77,7 @@ nk_console* nk_console_property_int(nk_console* parent, const char* label, int m
 nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel);
 nk_console* nk_console_slider_int(nk_console* parent, const char* label, int min, int* val, int max, int step);
 nk_console* nk_console_slider_float(nk_console* parent, const char* label, float min, float* val, float max, float step);
+nk_console* nk_console_radio(nk_console* parent, const char* label, int* selected);
 nk_console* nk_console_row_begin(nk_console* parent);
 void nk_console_row_end(nk_console* console);
 nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);

@@ -7,17 +7,46 @@
  * @see nk_console_radio()
  */
 typedef struct nk_console_radio_data {
-    int* selected;
+    int* selected; // The selected index for the radio button within the radio group.
 } nk_console_radio_data;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
+/**
+ * Creates a radio button. Use the same selected pointer to indicate the same radio buttons within the radio group.
+ *
+ * @param parent The parent widget.
+ * @param label The label for the radio button.
+ * @param selected The selected index for the radio button. Provide the same selected index for all radio buttons in the group.
+ * @return The radio button widget.
+ */
 NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* selected);
+
+/**
+ * Renders the radio button.
+ *
+ * @param widget The radio button widget.
+ * @return The bounds of the radio button.
+ */
 NK_API struct nk_rect nk_console_radio_render(nk_console* widget);
-NK_API nk_bool nk_console_radio_is_selected(nk_console* widget); // Returns true if the radio button is selected.
-NK_API int nk_console_radio_index(nk_console* widget); // Returns the index of the radio button in the group.
+
+/**
+ * Returns true if the radio button is the selected radio in the group.
+ *
+ * @param widget The radio button widget.
+ * @return True if the radio button is selected.
+ */
+NK_API nk_bool nk_console_radio_is_selected(nk_console* widget);
+
+/**
+ * Returns the index of the radio button in the group.
+ *
+ * @param widget The radio button widget.
+ * @return The index of the radio button.
+ */
+NK_API int nk_console_radio_index(nk_console* widget);
 
 #if defined(__cplusplus)
 }
@@ -44,7 +73,7 @@ NK_API int nk_console_radio_index(nk_console* widget) {
     }
 
     int index = 0;
-    for (int i = 0; i < cvector_size(widget->parent->children); i++) {
+    for (size_t i = 0; i < cvector_size(widget->parent->children); i++) {
         nk_console* child = widget->parent->children[i];
         if (child->type == NK_CONSOLE_RADIO && child->data != NULL) {
             nk_console_radio_data* child_data = (nk_console_radio_data*)child->data;
@@ -83,6 +112,10 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
     nk_console* top = nk_console_get_top(widget);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_console_radio_data* data = (nk_console_radio_data*)widget->data;
+
+    if (data->selected == NULL) {
+        return nk_recti(0, 0, 0, 0);
+    }
 
     // Set up the layout
     nk_console_layout_widget(widget);
