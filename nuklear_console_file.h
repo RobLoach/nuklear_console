@@ -11,7 +11,7 @@ extern "C" {
 #else
 #define NK_CONSOLE_FILE_PATH_MAX 1024
 #endif
-#endif  // NK_CONSOLE_FILE_PATH_MAX
+#endif // NK_CONSOLE_FILE_PATH_MAX
 
 /**
  * Custom data for the file widget.
@@ -88,7 +88,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 }
 #endif
 
-#endif  // NK_CONSOLE_FILE_H__
+#endif // NK_CONSOLE_FILE_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
@@ -109,7 +109,7 @@ static const char* nk_console_file_basename(const char* path) {
     // TODO: Ensure UTF-8 compatibility.
     int len = nk_strlen(path);
     for (int i = len - 1; i > 0; i--) {
-        if(path[i] == '\\' || path[i] == '/' ){
+        if (path[i] == '\\' || path[i] == '/') {
             path = path + i + 1;
             break;
         }
@@ -214,12 +214,12 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
         data->directory[0] = '\0';
     }
     else if (len > 0) {
-        // TODO: file: Make sure this is cross-platform.
-        #if defined(_WIN32) || defined(WIN32)
-            data->directory[len] = '\\';
-        #else
-            data->directory[len] = '/';
-        #endif
+// TODO: file: Make sure this is cross-platform.
+#if defined(_WIN32) || defined(WIN32)
+        data->directory[len] = '\\';
+#else
+        data->directory[len] = '/';
+#endif
         data->directory[len + 1] = '\0';
         len++;
     }
@@ -235,7 +235,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
         case NK_SYMBOL_TRIANGLE_RIGHT: // Folder
             nk_console_set_active_parent(file);
             nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
-        break;
+            break;
         default: // File
         {
             // Copy the string to the file buffer.
@@ -255,8 +255,7 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
 
             // Now that we selected a file, we can exit.
             nk_console_set_active_parent(file->parent);
-        }
-        break;
+        } break;
     }
 }
 
@@ -427,5 +426,5 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
 }
 #endif
 
-#endif  // NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

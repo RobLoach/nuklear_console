@@ -38,7 +38,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 }
 #endif
 
-#endif  // NK_CONSOLE_INPUT_H__
+#endif // NK_CONSOLE_INPUT_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
@@ -212,10 +212,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
             finished = nk_true;
         }
         // Any other input.
-        else if (nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) ||
-                nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER) ||
-                nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_LEFT) ||
-                nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT)) {
+        else if (nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER) || nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_LEFT) || nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT)) {
             finished = nk_true;
         }
     }
@@ -260,5 +257,5 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
 }
 #endif
 
-#endif  // NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

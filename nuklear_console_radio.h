@@ -52,7 +52,7 @@ NK_API int nk_console_radio_index(nk_console* widget);
 }
 #endif
 
-#endif  // NK_CONSOLE_RADIO_H__
+#endif // NK_CONSOLE_RADIO_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_RADIO_IMPLEMENTATION_ONCE
@@ -158,18 +158,18 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
         nk_flags text_alignment = 0;
         nk_flags widget_alignment = 0;
         switch (widget->alignment) {
-        case NK_TEXT_LEFT:
-            text_alignment = NK_TEXT_ALIGN_LEFT;
-            widget_alignment = NK_WIDGET_ALIGN_RIGHT;
-            break;
-        case NK_TEXT_RIGHT:
-            text_alignment = NK_TEXT_ALIGN_RIGHT;
-            widget_alignment = NK_WIDGET_ALIGN_LEFT;
-            break;
-        case NK_TEXT_CENTERED:
-            text_alignment = NK_TEXT_ALIGN_CENTERED;
-            widget_alignment = NK_WIDGET_ALIGN_CENTERED;
-            break;
+            case NK_TEXT_LEFT:
+                text_alignment = NK_TEXT_ALIGN_LEFT;
+                widget_alignment = NK_WIDGET_ALIGN_RIGHT;
+                break;
+            case NK_TEXT_RIGHT:
+                text_alignment = NK_TEXT_ALIGN_RIGHT;
+                widget_alignment = NK_WIDGET_ALIGN_LEFT;
+                break;
+            case NK_TEXT_CENTERED:
+                text_alignment = NK_TEXT_ALIGN_CENTERED;
+                widget_alignment = NK_WIDGET_ALIGN_CENTERED;
+                break;
         }
 
         if (widget->label_length > 0) {
@@ -242,5 +242,5 @@ NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* 
 }
 #endif
 
-#endif  // NK_CONSOLE_RADIO_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_RADIO_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

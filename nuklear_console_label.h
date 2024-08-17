@@ -12,7 +12,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget);
 }
 #endif
 
-#endif  // NK_CONSOLE_LABEL_H__
+#endif // NK_CONSOLE_LABEL_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_LABEL_IMPLEMENTATION_ONCE
@@ -94,5 +94,5 @@ NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
 }
 #endif
 
-#endif  // NK_CONSOLE_LABEL_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_LABEL_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

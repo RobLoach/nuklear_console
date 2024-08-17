@@ -148,8 +148,8 @@ NK_API nk_console* nk_console_active_parent(nk_console* console);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
 NK_API void nk_console_set_active_widget(nk_console* widget);
 NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
-NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size);
-NK_API void nk_console_mfree(nk_handle unused, void *ptr);
+NK_API void* nk_console_malloc(nk_handle unused, void* old, nk_size size);
+NK_API void nk_console_mfree(nk_handle unused, void* ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads);
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
@@ -195,23 +195,23 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #endif
 
 #define NK_CONSOLE_HEADER_ONLY
-#include "nuklear_console_label.h"
 #include "nuklear_console_button.h"
 #include "nuklear_console_checkbox.h"
-#include "nuklear_console_progress.h"
+#include "nuklear_console_color.h"
 #include "nuklear_console_combobox.h"
-#include "nuklear_console_property.h"
-#include "nuklear_console_row.h"
-#include "nuklear_console_textedit.h"
-#include "nuklear_console_textedit_text.h"
-#include "nuklear_console_message.h"
 #include "nuklear_console_file.h"
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
-#include "nuklear_console_spacing.h"
-#include "nuklear_console_color.h"
 #include "nuklear_console_input.h"
+#include "nuklear_console_label.h"
+#include "nuklear_console_message.h"
+#include "nuklear_console_progress.h"
+#include "nuklear_console_property.h"
 #include "nuklear_console_radio.h"
+#include "nuklear_console_row.h"
+#include "nuklear_console_spacing.h"
+#include "nuklear_console_textedit.h"
+#include "nuklear_console_textedit_text.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -220,7 +220,7 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 
 #endif
 
-#endif  // NK_CONSOLE_H__
+#endif // NK_CONSOLE_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
@@ -278,23 +278,23 @@ extern "C" {
 
 NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 
-#include "nuklear_console_label.h"
 #include "nuklear_console_button.h"
 #include "nuklear_console_checkbox.h"
-#include "nuklear_console_progress.h"
-#include "nuklear_console_combobox.h"
-#include "nuklear_console_property.h"
-#include "nuklear_console_row.h"
-#include "nuklear_console_textedit_text.h"
-#include "nuklear_console_textedit.h"
-#include "nuklear_console_message.h"
-#include "nuklear_console_file_system.h"
-#include "nuklear_console_file.h"
-#include "nuklear_console_image.h"
-#include "nuklear_console_spacing.h"
 #include "nuklear_console_color.h"
+#include "nuklear_console_combobox.h"
+#include "nuklear_console_file.h"
+#include "nuklear_console_file_system.h"
+#include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
+#include "nuklear_console_label.h"
+#include "nuklear_console_message.h"
+#include "nuklear_console_progress.h"
+#include "nuklear_console_property.h"
 #include "nuklear_console_radio.h"
+#include "nuklear_console_row.h"
+#include "nuklear_console_spacing.h"
+#include "nuklear_console_textedit.h"
+#include "nuklear_console_textedit_text.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -340,7 +340,7 @@ NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_ty
 
     // Manage the top level events.
     if (type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
-        nk_console_event_handler handler = (nk_console_event_handler) {
+        nk_console_event_handler handler = (nk_console_event_handler){
             .type = type,
             .callback = callback,
             .user_data = (void*)widget,
@@ -350,7 +350,7 @@ NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_ty
         return;
     }
 
-    nk_console_event_handler handler = (nk_console_event_handler) {
+    nk_console_event_handler handler = (nk_console_event_handler){
         .type = type,
         .callback = callback,
         .user_data = user_data,
@@ -635,8 +635,8 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
  * @see nk_tooltip()
  * @todo Support multiline tooltips with nk_text_calculate_text_bounds()
  */
-static void nk_console_tooltip_display(struct nk_context *ctx, const char *text) {
-    const struct nk_style *style;
+static void nk_console_tooltip_display(struct nk_context* ctx, const char* text) {
+    const struct nk_style* style;
     struct nk_vec2 padding;
 
     style = &ctx->style;
@@ -767,13 +767,13 @@ NK_API void nk_console_render(nk_console* console) {
     }
 }
 
-NK_API void* nk_console_malloc(nk_handle unused, void *old, nk_size size) {
+NK_API void* nk_console_malloc(nk_handle unused, void* old, nk_size size) {
     NK_UNUSED(unused);
     NK_UNUSED(old);
     return NK_CONSOLE_MALLOC(unused, old, size);
 }
 
-NK_API void nk_console_mfree(nk_handle unused, void *ptr) {
+NK_API void nk_console_mfree(nk_handle unused, void* ptr) {
     NK_UNUSED(unused);
     NK_CONSOLE_FREE(unused, ptr);
 }
@@ -950,7 +950,6 @@ NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console) {
         return NULL;
     }
     return data->gamepads;
-
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
@@ -981,8 +980,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
         case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
-        //case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_BACK:
+            return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
+            // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
     }
 
     return nk_false;
