@@ -31,6 +31,10 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 
+// Radio
+static int radio_option = 1;
+static int radio_option2 = 0;
+
 // Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
@@ -86,6 +90,11 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     char message[128];
     snprintf(message, 128, "This is message #%d!", ++message_count);
     nk_console_show_message(button, message);
+}
+
+void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_show_message(radio, radio->label);
 }
 
 nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
@@ -164,6 +173,28 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             image_button->height = 128;
 
             nk_console_button_onclick(buttons, "Back", &nk_console_button_back);
+        }
+
+        // Radio Buttons
+        nk_console* radios = nk_console_button(widgets, "Radios");
+        {
+            nk_console_label(radios, "Option A:");
+            nk_console_radio(radios, "Radio #1", &radio_option);
+            nk_console_radio(radios, "Radio #2", &radio_option);
+            nk_console_radio(radios, "Radio #3", &radio_option);
+            nk_console_radio(radios, "Radio #4", &radio_option);
+
+            nk_console_label(radios, "Option B:");
+            nk_console_radio(radios, "Left Aligned #1", &radio_option2)->alignment = NK_TEXT_LEFT;
+            nk_console_radio(radios, "Left Aligned #2", &radio_option2)->alignment = NK_TEXT_LEFT;
+            nk_console_radio(radios, "Center Aligned #1", &radio_option2)->alignment = NK_TEXT_CENTERED;
+            nk_console_radio(radios, "Center Aligned #2", &radio_option2)->alignment = NK_TEXT_CENTERED;
+            nk_console_radio(radios, "Right Aligned #1", &radio_option2)->alignment = NK_TEXT_RIGHT;
+            nk_console_radio(radios, "Right Aligned #2", &radio_option2)->alignment = NK_TEXT_RIGHT;
+            nk_console_radio(radios, "Disabled", &radio_option2)->disabled = nk_true;
+            nk_console_radio(radios, "Invisible", &radio_option2)->visible = nk_false;
+
+            nk_console_button_onclick(radios, "Back", &nk_console_button_back);
         }
 
         // Images
