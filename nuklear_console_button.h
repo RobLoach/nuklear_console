@@ -60,7 +60,7 @@ NK_API void nk_console_button_set_image(nk_console* button, struct nk_image imag
     data->image = image;
 
     // While automatically setting the height to the button height is an option here, we will opt out of doing that.
-    //button->height = (int)image.h;
+    // button->height = (int)image.h;
 }
 
 NK_API struct nk_image nk_console_button_get_image(nk_console* button) {
@@ -231,5 +231,5 @@ NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const c
 }
 #endif
 
-#endif  // NK_CONSOLE_BUTTON_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_BUTTON_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

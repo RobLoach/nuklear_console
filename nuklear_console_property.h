@@ -20,8 +20,8 @@ typedef struct nk_console_property_data {
     float* val_float; /** Pointer to the float value. */
 } nk_console_property_data;
 
-NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel);
-NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel);
+NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel);
+NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
 NK_API nk_console* nk_console_slider_int(nk_console* parent, const char* label, int min, int* val, int max, int step);
 NK_API nk_console* nk_console_slider_float(nk_console* parent, const char* label, float min, float* val, float max, float step);
 NK_API struct nk_rect nk_console_property_render(nk_console* console);
@@ -30,7 +30,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console);
 }
 #endif
 
-#endif  // NK_CONSOLE_PROPERTY_H__
+#endif // NK_CONSOLE_PROPERTY_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_PROPERTY_IMPLEMENTATION_ONCE
@@ -201,7 +201,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     return widget_bounds;
 }
 
-NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int *val, int max, int step, float inc_per_pixel) {
+NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel) {
     // Create the property data.
     nk_console_property_data* data = (nk_console_property_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_property_data));
     nk_zero(data, sizeof(nk_console_property_data));
@@ -230,7 +230,7 @@ NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label
     return widget;
 }
 
-NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float *val, float max, float step, float inc_per_pixel) {
+NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel) {
     nk_console* widget = nk_console_property_int(parent, label, 0, NULL, 0, 0, inc_per_pixel);
     nk_console_property_data* data = (nk_console_property_data*)widget->data;
     widget->type = NK_CONSOLE_PROPERTY_FLOAT;
@@ -266,5 +266,5 @@ NK_API nk_console* nk_console_slider_float(nk_console* parent, const char* label
 }
 #endif
 
-#endif  // NK_CONSOLE_PROPERTY_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_PROPERTY_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

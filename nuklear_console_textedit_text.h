@@ -18,7 +18,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget);
 }
 #endif
 
-#endif  // NK_CONSOLE_TEXTEDIT_TEXT_H__
+#endif // NK_CONSOLE_TEXTEDIT_TEXT_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_TEXTEDIT_TEXT_IMPLEMENTATION_ONCE
@@ -100,5 +100,5 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
 }
 #endif
 
-#endif  // NK_CONSOLE_TEXTEDIT_TEXT_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_TEXTEDIT_TEXT_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

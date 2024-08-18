@@ -17,7 +17,7 @@ typedef struct nk_console_combobox_data {
     int count;
 } nk_console_combobox_data;
 
-NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected);
+NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected);
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console);
 NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data);
 NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user_data);
@@ -87,7 +87,7 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user
     nk_console_set_active_parent(button);
 }
 
-NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char *items_separated_by_separator, int separator, int* selected) {
+NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
     // Create the widget data.
     nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_combobox_data));
     nk_zero(data, sizeof(nk_console_combobox_data));
@@ -125,7 +125,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
 
     // Add the last item
     nk_console_button_onclick(combobox, button_text_start, &nk_console_combobox_button_click)
-                ->label_length = text_length;
+        ->label_length = text_length;
 
     if (selected != NULL) {
         if (*selected < 0) {
@@ -189,7 +189,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     // Display the mocked combobox button
     int swap_columns = console->columns;
     console->columns = 0;
-    //console->type = NK_CONSOLE_BUTTON;
+    // console->type = NK_CONSOLE_BUTTON;
     if (nk_console_is_active_widget(console)) {
         nk_console_button_set_symbol(console, NK_SYMBOL_TRIANGLE_DOWN);
     }
@@ -206,5 +206,5 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
 }
 #endif
 
-#endif  // NK_CONSOLE_COMBOBOX_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_COMBOBOX_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

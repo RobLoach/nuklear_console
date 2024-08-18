@@ -195,44 +195,37 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                     }
                 }
             }
-        }
-        break;
+        } break;
 
         // Backspace
-        case NK_SYMBOL_TRIANGLE_LEFT:
-            {
-                int len = nk_strlen(data->buffer);
-                if (len > 0) {
-                    data->buffer[len - 1] = '\0';
-                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
-                }
+        case NK_SYMBOL_TRIANGLE_LEFT: {
+            int len = nk_strlen(data->buffer);
+            if (len > 0) {
+                data->buffer[len - 1] = '\0';
+                nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
             }
-            break;
+        } break;
 
         // Space
-        case NK_SYMBOL_RECT_SOLID:
-            {
-                int len = nk_strlen(data->buffer);
-                if (len < data->buffer_size - 1) {
-                    data->buffer[len] = ' ';
-                    data->buffer[len + 1] = '\0';
-                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
-                }
+        case NK_SYMBOL_RECT_SOLID: {
+            int len = nk_strlen(data->buffer);
+            if (len < data->buffer_size - 1) {
+                data->buffer[len] = ' ';
+                data->buffer[len + 1] = '\0';
+                nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
             }
-            break;
+        } break;
 
         // Any key character
-        case NK_SYMBOL_NONE:
-            {
-                // Add the character to the buffer.
-                int len = nk_strlen(data->buffer);
-                if (len < data->buffer_size - 1) {
-                    data->buffer[len] = key->label[0];
-                    data->buffer[len + 1] = '\0';
-                    nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
-                }
+        case NK_SYMBOL_NONE: {
+            // Add the character to the buffer.
+            int len = nk_strlen(data->buffer);
+            if (len < data->buffer_size - 1) {
+                data->buffer[len] = key->label[0];
+                data->buffer[len + 1] = '\0';
+                nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
             }
-            break;
+        } break;
 
         default:
             break;
@@ -263,6 +256,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
 
     // First row: 1 - 0
     nk_console* row = nk_console_row_begin(button);
+    {
         nk_console_button_onclick(row, data->shift ? "!" : "1", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "@" : "2", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "#" : "3", &nk_console_textedit_key_click);
@@ -273,10 +267,12 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
         nk_console_button_onclick(row, data->shift ? "*" : "8", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "(" : "9", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? ")" : "0", &nk_console_textedit_key_click);
+    }
     nk_console_row_end(row);
 
     // Second row: Q - P
     row = nk_console_row_begin(button);
+    {
         nk_console_button_onclick(row, data->shift ? "Q" : "q", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "W" : "w", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "E" : "e", &nk_console_textedit_key_click);
@@ -287,10 +283,12 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
         nk_console_button_onclick(row, data->shift ? "I" : "i", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "O" : "o", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "P" : "p", &nk_console_textedit_key_click);
+    }
     nk_console_row_end(row);
 
     // Third row: A - L
     row = nk_console_row_begin(button);
+    {
         nk_console_button_onclick(row, data->shift ? "A" : "a", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "S" : "s", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "D" : "d", &nk_console_textedit_key_click);
@@ -301,10 +299,12 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
         nk_console_button_onclick(row, data->shift ? "K" : "k", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "L" : "l", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? ">" : ".", &nk_console_textedit_key_click);
+    }
     nk_console_row_end(row);
 
     // Fourth row: Z - M
     row = nk_console_row_begin(button);
+    {
         key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click);
         if (data->shift) {
             nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP);
@@ -321,7 +321,8 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
         nk_console_button_onclick(row, data->shift ? "M" : "m", &nk_console_textedit_key_click);
         nk_console_button_onclick(row, data->shift ? "<" : ",", &nk_console_textedit_key_click);
         key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click); // Backspace
-            nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
+        nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
+    }
     nk_console_row_end(row);
 
     // Fifth row: Space and Back
@@ -409,5 +410,5 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
 }
 #endif
 
-#endif  // NK_CONSOLE_TEXTEDIT_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_TEXTEDIT_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

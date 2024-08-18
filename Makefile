@@ -23,3 +23,6 @@ pntr:
 
 web:
 	$(MAKE) -C demo/raylib web
+
+clang:
+	clang-format -i *.h

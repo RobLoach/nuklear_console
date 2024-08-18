@@ -21,7 +21,7 @@ extern "C" {
 }
 #endif
 
-#endif  // NK_CONSOLE_FILE_SYSTEM_H__
+#endif // NK_CONSOLE_FILE_SYSTEM_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_FILE_SYSTEM_IMPLEMENTATION_ONCE
@@ -37,20 +37,20 @@ extern "C" {
 
 #ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
 #define NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H "vendor/tinydir/tinydir.h"
-#endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
+#endif // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
 
 #ifndef NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
 
 // tinydir uses the same memory function signatures as cvector.
 #ifndef _TINYDIR_MALLOC
 #define _TINYDIR_MALLOC cvector_clib_malloc
-#endif  // _TINYDIR_MALLOC
+#endif // _TINYDIR_MALLOC
 #ifndef _TINYDIR_FREE
 #define _TINYDIR_FREE cvector_clib_free
-#endif  // _TINYDIR_FREE
+#endif // _TINYDIR_FREE
 
 #include NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H
-#endif  // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
+#endif // NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP
 
 /**
  * Iterate through the files in the given directory, and add the contents as widgets.
@@ -136,44 +136,12 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
-#else  // !NK_CONSOLE_ENABLE_TINYDIR && !NK_CONSOLE_ENABLE_RAYLIB
-
-/**
- * Since there is no file system found, clicking Select File buttons will report an error message.
- *
- * @param parent The file widget.
- * @param directory The directory to enumerate.
- *
- * @see nk_console_file_add_entry()
- */
-static nk_bool nk_console_file_add_files_diabled(nk_console* file, const char* directory) {
-    NK_UNUSED(directory);
-    if (file == NULL) {
-        return nk_false;
-    }
-
-    // Requires NK_CONSOLE_ENABLE_TINYDIR or another file system library.
-    nk_console_show_message(file, "Error: File system not available.");
-
-    // Go back to the parent widget, and disable the widget.
-    if (file->parent != NULL) {
-        file->disabled = nk_true;
-        nk_console_set_active_parent(file->parent);
-    }
-
-    // The file system is disabled, not erroring out.
-    return nk_true;
-}
-
-// Tell the file widget that the file system is disabled.
-#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_diabled
-
-#endif  // NK_CONSOLE_ENABLE_TINYDIR
-#endif  // NK_CONSOLE_FILE_ADD_FILES
+#endif // NK_CONSOLE_ENABLE_TINYDIR
+#endif // NK_CONSOLE_FILE_ADD_FILES
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif  // NK_CONSOLE_FILE_SYSTEM_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_FILE_SYSTEM_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

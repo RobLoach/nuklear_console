@@ -17,7 +17,7 @@ NK_API void nk_console_show_message(nk_console* console, const char* text);
 }
 #endif
 
-#endif  // NK_CONSOLE_MESSAGE_H__
+#endif // NK_CONSOLE_MESSAGE_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_MESSAGE_IMPLEMENTATION_ONCE
@@ -32,7 +32,7 @@ extern "C" {
  * A float determining how many seconds messages should be shown for.
  */
 #define NK_CONSOLE_MESSAGE_DURATION 4.0f
-#endif  // NK_CONSOLE_MESSAGE_DURATION
+#endif // NK_CONSOLE_MESSAGE_DURATION
 
 NK_API void nk_console_show_message(nk_console* console, const char* text) {
     if (console == NULL || text == NULL || text[0] == '\0') {
@@ -131,7 +131,7 @@ NK_API void nk_console_render_message(nk_console* console) {
         clear_all = nk_false;
         nk_console_message_render(console, it);
         break;
-	}
+    }
 
     if (clear_all) {
         cvector_clear(data->messages);
@@ -142,5 +142,5 @@ NK_API void nk_console_render_message(nk_console* console) {
 }
 #endif
 
-#endif  // NK_CONSOLE_MESSAGE_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_MESSAGE_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION

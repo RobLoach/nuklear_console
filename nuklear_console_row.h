@@ -6,8 +6,8 @@ extern "C" {
 #endif
 
 typedef struct nk_console_row_data {
-  int activeChild;
-  nk_bool widgets_added; /** Indicates if all the row's widgets have been added. */
+    int activeChild;
+    nk_bool widgets_added; /** Indicates if all the row's widgets have been added. */
 } nk_console_row_data;
 
 /**
@@ -30,7 +30,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console);
 }
 #endif
 
-#endif  // NK_CONSOLE_ROW_H__
+#endif // NK_CONSOLE_ROW_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_ROW_IMPLEMENTATION_ONCE
@@ -289,5 +289,5 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 }
 #endif
 
-#endif  // NK_CONSOLE_ROW_IMPLEMENTATION_ONCE
-#endif  // NK_CONSOLE_IMPLEMENTATION
+#endif // NK_CONSOLE_ROW_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_IMPLEMENTATION
