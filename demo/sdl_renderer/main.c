@@ -26,6 +26,7 @@
 #define WINDOW_WIDTH 800
 #define WINDOW_HEIGHT 600
 
+#define NK_GAMEPAD_SDL
 #include "../common/nuklear_console_demo.c"
 
 int main(int argc, char *argv[]) {

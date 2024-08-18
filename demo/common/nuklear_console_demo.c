@@ -4,6 +4,8 @@
 #include "../../vendor/Nuklear/demo/common/style.c"
 
 #define NK_GAMEPAD_IMPLEMENTATION
+#define NK_GAMEPAD_KEYBOARD
+#define NK_GAMEPAD_NONE
 #include "../../vendor/nuklear_gamepad/nuklear_gamepad.h"
 
 #define NK_CONSOLE_IMPLEMENTATION
@@ -243,8 +245,16 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
+        // Gamepad Input Source
+        struct nk_gamepad_input_source gamepad_input_sources[] = {
+            gamepads.input_source,
+            nk_gamepad_keyboard_input_source(NULL),
+            nk_gamepad_none_input_source(NULL)
+        };
+        nk_console_gamepad_source(widgets, "Gamepad Source", gamepad_input_sources, 3);
+
         // Input: From any gamepad (-1)
-        nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
+        nk_console_gamepad_button(widgets, "Gamepad Button", -1, &gamepad_number, &gamepad_button);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)

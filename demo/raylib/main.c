@@ -9,6 +9,7 @@
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
 #include "raylib-nuklear.h"
 
+#define NK_GAMEPAD_RAYLIB
 #include "../common/nuklear_console_demo.c"
 
 void UpdateDrawFrame(void);
