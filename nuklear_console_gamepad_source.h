@@ -37,21 +37,30 @@ NK_API void nk_console_gamepad_source_changed(nk_console* widget, void* user_dat
         return;
     }
 
+    // Get the selected value from the combobox.
     nk_console_gamepad_source_data* data = (nk_console_gamepad_source_data*)user_data;
     if (data->input_source_selected < 0 || (size_t)data->input_source_selected >= cvector_size(data->input_sources)) {
         return;
     }
 
+    // Retrieve the input source.
     struct nk_gamepad_input_source input_source = data->input_sources[data->input_source_selected];
     nk_console* top = nk_console_get_top(widget);
     if (top == NULL || top->data == NULL) {
         return;
     }
 
+    // Only change the input source if input hasn't been processed yet.
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+    if (top_data->input_processed == nk_true) {
+        return;
+    }
+
     if (nk_gamepad_set_input_source(top_data->gamepads, input_source) == nk_false) {
         nk_console_show_message(top, "Failed to set gamepad input source");
     };
+
+    top_data->input_processed = nk_true;
 }
 
 NK_API void nk_console_gamepad_source_destroyed(nk_console* widget, void* user_data) {
