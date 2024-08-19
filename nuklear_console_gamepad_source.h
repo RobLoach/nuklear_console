@@ -52,9 +52,9 @@ NK_API void nk_console_gamepad_source_changed(nk_console* widget, void* user_dat
 
     // Only change the input source if input hasn't been processed yet.
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    if (top_data->input_processed == nk_true) {
-        return;
-    }
+    // if (top_data->input_processed == nk_true) {
+    //     return;
+    // }
 
     if (nk_gamepad_set_input_source(top_data->gamepads, input_source) == nk_false) {
         nk_console_show_message(top, "Failed to set gamepad input source");
