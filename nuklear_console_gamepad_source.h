@@ -36,6 +36,7 @@ NK_API void nk_console_gamepad_source_changed(nk_console* widget, void* user_dat
     if (widget == NULL || user_data == NULL) {
         return;
     }
+    printf("Changed\n");
 
     // Get the selected value from the combobox.
     nk_console_gamepad_source_data* data = (nk_console_gamepad_source_data*)user_data;

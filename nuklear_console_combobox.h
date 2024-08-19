@@ -169,7 +169,6 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
             if (changed) {
                 console->label = console->children[*data->selected + 1]->label;
                 console->label_length = console->children[*data->selected + 1]->label_length;
-                nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
                 top_data->input_processed = nk_true;
             }
         }
