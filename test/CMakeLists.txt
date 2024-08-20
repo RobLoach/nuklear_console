@@ -5,7 +5,7 @@ if (NOT pntr)
     FetchContent_Declare(
         pntr
         GIT_REPOSITORY https://github.com/RobLoach/pntr.git
-        GIT_TAG 3699bb3
+        GIT_TAG 650237a
     )
     FetchContent_GetProperties(pntr)
     if (NOT pntr) # Have we downloaded raylib yet?
@@ -22,7 +22,7 @@ if (NOT pntr_nuklear)
     FetchContent_Declare(
         pntr_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/pntr_nuklear.git
-        GIT_TAG eb7050b
+        GIT_TAG d651de0
     )
     FetchContent_GetProperties(pntr_nuklear)
     if (NOT pntr_nuklear_POPULATED) # Have we downloaded raylib yet?

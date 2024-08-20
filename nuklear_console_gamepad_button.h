@@ -1,5 +1,5 @@
-#ifndef NK_CONSOLE_INPUT_H__
-#define NK_CONSOLE_INPUT_H__
+#ifndef NK_CONSOLE_GAMEPAD_BUTTON_H__
+#define NK_CONSOLE_GAMEPAD_BUTTON_H__
 
 #if defined(__cplusplus)
 extern "C" {
@@ -8,15 +8,15 @@ extern "C" {
 /**
  * Data specifically used for the input widget.
  *
- * @see nk_console_input()
+ * @see nk_console_gamepad_button()
  */
-typedef struct nk_console_input_data {
+typedef struct nk_console_gamepad_button_data {
     struct nk_console_button_data button_data; /** Inherited from button */
     int gamepad_number; /** The gamepad number of which to expect input from. Provied -1 for any gamepad. */
     int* out_gamepad_number; /** A pointer for where to store the gamepad number the button is associated with. */
     enum nk_gamepad_button* out_gamepad_button; /** A pointer to where to store the gamepad button. */
-    float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
-} nk_console_input_data;
+    float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_GAMEPAD_BUTTON_TIMER */
+} nk_console_gamepad_button_data;
 
 /**
  * Create a new input widget to get a gamepad button.
@@ -31,24 +31,24 @@ typedef struct nk_console_input_data {
  *
  * @return The new input widget.
  */
-NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
-NK_API struct nk_rect nk_console_input_render(nk_console* widget);
+NK_API nk_console* nk_console_gamepad_button(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
+NK_API struct nk_rect nk_console_gamepad_button_render(nk_console* widget);
 
 #if defined(__cplusplus)
 }
 #endif
 
-#endif // NK_CONSOLE_INPUT_H__
+#endif // NK_CONSOLE_GAMEPAD_BUTTON_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
-#ifndef NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
-#define NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
+#ifndef NK_CONSOLE_GAMEPAD_BUTTON_IMPLEMENTATION_ONCE
+#define NK_CONSOLE_GAMEPAD_BUTTON_IMPLEMENTATION_ONCE
 
-#ifndef NK_CONSOLE_INPUT_TIMER
+#ifndef NK_CONSOLE_GAMEPAD_BUTTON_TIMER
 /**
  * The amount of time to wait for input before timing out, in seconds.
  */
-#define NK_CONSOLE_INPUT_TIMER 6.0f
+#define NK_CONSOLE_GAMEPAD_BUTTON_TIMER 6.0f
 #endif
 
 #if defined(__cplusplus)
@@ -62,7 +62,7 @@ extern "C" {
  *
  * @return The name of the button.
  */
-static const char* nk_console_input_button_name(enum nk_gamepad_button button) {
+static const char* nk_console_gamepad_button_button_name(enum nk_gamepad_button button) {
     switch (button) {
         case NK_GAMEPAD_BUTTON_INVALID: return "<None>";
         case NK_GAMEPAD_BUTTON_A: return "A";
@@ -81,11 +81,11 @@ static const char* nk_console_input_button_name(enum nk_gamepad_button button) {
     }
 }
 
-NK_API struct nk_rect nk_console_input_render(nk_console* console) {
+NK_API struct nk_rect nk_console_gamepad_button_render(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
-    nk_console_input_data* data = (nk_console_input_data*)console->data;
+    nk_console_gamepad_button_data* data = (nk_console_gamepad_button_data*)console->data;
     if (data->out_gamepad_button == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
@@ -139,7 +139,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
     console->columns = 0;
-    console->label = nk_console_input_button_name(*data->out_gamepad_button);
+    console->label = nk_console_gamepad_button_button_name(*data->out_gamepad_button);
     console->label_length = 0;
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;
@@ -156,14 +156,14 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
  *
  * @return An empty rectangle, because there isn't a widget to interact with.
  */
-static struct nk_rect nk_console_input_active_render(nk_console* console) {
+static struct nk_rect nk_console_gamepad_button_active_render(nk_console* console) {
     if (console == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
 
     // Get the parent input widget.
     nk_console* input = console->parent;
-    nk_console_input_data* data = (nk_console_input_data*)input->data;
+    nk_console_gamepad_button_data* data = (nk_console_gamepad_button_data*)input->data;
     if (data == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
@@ -187,14 +187,14 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     nk_bool finished = nk_false;
 
     // Handle the timeout
-    if (data->timer >= NK_CONSOLE_INPUT_TIMER) {
+    if (data->timer >= NK_CONSOLE_GAMEPAD_BUTTON_TIMER) {
         finished = nk_true;
     }
 
     // Only display the timer if delta time is provided.
     if (data->timer > 0.0f) {
         // Display a progressbar, scaling the time to milliseconds.
-        nk_prog(console->ctx, (size_t)(data->timer * 1000), (size_t)(NK_CONSOLE_INPUT_TIMER * 1000), nk_false);
+        nk_prog(console->ctx, (size_t)(data->timer * 1000), (size_t)(NK_CONSOLE_GAMEPAD_BUTTON_TIMER * 1000), nk_false);
     }
 
     // Blinking press a button instructions
@@ -226,29 +226,29 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     return nk_rect(0, 0, 0, 0);
 }
 
-NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
+NK_API nk_console* nk_console_gamepad_button(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
     if (parent == NULL) {
         return NULL;
     }
 
     // Create the widget data.
-    nk_console_input_data* data = (nk_console_input_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_input_data));
-    nk_zero(data, sizeof(nk_console_input_data));
+    nk_console_gamepad_button_data* data = (nk_console_gamepad_button_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_gamepad_button_data));
+    nk_zero(data, sizeof(nk_console_gamepad_button_data));
     data->gamepad_number = gamepad_number;
     data->out_gamepad_number = out_gamepad_number;
     data->out_gamepad_button = out_gamepad_button;
 
     nk_console* widget = nk_console_label(parent, label);
-    widget->type = NK_CONSOLE_INPUT;
+    widget->type = NK_CONSOLE_GAMEPAD_BUTTON;
     widget->columns = label == NULL ? 1 : 2;
-    widget->render = nk_console_input_render;
+    widget->render = nk_console_gamepad_button_render;
     widget->selectable = nk_true;
     widget->data = data;
 
     // Set up the input state child.
     nk_console* active_state = nk_console_label(widget, NULL);
-    active_state->type = NK_CONSOLE_INPUT_ACTIVE;
-    active_state->render = nk_console_input_active_render;
+    active_state->type = NK_CONSOLE_GAMEPAD_BUTTON_ACTIVE;
+    active_state->render = nk_console_gamepad_button_active_render;
 
     return widget;
 }
@@ -257,5 +257,5 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
 }
 #endif
 
-#endif // NK_CONSOLE_INPUT_IMPLEMENTATION_ONCE
+#endif // NK_CONSOLE_GAMEPAD_BUTTON_IMPLEMENTATION_ONCE
 #endif // NK_CONSOLE_IMPLEMENTATION

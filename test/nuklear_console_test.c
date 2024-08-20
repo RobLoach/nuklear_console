@@ -60,11 +60,11 @@ int main() {
     nk_console* progress = nk_console_progress(console, "Progress Bar", &process_value, 100);
     assert(progress != NULL);
 
-    // nk_console_input()
+    // nk_console_gamepad_button()
     int gamepad_number = 0;
-    enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
-    nk_console* input = nk_console_input(console, "Input Button", -1, &gamepad_number, &gamepad_button);
-    assert(input != NULL);
+    enum nk_gamepad_button gamepad_button_start = NK_GAMEPAD_BUTTON_LB;
+    nk_console* gamepad_button = nk_console_gamepad_button(console, "Gamepad Button", -1, &gamepad_number, &gamepad_button_start);
+    assert(gamepad_button != NULL);
 
     // nk_console_combobox()
     int value_combobox = 3;

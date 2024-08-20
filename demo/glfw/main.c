@@ -38,6 +38,7 @@
  * ===============================================================*/
 
 #define NK_CONSOLE_ENABLE_TINYDIR
+#define NK_GAMEPAD_GLFW
 #include "../common/nuklear_console_demo.c"
 
 
