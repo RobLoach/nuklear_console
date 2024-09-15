@@ -97,12 +97,15 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Apply the style.
     struct nk_style_item buttonStyle = console->ctx->style.button.normal;
+    struct nk_color textColor = console->ctx->style.button.text_normal;
     if (nk_console_is_active_widget(console)) {
         if (selected) {
             console->ctx->style.button.normal = console->ctx->style.button.active;
+            console->ctx->style.button.text_normal = console->ctx->style.button.text_active;
         }
         else {
             console->ctx->style.button.normal = console->ctx->style.button.hover;
+            console->ctx->style.button.text_normal = console->ctx->style.button.text_hover;
         }
     }
 
@@ -148,6 +151,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Restore the styles
     console->ctx->style.button.normal = buttonStyle;
+    console->ctx->style.button.text_normal = textColor;
 
     // Act on the button
     if (selected) {
