@@ -31,6 +31,10 @@ static float property_float_test = 0.4f;
 static int slider_int_test = 20;
 static float slider_float_test = 0.4f;
 
+// Knob
+static int knob_int_test = 20;
+static float knob_float_test = 0.4f;
+
 // Radio
 static int radio_option = 1;
 static int radio_option2 = 0;
@@ -255,6 +259,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         {
             nk_console_property_int(properties, "Property Int", 10, &property_int_test, 30, 1, 1);
             nk_console_property_float(properties, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
+            nk_console_knob_int(properties, "Knob Int", 0, &knob_int_test, 30, 1, 1);
+            nk_console_knob_float(properties, "Knob Float", 0.0f, &knob_float_test, 2.0f, 0.1f, 1);
             nk_console_button_onclick(properties, "Back", &nk_console_button_back);
         }
 
