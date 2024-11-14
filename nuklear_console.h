@@ -171,7 +171,6 @@ NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_even
 // Backwards compatibility
 #define nk_console_onchange(widget) nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED)
 #define nk_console_button_set_onclick(button, onclick) nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, onclick)
-#define nk_console_button_set_onclick_handler(button, callback, user_data, destructor) nk_console_add_event_handler(button, NK_CONSOLE_EVENT_CLICKED, callback, user_data, destructor)
 
 /**
  * Get the user data for the top-level console.
