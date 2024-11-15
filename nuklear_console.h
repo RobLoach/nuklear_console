@@ -812,8 +812,10 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
         return;
     }
 
-    nk_begin(console->ctx, title, bounds, flags);
-    nk_console_render(console);
+    if (nk_begin(console->ctx, title, bounds, flags)) {
+        nk_console_render(console);
+    }
+
     nk_end(console->ctx);
 }
 
