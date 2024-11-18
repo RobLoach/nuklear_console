@@ -70,20 +70,13 @@ typedef enum {
     NK_CONSOLE_INPUT,
     NK_CONSOLE_INPUT_ACTIVE,
     NK_CONSOLE_RADIO,
+    NK_CONSOLE_WINDOW,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
     char text[256];
     float duration;
 } nk_console_message;
-
-typedef struct nk_consoles {
-    int active_console_index; /** The index of the active console. */
-    struct nk_console** consoles; /** The consoles that are being managed. */
-    struct nk_console* dispatcher; /** The console that is currently dispatching a console switch. */
-    struct nk_console* target; /** The console that is the target of the console switch. */
-    int count; /** The number of consoles that are being managed. */
-} nk_consoles;
 
 typedef struct nk_console {
     nk_console_widget_type type;
@@ -110,19 +103,7 @@ typedef struct nk_console {
 } nk_console;
 
 typedef struct nk_console_top_data {
-    nk_console* active_parent; /** The parent that is currently being displayed. */
     nk_bool input_processed; /** Whether or not user input has been processed. */
-
-    /**
-     * Message queue that is to be shown.
-     */
-    struct nk_console_message* messages;
-
-    /**
-     * When set, will determine where messages should appear on the screen.
-     */
-    struct nk_rect message_bounds;
-
     /**
      * The gamepad system to use for gamepad input.
      *
@@ -131,10 +112,8 @@ typedef struct nk_console_top_data {
      */
     struct nk_gamepads* gamepads;
 
-    /**
-     * The multiple consoles that are being managed, if any.
-     */
-    struct nk_consoles* consoles;
+    int active_window_index; /** The index of the active window. */
+    int window_count; /** The number of windows in the console. */
 
     /**
      * Custom user data. This is only applied to the top-level console.
@@ -152,15 +131,11 @@ NK_API void nk_console_render(nk_console* console);
 NK_API void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
 // Multiple consoles in separate windows
-NK_API struct nk_consoles* nk_console_init_multiple(struct nk_context* context, int count, int active_console_index);
-NK_API void nk_consoles_free(nk_consoles* consoles);
-NK_API void nk_console_set_active_console(nk_console* console);
-NK_API nk_console* nk_console_get_active_console(nk_consoles* consoles);
-NK_API void nk_console_handle_console_switch(nk_console* widget);
+NK_API void nk_console_set_active_window(nk_console* console);
 
 // Utilities
-NK_API nk_bool nk_console_has_multiple_consoles(nk_console* widget);
 NK_API nk_console* nk_console_get_top(nk_console* widget);
+NK_API nk_console* nk_console_get_window(nk_console* widget);
 NK_API int nk_console_get_widget_index(nk_console* widget);
 NK_API void nk_console_check_tooltip(nk_console* console);
 NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
@@ -232,6 +207,7 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_console_window.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -315,6 +291,7 @@ NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_console_window.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -429,14 +406,13 @@ NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
         return nk_false;
     }
 
-    nk_console* top = nk_console_get_top(widget);
+    nk_console* window = nk_console_get_window(widget);
 
-    if (top->disabled) {
+    if (window->disabled) {
         return nk_false;
     }
 
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
-
     return parent->activeWidget == widget;
 }
 
@@ -445,9 +421,10 @@ nk_console* nk_console_active_parent(nk_console* console) {
         return NULL;
     }
 
-    nk_console* top = nk_console_get_top(console);
-    nk_console* active_parent = ((nk_console_top_data*)top->data)->active_parent;
-    return active_parent == NULL ? top : active_parent;
+    nk_console* window = nk_console_get_window(console);
+
+    nk_console* active_parent = ((nk_console_window_data*)window->data)->active_parent;
+    return active_parent == NULL ? window : active_parent;
 }
 
 NK_API void nk_console_set_active_parent(nk_console* new_parent) {
@@ -455,16 +432,33 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
         return;
     }
 
-    nk_console* top = nk_console_get_top(new_parent);
-    if (top == NULL) {
+    nk_console* window = nk_console_get_window(new_parent);
+    if (window == NULL) {
         return;
     }
 
     // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
-    nk_window_set_scroll(top->ctx, 0, 0);
+    nk_window_set_scroll(window->ctx, 0, 0);
 
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
-    data->active_parent = new_parent;
+    nk_console_window_data* window_data = (nk_console_window_data*)window->data;
+    window_data->active_parent = new_parent;
+}
+
+/**
+ * Get the console window for a given widget.
+ */
+NK_API nk_console* nk_console_get_window(nk_console* widget) {
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    while (widget->type != NK_CONSOLE_WINDOW) {
+        widget = widget->parent;
+    }
+
+    NK_ASSERT(widget->type == NK_CONSOLE_WINDOW);
+
+    return widget;
 }
 
 /**
@@ -526,12 +520,10 @@ NK_API int nk_console_get_widget_index(nk_console* widget) {
  */
 NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
     nk_console* top = nk_console_get_top(widget);
+    nk_console* window = nk_console_get_window(widget);
 
-    if (top->disabled) {
-        return;
-    }
-
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+    nk_console_window_data* window_data = (nk_console_window_data*)window->data;
 
     // Scroll to the active widget if needed.
     struct nk_rect content_region = nk_window_get_content_region(widget->ctx);
@@ -545,11 +537,11 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     }
 
     // Only process an active input once.
-    if (data->input_processed == nk_false) {
+    if (top_data->input_processed == nk_false) {
         // Page Up
         // SUGGESTION/TODO: Add NK_GAMEPAD_BUTTON_LT and NK_GAMEPAD_BUTTON_RT and bind them to Page Up and Page Down.
-        // Disabled in favor of console switching if there are multiple consoles.
-        if (!nk_console_has_multiple_consoles(top) && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
+        // Disabled in favor of console switching if there are multiple windows.
+        if (top_data->window_count < 2 && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
             while (--widgetIndex >= 0) {
@@ -561,12 +553,12 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     }
                 }
             }
-            data->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
         // Page Down
         // SUGGESTION/TODO: Add NK_GAMEPAD_BUTTON_LT and NK_GAMEPAD_BUTTON_RT and bind them to Page Up and Page Down.
-        // Disabled in favor of console switching if there are multiple consoles.
-        else if (!nk_console_has_multiple_consoles(top) && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
+        // Disabled in favor of console switching if there are multiple windows.
+        else if (top_data->window_count < 2 && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             int count = 0;
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
@@ -578,7 +570,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     }
                 }
             }
-            data->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
         // Up
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP)) {
@@ -590,7 +582,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     break;
                 }
             }
-            data->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
         // Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN)) {
@@ -602,48 +594,26 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
                     break;
                 }
             }
-            data->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
-            if (nk_console_active_parent(top) == NULL) {
+            if (nk_console_active_parent(window) == NULL) {
                 return;
             }
 
             if (widget->parent != NULL) {
-                if (widget->parent == top) {
-                    nk_console_set_active_parent(top);
+                if (widget->parent == window) {
+                    nk_console_set_active_parent(window);
                 }
                 else if (widget->parent->parent != NULL) {
                     nk_console_set_active_parent(widget->parent->parent);
                 }
             }
 
-            data->input_processed = nk_true;
+            top_data->input_processed = nk_true;
         }
     }
-}
-
-/**
- * Retrieve the first selectable widget from the given parent.
- *
- * @internal
- */
-static nk_console* nk_console_find_first_selectable(nk_console* parent) {
-    if (parent == NULL || parent->children == NULL) {
-        return NULL;
-    }
-
-    // Iterate through the children to find the first selectable widget.
-    for (size_t i = 0; i < cvector_size(parent->children); i++) {
-        if (parent->children[i] != NULL) {
-            if (nk_console_selectable(parent->children[i])) {
-                return parent->children[i];
-            }
-        }
-    }
-
-    return NULL;
 }
 
 /**
@@ -718,70 +688,36 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
-    // First run on this game loop
+    // Render window(s)
     if (console->parent == NULL) {
-        nk_console_top_data* data = (nk_console_top_data*)console->data;
+        nk_console_top_data* top_data = (nk_console_top_data*)console->data;
 
         // Reset the input state.
-        data->input_processed = nk_false;
+        top_data->input_processed = nk_false;
 
-        // Handle console switching.
-        nk_console_handle_console_switch(console);
+        if (top_data->window_count == 0) {
+            // No windows added to console, so we capture it and add it to the console,
+            // moving the widgets from top console to our newly created window.
+            nk_console_render(nk_console_capture_window(console));
+        }
+        else if (top_data->window_count == 1) {
+            nk_console_render(console->children[0]);
+        }
+        else if (top_data->window_count > 1) {
+            // Multiple windows added to console
+            for (int i = 0; i < cvector_size(console->children); i++) {
+                nk_console* window = console->children[i];
+                nk_console_window_data* window_data = (nk_console_window_data*)window->data;
 
-        // Render the active message.
-        nk_console_render_message(console);
-
-        // Render all of the parent's children.
-        if (data->active_parent->children != NULL) {
-            // Make sure there's an active widget selected.
-            if (data->active_parent->activeWidget == NULL) {
-                nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
-            }
-            else {
-                // Make sure the widget actually exists and can be selected.
-                nk_bool widgetFound = nk_false;
-                for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
-                    if (data->active_parent->children[i] == data->active_parent->activeWidget) {
-                        // Ensure the widget is still selectable.
-                        if (nk_console_selectable(data->active_parent->activeWidget)) {
-                            widgetFound = nk_true;
-                        }
-                        break;
-                    }
-                }
-                if (widgetFound == nk_false) {
-                    nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
-                }
-            }
-
-            // Render all the children
-            for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
-                nk_console_render(data->active_parent->children[i]);
+                // Begin a new Nuklear window
+                nk_console_render_window(window, window->label, window_data->bounds, window_data->flags);
             }
         }
 
-        // Invoke the post-render events.
-        size_t count = cvector_size(console->events);
-        if (count > 0) {
-            nk_bool can_erase = nk_true;
-            for (size_t i = 0; i < count; i++) {
-                if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
-                    // Call the callback if it's set.
-                    if (console->events[i].callback != NULL) {
-                        console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
-                        console->events[i].callback = NULL;
-                    }
-                }
-                else {
-                    can_erase = nk_false;
-                }
-            }
-            if (can_erase) {
-                cvector_clear(console->events);
-            }
-        }
+
         return;
     }
+
 
     // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
@@ -795,17 +731,18 @@ NK_API void nk_console_render(nk_console* console) {
         widget_bounds.y -= (float)window_scroll_y;
 
         nk_console* top = nk_console_get_top(console);
-        nk_console_top_data* data = (nk_console_top_data*)top->data;
-        if (data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (top_data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             if (nk_console_selectable(console)) {
                 // Ensure the console is active.
-                if (nk_console_has_multiple_consoles(top)) {
-                    nk_console_set_active_console(top);
+                if (top_data->window_count > 1) {
+                    nk_console* window = nk_console_get_window(console);
+                    nk_console_set_active_window(window);
                 }
 
                 // Select the widget.
                 nk_console_set_active_widget(console);
-                data->input_processed = nk_true;
+                top_data->input_processed = nk_true;
             }
         }
     }
@@ -838,80 +775,12 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
-    data->active_parent = console;
+    data->active_window_index = 0;
     console->data = data;
 
+    data->window_count = 0;
+
     return console;
-}
-
-/**
- * Initialize a new nk_consoles structure with the given number of consoles.
- *
- * @param context The associated Nuklear context.
- * @param count The number of consoles to initialize.
- * @param active_console_index The index of the console to make active.
- *
- * @return The initialized nk_consoles structure.
- */
-NK_API nk_consoles* nk_console_init_multiple(struct nk_context* context, int count, int active_console_index) {
-    if (!context || count <= 0 || active_console_index < 0 || active_console_index >= count) {
-        fprintf(stderr, "Error: Invalid parameters passed to nk_console_init_multiple.\n");
-        return NULL;
-    }
-
-    nk_handle handle;
-
-    // Allocate memory for the nk_consoles structure
-    nk_consoles* consoles = (nk_consoles*)nk_console_malloc(handle, NULL, sizeof(nk_consoles));
-    if (!consoles) {
-        fprintf(stderr, "Error: Failed to allocate memory for nk_consoles.\n");
-        return NULL;
-    }
-    nk_zero(consoles, sizeof(nk_consoles));
-
-    consoles->count = count;
-    consoles->active_console_index = active_console_index;
-
-    // Allocate memory for the array of console pointers
-    consoles->consoles = (nk_console**)nk_console_malloc(handle, NULL, count * sizeof(nk_console*));
-    if (!consoles->consoles) {
-        fprintf(stderr, "Error: Failed to allocate memory for console pointers.\n");
-        nk_consoles_free(consoles);
-        return NULL;
-    }
-
-    // Initialize each console
-    for (int i = 0; i < count; ++i) {
-        nk_console* console = nk_console_init(context);
-        if (!console) {
-            fprintf(stderr, "Error: Failed to initialize console at index %d.\n", i);
-            nk_consoles_free(consoles);
-            return NULL;
-        }
-        consoles->consoles[i] = console;
-
-        // Link the consoles structure back to the console
-        nk_console_top_data* data = console->data;
-        if (data) data->consoles = consoles;
-
-        // Disable all consoles except the active one
-        console->disabled = (i != active_console_index);
-    }
-
-    return consoles;
-}
-
-/**
- * Check if the console is associated with multiple consoles.
- *
- * @param widget The widget to check.
- *
- * @return nk_true if the widget has multiple consoles, nk_false otherwise.
- */
-NK_API nk_bool nk_console_has_multiple_consoles(nk_console* top) {
-    NK_ASSERT(top->parent == NULL);
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
-    return data->consoles != NULL && data->consoles->count > 1;
 }
 
 /**
@@ -919,81 +788,27 @@ NK_API nk_bool nk_console_has_multiple_consoles(nk_console* top) {
  *
  * @param top The top-level console.
  */
-NK_API void nk_console_set_active_console(nk_console* top) {
+NK_API void nk_console_set_active_window(nk_console* window) {
+    NK_ASSERT(window->type == NK_CONSOLE_WINDOW);
+
+    nk_console* top = window->parent;
     NK_ASSERT(top->parent == NULL);
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
 
-    for (int i = 0; i < data->consoles->count; i++) {
-        if (data->consoles->consoles[i] == top) {
-            data->consoles->consoles[i]->disabled = nk_false;
-            data->consoles->active_console_index = i;
+    for (int i = 0; i < cvector_size(top->children); i++) {
+        nk_console* w = top->children[i];
+        nk_console_window_data* window_data = (nk_console_window_data*)w->data;
+        if (w == window) {
+            w->disabled = nk_false;
+            top_data->active_window_index = i;
         }
         else {
-            data->consoles->consoles[i]->disabled = nk_true;
+            w->disabled = nk_true;
         }
     }
-}
 
-/**
- * Get the active console from the given consoles structure.
- *
- * @param consoles The consoles structure.
- *
- * @return The active console.
- */
-NK_API nk_console* nk_console_get_active_console(nk_consoles* consoles) {
-    NK_ASSERT(consoles != NULL);
-    return consoles->consoles[consoles->active_console_index];
-}
-
-/**
- * Handle console switching.
- *
- * A console switch is dispatched (queued) when the user presses the left or right bumper on the gamepad.
- * The switch is then performed on the next frame. The occurence of the next frame is inferred
- * from the dispatcher console's next call.
- *
- * @param top The top-level console.
- */
-NK_API void nk_console_handle_console_switch(nk_console* top) {
-    NK_ASSERT(top->parent == NULL);
-
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
-
-    // If there aren't multiple consoles, there's nothing to do.
-    if (!nk_console_has_multiple_consoles(top)) {
-        return;
-    }
-
-    // Perform the queued console switch, if this console queued it.
-    if (data->consoles->dispatcher == top) {
-        // Switch to the next active console
-        nk_console_set_active_console(data->consoles->target);
-
-        // Clear the queue after performing the switch
-        data->consoles->dispatcher = NULL;
-        data->consoles->target = NULL;
-        return;
-    }
-
-    // A console switch is already underway, so no need to check for console switch input.
-    if (data->consoles->dispatcher != NULL) {
-        return;
-    }
-
-    // Queue the next console to be activated
-    if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
-        int index = (data->consoles->active_console_index + 1) % data->consoles->count;
-        data->consoles->dispatcher = top;
-        data->consoles->target = data->consoles->consoles[index];
-    }
-    // Queue the previous console to be activated
-    else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
-        int index = (data->consoles->active_console_index - 1 + data->consoles->count) % data->consoles->count;
-        data->consoles->dispatcher = top;
-        data->consoles->target = data->consoles->consoles[index];
-    }
+    nk_window_set_focus(top->ctx, window->label);
 }
 
 /**
@@ -1014,25 +829,6 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
     }
 
     nk_end(console->ctx);
-}
-
-/**
- * Free all consoles associated with the given nk_consoles structure,
- * as well as the structure itself.
- *
- * @param consoles The consoles structure to free.
- */
-NK_API void nk_consoles_free(nk_consoles* consoles) {
-    if (consoles == NULL) {
-        return;
-    }
-
-    for (int i = 0; i < consoles->count; i++) {
-        nk_console_free(consoles->consoles[i]);
-    }
-
-    nk_console_mfree(nk_handle_id(0), consoles->consoles);
-    nk_console_mfree(nk_handle_id(0), consoles);
 }
 
 /**
@@ -1060,8 +856,8 @@ NK_API void nk_console_free(nk_console* console) {
     // Clear any component-specific data.
     if (console->data != NULL) {
         // Free the top data.
-        if (console->type == NK_CONSOLE_PARENT) {
-            nk_console_top_data* data = (nk_console_top_data*)console->data;
+        if (console->type == NK_CONSOLE_WINDOW) {
+            nk_console_window_data* data = (nk_console_window_data*)console->data;
             if (data->messages != NULL) {
                 cvector_free(data->messages);
                 data->messages = NULL;
@@ -1180,8 +976,8 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
     }
 
     // Gamepad
-    nk_console_top_data* data = (nk_console_top_data*)console->data;
-    if (nk_gamepad_is_button_pressed(data->gamepads, -1, (enum nk_gamepad_button)button)) {
+    nk_console_top_data* top_data = (nk_console_top_data*)console->data;
+    if (nk_gamepad_is_button_pressed(top_data->gamepads, -1, (enum nk_gamepad_button)button)) {
         return nk_true;
     }
 
@@ -1196,9 +992,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: {
-            // PageUp/PageDown is replaced with console switching if there are multiple consoles.
+            // PageUp/PageDown is replaced with console switching if there are multiple windows.
             // Both could be supported when nuklear_gamepad supports NK_GAMEPAD_BUTTON_LT and NK_GAMEPAD_BUTTON_RT.
-            if (nk_console_has_multiple_consoles(console)) {
+            if (top_data->window_count > 1) {
                 return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_TAB) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
             }
             else {
@@ -1206,9 +1002,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
             };
         }
         case NK_GAMEPAD_BUTTON_RB: {
-            // PageUp/PageDown is replaced with console switching if there are multiple consoles.
+            // PageUp/PageDown is replaced with console switching if there are multiple windows.
             // Both could be supported when nuklear_gamepad supports NK_GAMEPAD_BUTTON_LT and NK_GAMEPAD_BUTTON_RT.
-            if (nk_console_has_multiple_consoles(console)) {
+            if (top_data->window_count > 1) {
                 return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_TAB) && !nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
             }
             else {

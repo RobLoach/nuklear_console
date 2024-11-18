@@ -1,5 +1,5 @@
-#include <string.h> // strcmp
 #include <stdio.h> // snprintf
+#include <string.h> // strcmp
 
 #include "../../vendor/Nuklear/demo/common/style.c"
 
@@ -14,6 +14,8 @@ static struct nk_gamepads gamepads;
 static nk_bool shouldClose = nk_false;
 
 struct demo_console_state {
+    char title[64];
+
     // Theme
     int theme;
 
@@ -127,8 +129,10 @@ void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
 }
 
 void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* console, struct demo_console_state* state, void* user_data, struct nk_image image) {
+    nk_console* top = nk_console_get_top(console);
+
     nk_gamepad_init(&gamepads, ctx, user_data);
-    nk_console_set_gamepads(console, &gamepads);
+    nk_console_set_gamepads(top, &gamepads);
 
     // New Game
     nk_console* newgame = nk_console_button(console, "New Game");
@@ -240,22 +244,22 @@ void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* consol
         {
             nk_console* row = nk_console_row_begin(spacing);
             nk_console_spacing(row, 1);
-            nk_console* b = nk_console_button(row,"");
+            nk_console* b = nk_console_button(row, "");
             nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_UP);
             nk_console_spacing(row, 1);
             nk_console_row_end(row);
 
             row = nk_console_row_begin(spacing);
-            b = nk_console_button(row,"");
+            b = nk_console_button(row, "");
             nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_LEFT);
             nk_console_spacing(row, 1);
-            b = nk_console_button(row,"");
+            b = nk_console_button(row, "");
             nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_RIGHT);
             nk_console_row_end(row);
 
             row = nk_console_row_begin(spacing);
             nk_console_spacing(row, 1);
-            b = nk_console_button(row,"");
+            b = nk_console_button(row, "");
             nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_DOWN);
             nk_console_spacing(row, 1);
             nk_console_row_end(row);
@@ -320,51 +324,51 @@ void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* consol
     // Rows
     nk_console* calc = nk_console_button(console, "Calculator");
     {
-      nk_console* row = nk_console_row_begin(calc);
-      nk_console_button(row, "sqrt");
-      nk_console_button(row, "pi");
-      nk_console_row_end(row);
+        nk_console* row = nk_console_row_begin(calc);
+        nk_console_button(row, "sqrt");
+        nk_console_button(row, "pi");
+        nk_console_row_end(row);
 
-      row = nk_console_row_begin(calc);
-      nk_console_button(row, "AC");
-      nk_console_button(row, "()");
-      nk_console_button(row, "%");
-      nk_console_button(row, "/");
-      nk_console_row_end(row);
+        row = nk_console_row_begin(calc);
+        nk_console_button(row, "AC");
+        nk_console_button(row, "()");
+        nk_console_button(row, "%");
+        nk_console_button(row, "/");
+        nk_console_row_end(row);
 
-      row = nk_console_row_begin(calc);
-      nk_console_button(row, "7");
-      nk_console_button(row, "8");
-      nk_console_button(row, "9");
-      nk_console_button(row, "*");
-      nk_console_row_end(row);
+        row = nk_console_row_begin(calc);
+        nk_console_button(row, "7");
+        nk_console_button(row, "8");
+        nk_console_button(row, "9");
+        nk_console_button(row, "*");
+        nk_console_row_end(row);
 
-      row = nk_console_row_begin(calc);
-      nk_console_button(row, "4");
-      nk_console_button(row, "5");
-      nk_console_button(row, "6");
-      nk_console_button(row, "-");
-      nk_console_row_end(row);
+        row = nk_console_row_begin(calc);
+        nk_console_button(row, "4");
+        nk_console_button(row, "5");
+        nk_console_button(row, "6");
+        nk_console_button(row, "-");
+        nk_console_row_end(row);
 
-      row = nk_console_row_begin(calc);
-      nk_console_button(row, "1");
-      nk_console_button(row, "2");
-      nk_console_button(row, "3");
-      nk_console_button(row, "+");
-      nk_console_row_end(row);
+        row = nk_console_row_begin(calc);
+        nk_console_button(row, "1");
+        nk_console_button(row, "2");
+        nk_console_button(row, "3");
+        nk_console_button(row, "+");
+        nk_console_row_end(row);
 
-      row = nk_console_row_begin(calc);
-      nk_console_button(row, "0");
-      nk_console_button(row, ".");
-      nk_console_button(row, "bksp");
-      nk_console_button(row, "=");
-      nk_console_row_end(row);
+        row = nk_console_row_begin(calc);
+        nk_console_button(row, "0");
+        nk_console_button(row, ".");
+        nk_console_button(row, "bksp");
+        nk_console_button(row, "=");
+        nk_console_row_end(row);
 
-      nk_console_button_set_symbol(
-        nk_console_button_onclick(calc, "Back", &nk_console_button_back),
-        NK_SYMBOL_TRIANGLE_LEFT);
+        nk_console_button_set_symbol(
+            nk_console_button_onclick(calc, "Back", &nk_console_button_back),
+            NK_SYMBOL_TRIANGLE_LEFT);
 
-      calc->tooltip = "Demo rows and grids!";
+        calc->tooltip = "Demo rows and grids!";
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
@@ -377,30 +381,7 @@ nk_bool nuklear_console_demo_render(nk_console* console) {
     return shouldClose;
 }
 
-nk_bool nuklear_console_demo_render_window(nk_console* console, int num, int width, int height, int flags) {
-    char title[18];
-    snprintf(title, sizeof(title), "nuklear_console_%d", num);
-
-    int margin = 10;
-
-    nk_console_render_window(
-        console,
-        title,
-        nk_rect(margin + width * (num - 1), margin, width - margin, height - margin * 2),
-        flags);
-
-    return shouldClose;
-}
-
-#if CONSOLE_COUNT < 2
 void nuklear_console_demo_free(nk_console* console) {
     nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }
-#else
-void nuklear_console_demo_free(nk_consoles* consoles) {
-    nk_gamepad_free(&gamepads);
-    nk_consoles_free(consoles);
-}
-#endif
-

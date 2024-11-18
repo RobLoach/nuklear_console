@@ -23,10 +23,8 @@
 #include "../../vendor/Nuklear/nuklear.h"
 #include "../../vendor/Nuklear/demo/sdl_renderer/nuklear_sdl_renderer.h"
 
-#define WINDOW_WIDTH 1280
-#define WINDOW_HEIGHT 720
-#define CONSOLE_COUNT 3
-NK_STATIC_ASSERT(CONSOLE_COUNT > 0);
+#define WINDOW_WIDTH 800
+#define WINDOW_HEIGHT 600
 
 #include "../common/nuklear_console_demo.c"
 
@@ -105,26 +103,12 @@ int main(int argc, char *argv[]) {
         SDL_FreeSurface(surface);
     }
 
-#if CONSOLE_COUNT < 2
     nk_console* console = nk_console_init(ctx);
+
     struct demo_console_state state = demo_console_state_defaults();
     nuklear_console_demo_init(ctx, console, &state, NULL, img);
-#else
-    nk_consoles* consoles = nk_console_init_multiple(ctx, CONSOLE_COUNT, 0);
-
-    struct demo_console_state states[CONSOLE_COUNT];
-
-    for (int i = 0; i < CONSOLE_COUNT; i++) {
-        states[i] = demo_console_state_defaults();
-        nuklear_console_demo_init(ctx, consoles->consoles[i], &states[i], NULL, img);
-    }
-#endif
 
     while (running) {
-#if CONSOLE_COUNT > 1
-        nk_console* console = nk_console_get_active_console(consoles);
-#endif
-
         /* Input */
         SDL_Event evt;
         nk_input_begin(ctx);
@@ -138,25 +122,16 @@ int main(int argc, char *argv[]) {
         }
         nk_input_end(ctx);
 
-
         int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
 
         /* GUI */
-        /* Render it, and see if we're to stop running. */
-#if CONSOLE_COUNT < 2
         if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
+            /* Render it, and see if we're to stop running. */
             if (nuklear_console_demo_render(console)) {
                 running = 0;
             }
         }
         nk_end(ctx);
-#else
-        for (int i = 0; i < CONSOLE_COUNT; i++) {
-          if (nuklear_console_demo_render_window(consoles->consoles[i], i + 1, WINDOW_WIDTH / CONSOLE_COUNT, WINDOW_HEIGHT, flags)) {
-                running = 0;
-            }
-        }
-#endif
 
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
@@ -170,11 +145,7 @@ cleanup:
     if (texture != NULL) {
         SDL_DestroyTexture(texture);
     }
-#if CONSOLE_COUNT < 2
     nuklear_console_demo_free(console);
-#else
-    nuklear_console_demo_free(consoles);
-#endif
     nk_sdl_shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);

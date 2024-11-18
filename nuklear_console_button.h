@@ -204,8 +204,8 @@ NK_API void nk_console_button_back(nk_console* button, void* user_data) {
         return;
     }
 
-    nk_console* top = nk_console_get_top(button);
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    nk_console* window = nk_console_get_window(button);
+    nk_console_window_data* window_data = (nk_console_window_data*)window->data;
 
     nk_console* parent = button->parent;
     if (parent != NULL) {
@@ -215,7 +215,7 @@ NK_API void nk_console_button_back(nk_console* button, void* user_data) {
         nk_console_set_active_parent(parent);
     }
     else {
-        data->active_parent = top;
+        window_data->active_parent = window;
     }
 }
 
