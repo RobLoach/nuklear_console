@@ -523,7 +523,6 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
     nk_console* window = nk_console_get_window(widget);
 
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    nk_console_window_data* window_data = (nk_console_window_data*)window->data;
 
     // Scroll to the active widget if needed.
     struct nk_rect content_region = nk_window_get_content_region(widget->ctx);
@@ -705,7 +704,7 @@ NK_API void nk_console_render(nk_console* console) {
         }
         else if (top_data->window_count > 1) {
             // Multiple windows added to console
-            for (int i = 0; i < cvector_size(console->children); i++) {
+            for (size_t i = 0; i < cvector_size(console->children); i++) {
                 nk_console* window = console->children[i];
                 nk_console_window_data* window_data = (nk_console_window_data*)window->data;
 
@@ -796,12 +795,11 @@ NK_API void nk_console_set_active_window(nk_console* window) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
 
-    for (int i = 0; i < cvector_size(top->children); i++) {
+    for (size_t i = 0; i < cvector_size(top->children); i++) {
         nk_console* w = top->children[i];
-        nk_console_window_data* window_data = (nk_console_window_data*)w->data;
         if (w == window) {
             w->disabled = nk_false;
-            top_data->active_window_index = i;
+            top_data->active_window_index = (int)i;
         }
         else {
             w->disabled = nk_true;

@@ -195,12 +195,12 @@ NK_API struct nk_rect nk_console_window_render(nk_console* console) {
 
     if (!console->disabled && !top_data->input_processed) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
-            int index = (top_data->active_window_index + 1) % cvector_size(top->children);
+            int index = (top_data->active_window_index + 1) % (int)cvector_size(top->children);
             nk_console_set_active_window(top->children[index]);
             top_data->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
-            int index = (top_data->active_window_index - 1 + cvector_size(top->children)) % cvector_size(top->children);
+            int index = (top_data->active_window_index - 1 + (int)cvector_size(top->children)) % (int)cvector_size(top->children);
             nk_console_set_active_window(top->children[index]);
             top_data->input_processed = nk_true;
         }
