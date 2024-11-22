@@ -38,9 +38,6 @@ int main(int argc, char *argv[]) {
     int flags = 0;
     float font_scale = 3;
 
-    /* GUI */
-    struct nk_context *ctx;
-
     /* SDL setup */
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
@@ -103,10 +100,11 @@ int main(int argc, char *argv[]) {
         SDL_FreeSurface(surface);
     }
 
-    nk_console* console = nk_console_init(ctx);
+    console = nk_console_init(ctx);
 
+    // Initialize console state
     struct demo_console_state state = demo_console_state_defaults();
-    nuklear_console_demo_init(ctx, console, &state, NULL, img);
+    nuklear_console_demo_init(console, &state, NULL, img);
 
     while (running) {
         /* Input */
@@ -127,7 +125,7 @@ int main(int argc, char *argv[]) {
         /* GUI */
         if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, WINDOW_WIDTH, WINDOW_HEIGHT), flags)) {
             /* Render it, and see if we're to stop running. */
-            if (nuklear_console_demo_render(console)) {
+            if (nuklear_console_demo_render()) {
                 running = 0;
             }
         }
@@ -145,7 +143,7 @@ cleanup:
     if (texture != NULL) {
         SDL_DestroyTexture(texture);
     }
-    nuklear_console_demo_free(console);
+    nuklear_console_demo_free();
     nk_sdl_shutdown();
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(win);

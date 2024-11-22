@@ -16,9 +16,7 @@
 
 typedef struct AppData {
     pntr_font* font;
-    struct nk_context* ctx;
     pntr_image* image;
-    struct nk_console* console;
 } AppData;
 
 bool Init(pntr_app* app) {
@@ -27,18 +25,25 @@ bool Init(pntr_app* app) {
 
     // Load the default font
     appData->font = pntr_load_font_default();
-    appData->ctx = pntr_load_nuklear(appData->font);
+
+    ctx = pntr_load_nuklear(appData->font);
     appData->image = pntr_load_image("resources/image.png");
 
     // Initialize the Gamepads
-    appData->console = nuklear_console_demo_init(appData->ctx, app, pntr_image_nk(appData->image));
+    // Init top console
+    console = nk_console_init(ctx);
+
+    // Initialize console state
+    struct demo_console_state state = demo_console_state_defaults();
+
+    // Intialize the console demo widgets
+    nuklear_console_demo_init(console, &state, NULL, pntr_image_nk(appData->image));
 
     return true;
 }
 
 bool Update(pntr_app* app, pntr_image* screen) {
     AppData* appData = (AppData*)pntr_app_userdata(app);
-    struct nk_context* ctx = appData->ctx;
 
     // Update the pntr input state.
     pntr_nuklear_update(ctx, app);
@@ -74,7 +79,7 @@ void Close(pntr_app* app) {
     // Unload the font
     pntr_unload_font(appData->font);
     pntr_unload_image(appData->image);
-    pntr_unload_nuklear(appData->ctx);
+    pntr_unload_nuklear(ctx);
 
     pntr_unload_memory(appData);
 }

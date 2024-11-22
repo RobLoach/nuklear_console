@@ -20,8 +20,6 @@
 
 struct demo_ctx {
     SDL_Renderer* renderer;
-    struct nk_context* ctx;
-    struct nk_console* console;
     struct nk_image img;
     SDL_Texture* _texture;
     SDL_Window* _window;
@@ -53,7 +51,7 @@ static int configure(struct demo_ctx* demo) {
     }
 
     /* GUI */
-    demo->ctx = nk_sdl_init(demo->_window, demo->renderer);
+    ctx = nk_sdl_init(demo->_window, demo->renderer);
     {
         struct nk_font_atlas* atlas;
         struct nk_font_config config = nk_font_config(0);
@@ -62,7 +60,7 @@ static int configure(struct demo_ctx* demo) {
         nk_sdl_font_stash_begin(&atlas);
         font = nk_font_atlas_add_default(atlas, 13 * font_scale, &config);
         nk_sdl_font_stash_end();
-        nk_style_set_font(demo->ctx, &font->handle);
+        nk_style_set_font(ctx, &font->handle);
     }
 
     // Attempt to load the sample image.
@@ -97,7 +95,7 @@ static int cleanup(struct demo_ctx* demo) {
     if (demo->_texture != NULL) {
         SDL_DestroyTexture(demo->_texture);
     }
-    nuklear_console_demo_free(demo->console);
+    nuklear_console_demo_free();
     nk_sdl_shutdown();
     SDL_DestroyRenderer(demo->renderer);
     SDL_DestroyWindow(demo->_window);

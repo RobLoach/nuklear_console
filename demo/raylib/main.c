@@ -13,7 +13,6 @@
 
 void UpdateDrawFrame(void);
 
-struct nk_context *ctx;
 nk_bool closeWindow = nk_false;
 
 int main() {
@@ -28,7 +27,10 @@ int main() {
     ctx = InitNuklearEx(font, fontSize);
     Texture texture = LoadTexture("resources/image.png");
 
-    console = nuklear_console_demo_init(ctx, NULL, TextureToNuklear(texture));
+    console = nk_console_init(ctx);
+
+    struct demo_console_state state = demo_console_state_defaults();
+    nuklear_console_demo_init(console, &state, NULL, TextureToNuklear(texture));
 
     #if defined(PLATFORM_WEB)
         emscripten_set_main_loop(UpdateDrawFrame, 0, 1);

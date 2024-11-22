@@ -10,6 +10,8 @@
 #include "../../nuklear_console.h"
 
 // Demo
+static struct nk_context* ctx;
+static struct nk_console* console;
 static struct nk_gamepads gamepads;
 static nk_bool shouldClose = nk_false;
 
@@ -128,14 +130,14 @@ void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     nk_console_show_message(radio, radio->label);
 }
 
-void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* console, struct demo_console_state* state, void* user_data, struct nk_image image) {
-    nk_console* top = nk_console_get_top(console);
+void nuklear_console_demo_init(struct nk_console* _console, struct demo_console_state* state, void* user_data, struct nk_image image) {
+    nk_console* top = nk_console_get_top(_console);
 
     nk_gamepad_init(&gamepads, ctx, user_data);
     nk_console_set_gamepads(top, &gamepads);
 
     // New Game
-    nk_console* newgame = nk_console_button(console, "New Game");
+    nk_console* newgame = nk_console_button(_console, "New Game");
     {
         nk_console_button_set_symbol(newgame, NK_SYMBOL_PLUS);
         nk_console_label(newgame, "This would start a new game!");
@@ -143,7 +145,7 @@ void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* consol
     }
 
     // Widgets
-    nk_console* widgets = nk_console_button(console, "Widgets");
+    nk_console* widgets = nk_console_button(_console, "Widgets");
     {
         nk_console_set_tooltip(widgets, "Displays some random options!");
 
@@ -316,13 +318,13 @@ void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* consol
             NK_SYMBOL_TRIANGLE_LEFT);
     }
 
-    nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &state->theme);
+    nk_console* theme_options = nk_console_combobox(_console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &state->theme);
     nk_console_add_event_handler(theme_options, NK_CONSOLE_EVENT_CHANGED, &theme_changed, &state->theme, NULL);
     theme_options->tooltip = "Change the theme of the console!";
     set_style(ctx, (enum theme)state->theme);
 
     // Rows
-    nk_console* calc = nk_console_button(console, "Calculator");
+    nk_console* calc = nk_console_button(_console, "Calculator");
     {
         nk_console* row = nk_console_row_begin(calc);
         nk_console_button(row, "sqrt");
@@ -371,17 +373,17 @@ void nuklear_console_demo_init(struct nk_context* ctx, struct nk_console* consol
         calc->tooltip = "Demo rows and grids!";
     }
 
-    nk_console_button(console, "Save Game")->disabled = nk_true;
-    nk_console_button_onclick(console, "Quit Game", &button_clicked);
+    nk_console_button(_console, "Save Game")->disabled = nk_true;
+    nk_console_button_onclick(_console, "Quit Game", &button_clicked);
 }
 
-nk_bool nuklear_console_demo_render(nk_console* console) {
+nk_bool nuklear_console_demo_render() {
     nk_console_render(console);
 
     return shouldClose;
 }
 
-void nuklear_console_demo_free(nk_console* console) {
+void nuklear_console_demo_free() {
     nk_gamepad_free(nk_console_get_gamepads(console));
     nk_console_free(console);
 }
