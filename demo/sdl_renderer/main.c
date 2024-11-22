@@ -38,9 +38,6 @@ int main(int argc, char *argv[]) {
     int flags = 0;
     float font_scale = 3;
 
-    /* GUI */
-    struct nk_context *ctx;
-
     /* SDL setup */
     SDL_SetHint(SDL_HINT_VIDEO_HIGHDPI_DISABLED, "0");
     SDL_Init(SDL_INIT_VIDEO | SDL_INIT_EVENTS | SDL_INIT_GAMECONTROLLER);
@@ -103,7 +100,11 @@ int main(int argc, char *argv[]) {
         SDL_FreeSurface(surface);
     }
 
-    nk_console* console = nuklear_console_demo_init(ctx, NULL, img);
+    console = nk_console_init(ctx);
+
+    // Initialize console state
+    struct demo_console_state state = demo_console_state_defaults();
+    nuklear_console_demo_init(console, &state, NULL, img);
 
     while (running) {
         /* Input */

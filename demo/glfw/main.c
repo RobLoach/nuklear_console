@@ -55,7 +55,6 @@ int main(void)
     struct nk_glfw glfw = {0};
     static GLFWwindow *win;
     int width = 0, height = 0;
-    struct nk_context *ctx;
     float font_scale = 3;
 
     /* GLFW */
@@ -103,7 +102,13 @@ int main(void)
         /*nk_style_set_font(ctx, &droid->handle);*/
     }
 
-    nk_console* console = nuklear_console_demo_init(ctx, NULL, nk_image_id(0));
+    console = nk_console_init(ctx);
+
+    // Initialize console state
+    struct demo_console_state state = demo_console_state_defaults();
+
+    // Intialize the console demo widgets
+    nuklear_console_demo_init(console, &state, NULL, nk_image_id(0));
 
     while (!glfwWindowShouldClose(win))
     {

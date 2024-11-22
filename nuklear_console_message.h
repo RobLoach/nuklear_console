@@ -39,8 +39,8 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
-    nk_console_top_data* data = (nk_console_top_data*)(nk_console_get_top(console)->data);
-    if (data == NULL) {
+    nk_console_window_data* window_data = (nk_console_window_data*)(nk_console_get_window(console)->data);
+    if (window_data == NULL) {
         return;
     }
 
@@ -57,7 +57,7 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     message.text[len] = '\0'; // Make sure it's null-terminated
 
     // Add the new message to the message queue.
-    cvector_push_back(data->messages, message);
+    cvector_push_back(window_data->messages, message);
 }
 
 NK_API void nk_console_message_render(nk_console* console, nk_console_message* message) {
@@ -66,7 +66,7 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     }
 
     // Retrieve style sizes.
-    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    nk_console_window_data* window_data = (nk_console_window_data*)console->data;
     struct nk_context* ctx = console->ctx;
     struct nk_vec2 padding = ctx->style.window.padding;
     float border = ctx->style.window.border;
@@ -76,7 +76,7 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     struct nk_vec2 mouse_pos = ctx->input.mouse.pos;
 
     // Display the tooltip at the bottom of the window, by manipulating the mouse position
-    struct nk_rect bounds = data->message_bounds.w == 0 ? nk_window_get_bounds(ctx) : data->message_bounds;
+    struct nk_rect bounds = window_data->message_bounds.w == 0 ? nk_window_get_bounds(ctx) : window_data->message_bounds;
     bounds.w -= border;
     ctx->input.mouse.pos.x = bounds.x;
     ctx->input.mouse.pos.y = bounds.y + bounds.h - text_height - padding.y * 2 - border * 2.0f;
@@ -104,15 +104,17 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
 }
 
 NK_API void nk_console_render_message(nk_console* console) {
-    nk_console_top_data* data = (nk_console_top_data*)console->data;
-    if (data->messages == NULL || cvector_size(data->messages) == 0) {
+    NK_ASSERT(console->type == NK_CONSOLE_WINDOW);
+    nk_console_window_data* window_data = (nk_console_window_data*)console->data;
+
+    if (window_data->messages == NULL || cvector_size(window_data->messages) == 0) {
         return;
     }
 
     // Loop through all messages and display the first one.
     nk_bool clear_all = nk_true;
-    nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
-    for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
+    nk_console_message* end = (nk_console_message*)cvector_end(window_data->messages);
+    for (nk_console_message* it = (nk_console_message*)cvector_begin(window_data->messages); it != end; it++) {
         // Skip messages that have already been shown.
         if (it->duration <= 0.0f) {
             continue;
@@ -124,7 +126,8 @@ NK_API void nk_console_render_message(nk_console* console) {
         }
         // If animations arn't an option, allow dismissing the message.
         else if (nk_console_button_pushed(console, NK_GAMEPAD_BUTTON_B)) {
-            data->input_processed = nk_true;
+            nk_console_top_data* top_data = (nk_console_top_data*)nk_console_get_top(console)->data;
+            top_data->input_processed = nk_true;
             it->duration = 0.0f;
         }
 
@@ -134,7 +137,7 @@ NK_API void nk_console_render_message(nk_console* console) {
     }
 
     if (clear_all) {
-        cvector_clear(data->messages);
+        cvector_clear(window_data->messages);
     }
 }
 
