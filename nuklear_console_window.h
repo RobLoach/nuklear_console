@@ -72,7 +72,7 @@ static nk_console* nk_console_find_first_selectable(nk_console* parent) {
 }
 
 /**
- * Check that all children of the given console have the same type.
+ * Check that all direct children of the given top console have the same type.
  *
  * All children are windows or all children are widgets, mixing is not allowed.
  */
@@ -100,8 +100,9 @@ static nk_bool nk_console_has_consistent_children(nk_console* top) {
 /**
  * Capture the window from the nk context.
  */
-static struct nk_console* nk_console_capture_window(nk_console* console) {
+static nk_console* nk_console_capture_window(nk_console* console) {
     NK_ASSERT(console->ctx->current != NULL); /** No window is currently active. */
+    NK_ASSERT(console->parent == NULL); /** Only the top console can capture windows. */
 
     // Get current window
     struct nk_window* nk_win = console->ctx->current;
@@ -118,7 +119,7 @@ static struct nk_console* nk_console_capture_window(nk_console* console) {
     // Add widgets to window
     window->children = children;
 
-    // Set window as parent for all window children
+    // Set window as parent for all newly assigned children
     for (size_t i = 0; i < cvector_size(window->children); ++i) {
         window->children[i]->parent = window;
     }

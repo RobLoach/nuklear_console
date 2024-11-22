@@ -713,10 +713,8 @@ NK_API void nk_console_render(nk_console* console) {
             }
         }
 
-
         return;
     }
-
 
     // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
@@ -774,16 +772,15 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
+    data->window_count = 0;
     data->active_window_index = 0;
     console->data = data;
-
-    data->window_count = 0;
 
     return console;
 }
 
 /**
- * Set the given console as the active console.
+ * Set the given window as the active window.
  *
  * @param top The top-level console.
  */
