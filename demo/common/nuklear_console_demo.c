@@ -125,6 +125,21 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     nk_console_show_message(button, message);
 }
 
+/**
+ * Triggered when clicking the "Multiple Windows" button.
+ */
+void multiple_window_button_clicked(nk_console* button, void* userdata) {
+    nk_console* top = userdata;
+    for (int i = 0; i < cvector_size(top->children); i++) {
+        if (top->children[i]->type == NK_CONSOLE_WINDOW) {
+            nk_console_window_data* data = top->children[i]->data;
+
+            // Display the child windows.
+            data->flags = 0;
+        }
+    }
+}
+
 void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(radio, radio->label);
@@ -371,6 +386,14 @@ void nuklear_console_demo_init(struct nk_console* _console, struct demo_console_
             NK_SYMBOL_TRIANGLE_LEFT);
 
         calc->tooltip = "Demo rows and grids!";
+    }
+
+    // Multiple Windows
+    {
+        nk_console* window1 = nk_console_window(_console, "Window #1", nk_rect(10, 10, 100, 100), NK_WINDOW_HIDDEN);
+        nk_console* window2 = nk_console_window(_console, "Window #2", nk_rect(110, 10, 100, 100), NK_WINDOW_HIDDEN);
+        nk_console* multiple_window_button = nk_console_button_onclick_handler(_console, "Multiple Windows", &multiple_window_button_clicked, _console, NULL);
+        //nk_console_button_onclick(_console, "Multiple Windows", &multiple_window_button_clicked);
     }
 
     nk_console_button(_console, "Save Game")->disabled = nk_true;
