@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project(nuklear_console
     DESCRIPTION "nuklear_console: Console-like interface for Nuklear GUI"
     HOMEPAGE_URL "https://github.com/robloach/nuklear_console"
-    VERSION 0.0.1
+    VERSION 0.1.0
     LANGUAGES C
 )
 
@@ -13,10 +13,10 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG b51fb11
+        GIT_TAG 49c1cba
     )
     FetchContent_GetProperties(nuklear_gamepad)
-    if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?
+    if (NOT nuklear_gamepad_POPULATED)
         set(FETCHCONTENT_QUIET NO)
         FetchContent_Populate(nuklear_gamepad)
         add_subdirectory(${nuklear_gamepad_SOURCE_DIR} ${nuklear_gamepad_BINARY_DIR})
