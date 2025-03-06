@@ -99,6 +99,9 @@ typedef struct nk_console {
     // Events
     nk_console_event_handler* events; /** Events handled for the widget. */
     nk_console_render_event render; /** Render the widget. */
+
+    // Styles
+    const struct nk_user_font *font;
 } nk_console;
 
 typedef struct nk_console_top_data {
@@ -681,6 +684,11 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
+    // Push any styles.
+    if (console->font != NULL) {
+        nk_style_push_font(console->ctx, console->font);
+    }
+
     // First run on this game loop
     if (console->parent == NULL) {
         nk_console_top_data* data = (nk_console_top_data*)console->data;
@@ -740,11 +748,21 @@ NK_API void nk_console_render(nk_console* console) {
                 cvector_clear(console->events);
             }
         }
+
+        // Finish the styles.
+        if (console->font != NULL) {
+            nk_style_pop_font(console->ctx);
+        }
         return;
     }
 
     // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
+
+    // Finish the styles.
+    if (console->font != NULL) {
+        nk_style_pop_font(console->ctx);
+    }
 
     // Allow the mouse to switch focus to the widget.
     if (widget_bounds.w > 0 && widget_bounds.h > 0 && nk_input_is_mouse_moved(&console->ctx->input)) {
