@@ -14,7 +14,14 @@ typedef struct nk_console_knob_data {
     float dead_zone_degrees;
 } nk_console_knob_data;
 
+/**
+ * Creates a Knob widget using an integer value.
+ */
 NK_API nk_console* nk_console_knob_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel);
+
+/**
+ * Creates a Knob widget using a float value.
+ */
 NK_API nk_console* nk_console_knob_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
 
 #if defined(__cplusplus)
