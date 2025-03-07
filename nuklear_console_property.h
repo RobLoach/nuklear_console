@@ -46,15 +46,23 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    if (console->type == NK_CONSOLE_PROPERTY_INT || console->type == NK_CONSOLE_SLIDER_INT || console->type == NK_CONSOLE_KNOB_INT) {
-        if (data->val_int == NULL) {
+    switch (console->type) {
+        case NK_CONSOLE_PROPERTY_INT:
+        case NK_CONSOLE_SLIDER_INT:
+        case NK_CONSOLE_KNOB_INT:
+            if (data->val_int == NULL) {
+                return nk_rect(0, 0, 0, 0);
+            }
+            break;
+        case NK_CONSOLE_PROPERTY_FLOAT:
+        case NK_CONSOLE_SLIDER_FLOAT:
+        case NK_CONSOLE_KNOB_FLOAT:
+            if (data->val_float == NULL) {
+                return nk_rect(0, 0, 0, 0);
+            }
+        break;
+        default:
             return nk_rect(0, 0, 0, 0);
-        }
-    }
-    else if (console->type == NK_CONSOLE_PROPERTY_FLOAT || console->type == NK_CONSOLE_SLIDER_FLOAT || console->type == NK_CONSOLE_SLIDER_FLOAT) {
-        if (data->val_float == NULL) {
-            return nk_rect(0, 0, 0, 0);
-        }
     }
 
     nk_console_layout_widget(console);
