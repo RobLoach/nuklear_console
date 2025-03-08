@@ -113,7 +113,7 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
     // Directories
     for (int i = 0; i < filePathList.count; i++) {
         if (DirectoryExists(filePathList.paths[i])) {
-            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_true)) {
+            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_true) != NULL) {
                 result = nk_true;
             }
         }
@@ -122,7 +122,7 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
     // Files
     for (int i = 0; i < filePathList.count; i++) {
         if (FileExists(filePathList.paths[i]) && !DirectoryExists(filePathList.paths[i])) {
-            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_false)) {
+            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_false) != NULL) {
                 result = nk_true;
             }
         }
