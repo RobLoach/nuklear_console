@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_INPUT_H__
 #define NK_CONSOLE_INPUT_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data specifically used for the input widget.
  *
@@ -17,6 +13,10 @@ typedef struct nk_console_input_data {
     enum nk_gamepad_button* out_gamepad_button; /** A pointer to where to store the gamepad button. */
     float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
 } nk_console_input_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Create a new input widget to get a gamepad button.

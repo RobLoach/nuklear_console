@@ -3,10 +3,6 @@
 
 #include "nuklear_console_property.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data for Property and Slider widgets.
  */
@@ -15,6 +11,10 @@ typedef struct nk_console_knob_data {
     enum nk_heading zero_direction;
     float dead_zone_degrees;
 } nk_console_knob_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Creates a Knob widget using an integer value.

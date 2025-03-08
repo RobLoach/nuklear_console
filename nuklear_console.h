@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 struct nk_console;
 struct nk_console_event_handler;
 
@@ -134,6 +130,10 @@ typedef struct nk_console_top_data {
     void* user_data;
 } nk_console_top_data;
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 // Console
 NK_API nk_console* nk_console_init(struct nk_context* context);
 NK_API void nk_console_free(nk_console* console);
@@ -217,9 +217,7 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
-
 #include "nuklear_console.hpp"
-
 #endif
 
 #endif // NK_CONSOLE_H__

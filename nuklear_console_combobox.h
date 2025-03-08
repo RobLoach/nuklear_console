@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_COMBOBOX_H__
 #define NK_CONSOLE_COMBOBOX_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data for Combobox widgets.
  */
@@ -16,6 +12,10 @@ typedef struct nk_console_combobox_data {
     int* selected;
     int count;
 } nk_console_combobox_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected);
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console);

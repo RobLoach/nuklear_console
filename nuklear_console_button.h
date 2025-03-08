@@ -1,14 +1,14 @@
 #ifndef NK_CONSOLE_BUTTON_H__
 #define NK_CONSOLE_BUTTON_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     struct nk_image image;
 } nk_console_button_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text);
 NK_API struct nk_rect nk_console_button_render(nk_console* console);

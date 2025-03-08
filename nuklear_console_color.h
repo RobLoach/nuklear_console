@@ -1,14 +1,14 @@
 #ifndef NK_CONSOLE_COLOR_H__
 #define NK_CONSOLE_COLOR_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_color_data {
     struct nk_console_button_data button; /** Inherited from button */
     struct nk_colorf* color; /** The color which will be manipulated by the user. */
 } nk_console_color_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Create a color picker widget.

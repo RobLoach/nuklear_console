@@ -1,13 +1,13 @@
 #ifndef NK_CONSOLE_CHECKBOX_H__
 #define NK_CONSOLE_CHECKBOX_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_checkbox_data {
     nk_bool* value_bool;
 } nk_console_checkbox_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active);
 NK_API struct nk_rect nk_console_checkbox_render(nk_console* console);

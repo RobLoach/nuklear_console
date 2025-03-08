@@ -1,14 +1,14 @@
 #ifndef NK_CONSOLE_ROW_H__
 #define NK_CONSOLE_ROW_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_row_data {
     int activeChild;
     nk_bool widgets_added; /** Indicates if all the row's widgets have been added. */
 } nk_console_row_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Begin a new row in the console.

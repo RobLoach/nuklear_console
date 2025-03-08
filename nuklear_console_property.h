@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_PROPERTY_H__
 #define NK_CONSOLE_PROPERTY_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data for Property and Slider widgets.
  */
@@ -19,6 +15,10 @@ typedef struct nk_console_property_data {
     int* val_int; /** Pointer to the integer value. */
     float* val_float; /** Pointer to the float value. */
 } nk_console_property_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel);
 NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
