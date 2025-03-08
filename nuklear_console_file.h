@@ -5,7 +5,7 @@
 #ifdef PATH_MAX
 #define NK_CONSOLE_FILE_PATH_MAX PATH_MAX
 #else
-#define NK_CONSOLE_FILE_PATH_MAX 1024
+#define NK_CONSOLE_FILE_PATH_MAX 4096
 #endif
 #endif // NK_CONSOLE_FILE_PATH_MAX
 
@@ -18,6 +18,7 @@ typedef struct nk_console_file_data {
     int file_path_buffer_size; /** The size of the buffer. */
     char directory[NK_CONSOLE_FILE_PATH_MAX]; /** When selecting a file, this is the current directory. */
     void* file_user_data; /** Custom user data for the file system. */
+    nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -35,6 +36,18 @@ extern "C" {
  * @return The new file widget.
  */
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+
+/**
+ * Creates a directory widget that allows the user to select a directory.
+ *
+ * @param parent The parent widget.
+ * @param label The label for the file widget. For example: "Select a file".
+ * @param dir_buffer The buffer to store the file path.
+ * @param dir_buffer_size The size of the buffer.
+ *
+ * @return The new file widget.
+ */
+NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
 
 /**
  * Render callback to display the file widget.
@@ -152,7 +165,7 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
         console->label = nk_console_file_basename(data->file_path_buffer);
     }
     else {
-        console->label = "[Select a File]";
+        console->label = data->select_directory ? "[Select Directory]" : "[Select a File]";
     }
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;
@@ -262,7 +275,13 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
 }
 
 NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
-    if (parent == NULL || path == NULL || path[0] == '\0') {
+    if (parent == NULL || path == NULL || path[0] == '\0' || parent->data == NULL) {
+        return nk_false;
+    }
+
+    // Are we only selecting directories?
+    nk_console_file_data* data = (nk_console_file_data*)nk_console_file_button_get_file_widget(parent)->data;
+    if (is_directory == nk_false && data->select_directory == nk_true) {
         return nk_false;
     }
 
@@ -432,6 +451,18 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->data = data;
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
+    return widget;
+}
+
+NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
+    nk_console* widget = nk_console_file(parent, label, dir_buffer, dir_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    data->select_directory = nk_true;
+
     return widget;
 }
 
