@@ -1,6 +1,8 @@
 #ifndef NK_CONSOLE_KNOB_H__
 #define NK_CONSOLE_KNOB_H__
 
+#include "nuklear_console_property.h"
+
 #if defined(__cplusplus)
 extern "C" {
 #endif

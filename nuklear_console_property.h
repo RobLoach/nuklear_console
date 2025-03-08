@@ -60,7 +60,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
             if (data->val_float == NULL) {
                 return nk_rect(0, 0, 0, 0);
             }
-        break;
+            break;
         default:
             return nk_rect(0, 0, 0, 0);
     }

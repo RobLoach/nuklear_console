@@ -16,6 +16,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console);
 }
 #endif
 
+
 #endif // NK_CONSOLE_CHECKBOX_H__
 
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
