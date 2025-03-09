@@ -82,9 +82,10 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
  * @param path The path to the file or directory.
  * @param is_directory True if the path is a directory. False otherwise.
  *
- * @return The new button if it was successfully added
+ * @return The new button if it was successfully added, NULL otherwise.
  *
  * @see nk_console_file_destroy_tinydir()
+ * @see nk_console_file_add_files_raylib()
  */
 NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
 
