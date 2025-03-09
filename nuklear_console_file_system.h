@@ -78,7 +78,7 @@ static nk_bool nk_console_file_add_files_tinydir(nk_console* parent, const char*
     for (size_t i = 0; i < dir.n_files; i++) {
         tinydir_file file;
         tinydir_readfile_n(&dir, &file, i);
-        if (nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true) == nk_true) {
+        if (nk_console_file_add_entry(parent, file.name, file.is_dir == 0 ? nk_false : nk_true) != NULL) {
             result = nk_true;
         }
     }
