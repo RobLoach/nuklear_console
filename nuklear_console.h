@@ -14,6 +14,8 @@ typedef enum {
     NK_CONSOLE_EVENT_CHANGED, /** Triggered when the value for the widget is changed. */
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
     NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered after all the widgets have rendered, and the event is removed. */
+    NK_CONSOLE_EVENT_BLUR, /** Triggered when the widget was active, and loses focus. */
+    NK_CONSOLE_EVENT_FOCUS /** Triggered when the widget was not active, and gains focus */
 } nk_console_event_type;
 
 /**
@@ -390,8 +392,15 @@ NK_API void nk_console_set_active_widget(nk_console* widget) {
         return;
     }
 
+    nk_console* currentWidget = nk_console_get_active_widget(widget);
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
     parent->activeWidget = widget;
+
+    // Trigger the widget change events.
+    if (widget != currentWidget) {
+        nk_console_trigger_event(currentWidget, NK_CONSOLE_EVENT_BLUR);
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_FOCUS);
+    }
 }
 
 /**
