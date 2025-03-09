@@ -51,8 +51,12 @@ static nk_bool checkbox6 = nk_true;
 static int message_count = 0;
 
 // File
-static char file_path_buffer[1024] = {0};
-static int file_path_buffer_size = 1024;
+static char file_path_buffer[4096] = {0};
+static int file_path_buffer_size = 4096;
+
+// Directory
+static char dir_buffer[4096] = {0};
+static int dir_buffer_size = 4096;
 
 // Textedit
 static const int textedit_buffer_size = 256;
@@ -281,6 +285,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
 
         // File
         nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
+        nk_console_dir(widgets, "Directory", dir_buffer, dir_buffer_size);
 
         // Messages
         nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
