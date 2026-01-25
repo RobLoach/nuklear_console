@@ -3,6 +3,6 @@ include(FetchContent)
 FetchContent_Declare(
     pntr_nuklear
     GIT_REPOSITORY https://github.com/RobLoach/pntr_nuklear.git
-    GIT_TAG d87c940
+    GIT_TAG 9b1b413
 )
 FetchContent_MakeAvailable(pntr_nuklear)

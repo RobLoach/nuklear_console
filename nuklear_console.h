@@ -278,8 +278,6 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 extern "C" {
 #endif
 
-NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input);
-
 #include "nuklear_console_button.h"
 #include "nuklear_console_checkbox.h"
 #include "nuklear_console_color.h"
@@ -437,6 +435,7 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
     }
 
     // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
+    // TODO: Fix the scroll on the new window, since it may not be centered on the active widget.
     nk_window_set_scroll(top->ctx, 0, 0);
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
@@ -624,16 +623,8 @@ static nk_console* nk_console_find_first_selectable(nk_console* parent) {
 }
 
 /**
- * A function to check whether or not the mouse moved.
+ * Gets whether or not the given widget can be selected.
  */
-NK_API nk_bool nk_input_is_mouse_moved(const struct nk_input* input) {
-    if (input == NULL) {
-        return nk_false;
-    }
-
-    return input->mouse.delta.x != 0 || input->mouse.delta.y != 0;
-}
-
 NK_API nk_bool nk_console_selectable(nk_console* widget) {
     if (widget == NULL) {
         return nk_false;
@@ -675,6 +666,9 @@ static void nk_console_tooltip_display(struct nk_context* ctx, const char* text)
     ctx->input.mouse.pos.y = y;
 }
 
+/**
+ * Sees if there's an active tooltip, and displays it as needed.
+ */
 NK_API void nk_console_check_tooltip(nk_console* console) {
     if (console == NULL) {
         return;
