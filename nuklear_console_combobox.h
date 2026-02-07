@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_COMBOBOX_H__
 #define NK_CONSOLE_COMBOBOX_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data for Combobox widgets.
  */
@@ -17,10 +13,15 @@ typedef struct nk_console_combobox_data {
     int count;
 } nk_console_combobox_data;
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected);
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console);
 NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data);
 NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user_data);
+NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, const char* items_separated_by_separator, int separator, int* selected);
 
 #if defined(__cplusplus)
 }
@@ -87,30 +88,31 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user
     nk_console_set_active_parent(button);
 }
 
-NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
-    // Create the widget data.
-    nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_combobox_data));
-    nk_zero(data, sizeof(nk_console_combobox_data));
+/**
+ * Update the combobox with new label, items, separator, and selected value.
+ */
+NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
+    if (!combobox || !combobox->data) return;
+    nk_console_combobox_data* data = (nk_console_combobox_data*)combobox->data;
 
-    nk_console* combobox = nk_console_label(parent, label);
-    combobox->type = NK_CONSOLE_COMBOBOX;
-    combobox->selectable = nk_true;
+    // Update data fields
+    data->label = label;
     data->items_separated_by_separator = items_separated_by_separator;
     data->separator = separator;
     data->selected = selected;
-    data->label = label;
-    combobox->columns = label != NULL ? 2 : 1;
-    combobox->render = nk_console_combobox_render;
-    combobox->data = data;
 
-    nk_console_button_set_symbol(combobox, NK_SYMBOL_TRIANGLE_DOWN);
-    nk_console_add_event(combobox, NK_CONSOLE_EVENT_CLICKED, nk_console_combobox_button_main_click);
+    // Update combobox label
+    combobox->label = label;
+    combobox->label_length = nk_strlen(label);
 
-    // Back button
+    // Clear out any existing children
+    nk_console_free_children(combobox);
+
+    // Add the Back button
     nk_console* backbutton = nk_console_button_onclick(combobox, label, &nk_console_combobox_button_click);
     nk_console_button_set_symbol(backbutton, NK_SYMBOL_TRIANGLE_UP);
 
-    // Add all the sub-page buttons
+    // Add new items as children
     const char* button_text_start = items_separated_by_separator;
     int text_length = 0;
     for (int i = 0; items_separated_by_separator[i] != 0; i++) {
@@ -127,6 +129,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
     nk_console_button_onclick(combobox, button_text_start, &nk_console_combobox_button_click)
         ->label_length = text_length;
 
+    // Update selected value and combobox label
     if (selected != NULL) {
         if (*selected < 0) {
             *selected = 0;
@@ -134,10 +137,29 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
         else if (*selected >= (int)cvector_size(combobox->children) - 1) {
             *selected = (int)cvector_size(combobox->children) - 2;
         }
-
         combobox->label = combobox->children[*selected + 1]->label;
         combobox->label_length = combobox->children[*selected + 1]->label_length;
     }
+}
+
+NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
+    // Create the widget data.
+    nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_combobox_data));
+    nk_zero(data, sizeof(nk_console_combobox_data));
+
+    // Set up the combobox
+    nk_console* combobox = nk_console_label(parent, label);
+    combobox->type = NK_CONSOLE_COMBOBOX;
+    combobox->selectable = nk_true;
+    combobox->columns = label != NULL ? 2 : 1;
+    combobox->render = nk_console_combobox_render;
+    combobox->data = data;
+
+    nk_console_button_set_symbol(combobox, NK_SYMBOL_TRIANGLE_DOWN);
+    nk_console_add_event(combobox, NK_CONSOLE_EVENT_CLICKED, nk_console_combobox_button_main_click);
+
+    // Set up the combobox items and label
+    nk_console_combobox_update(combobox, label, items_separated_by_separator, separator, selected);
 
     return combobox;
 }

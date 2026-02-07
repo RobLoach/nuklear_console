@@ -5,7 +5,7 @@
 #ifdef PATH_MAX
 #define NK_CONSOLE_FILE_PATH_MAX PATH_MAX
 #else
-#define NK_CONSOLE_FILE_PATH_MAX 1024
+#define NK_CONSOLE_FILE_PATH_MAX 4096
 #endif
 #endif // NK_CONSOLE_FILE_PATH_MAX
 
@@ -18,6 +18,7 @@ typedef struct nk_console_file_data {
     int file_path_buffer_size; /** The size of the buffer. */
     char directory[NK_CONSOLE_FILE_PATH_MAX]; /** When selecting a file, this is the current directory. */
     void* file_user_data; /** Custom user data for the file system. */
+    nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -35,6 +36,18 @@ extern "C" {
  * @return The new file widget.
  */
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+
+/**
+ * Creates a directory widget that allows the user to select a directory.
+ *
+ * @param parent The parent widget.
+ * @param label The label for the file widget. For example: "Select a file".
+ * @param dir_buffer The buffer to store the file path.
+ * @param dir_buffer_size The size of the buffer.
+ *
+ * @return The new file widget.
+ */
+NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
 
 /**
  * Render callback to display the file widget.
@@ -69,11 +82,12 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
  * @param path The path to the file or directory.
  * @param is_directory True if the path is a directory. False otherwise.
  *
- * @return True if the entry was added.
+ * @return The new button if it was successfully added, NULL otherwise.
  *
  * @see nk_console_file_destroy_tinydir()
+ * @see nk_console_file_add_files_raylib()
  */
-NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
+NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
 
 /**
  * Refreshes the file widget to display the contents of the current directory.
@@ -152,7 +166,7 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
         console->label = nk_console_file_basename(data->file_path_buffer);
     }
     else {
-        console->label = "[Select a File]";
+        console->label = data->select_directory ? "[Select Directory]" : "[Select a File]";
     }
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;
@@ -261,20 +275,26 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     }
 }
 
-NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
-    if (parent == NULL || path == NULL || path[0] == '\0') {
-        return nk_false;
+NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
+    if (parent == NULL || path == NULL || path[0] == '\0' || parent->data == NULL) {
+        return NULL;
+    }
+
+    // Are we only selecting directories?
+    nk_console_file_data* data = (nk_console_file_data*)nk_console_file_button_get_file_widget(parent)->data;
+    if (is_directory == nk_false && data->select_directory == nk_true) {
+        return NULL;
     }
 
     int len = nk_strlen(path);
 
     // Ignore the current directory.
     if (len == 1 && path[0] == '.') {
-        return nk_false;
+        return NULL;
     }
     else if (len == 2 && path[0] == '.' && path[1] == '.') {
         // Ignore the parent directory.
-        return nk_false;
+        return NULL;
     }
 
     // Add the button.
@@ -299,8 +319,8 @@ NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, n
     }
 
     // Event
-    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, nk_console_file_entry_onclick);
-    return nk_true;
+    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_entry_onclick);
+    return button;
 }
 
 
@@ -336,14 +356,26 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     nk_console_free_children(widget);
 
     // Add the back/cancel button
-    nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
+    nk_console* cancelButton = nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
+    nk_console_button_set_symbol(cancelButton, NK_SYMBOL_X);
 
-    // Active directory label
-    nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
+    // Show the Active directory.
+    if (!data->select_directory) {
+        // Active directory label
+        nk_console* activeLabel = nk_console_label(widget, data->directory);
+        activeLabel->alignment = NK_TEXT_CENTERED;
+    }
+    else {
+        // Add the select directory button.
+        nk_console* button = nk_console_file_add_entry(widget, data->directory, nk_true);
+        nk_console_button_set_symbol(button, NK_SYMBOL_CIRCLE_SOLID);
+        nk_console_set_tooltip(button, "Use this directory");
+    }
 
     // Add the parent directory button
     nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", &nk_console_file_entry_onclick);
     nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
+    nk_console_set_tooltip(parent_directory_button, "Navigate to the parent directory");
     nk_console_set_active_widget(parent_directory_button);
 
 #ifdef NK_CONSOLE_FILE_ADD_FILES
@@ -432,6 +464,18 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->data = data;
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
+    return widget;
+}
+
+NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
+    nk_console* widget = nk_console_file(parent, label, dir_buffer, dir_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->select_directory = nk_true;
+
     return widget;
 }
 

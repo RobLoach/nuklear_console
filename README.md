@@ -44,18 +44,7 @@ int main() {
 
 ## Widgets
 
-- Buttons
-- Checkboxes
-- Color Select
-- Comboboxes
-- Files
-- Gamepad Input Buttons
-- Labels
-- Properties
-- Radio Buttons
-- Rows
-- Sliders
-- TextEdit
+Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Gamepad Input Buttons, Labels, Properties, Sliders, Knobs, Radio Options, Images, Knob, Rows, TextEdit, Messages.
 
 ## API
 

@@ -1,10 +1,6 @@
 #ifndef NK_CONSOLE_PROPERTY_H__
 #define NK_CONSOLE_PROPERTY_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 /**
  * Data for Property and Slider widgets.
  */
@@ -19,6 +15,10 @@ typedef struct nk_console_property_data {
     int* val_int; /** Pointer to the integer value. */
     float* val_float; /** Pointer to the float value. */
 } nk_console_property_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel);
 NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
@@ -46,15 +46,23 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         return nk_rect(0, 0, 0, 0);
     }
 
-    if (console->type == NK_CONSOLE_PROPERTY_INT || console->type == NK_CONSOLE_SLIDER_INT) {
-        if (data->val_int == NULL) {
+    switch (console->type) {
+        case NK_CONSOLE_PROPERTY_INT:
+        case NK_CONSOLE_SLIDER_INT:
+        case NK_CONSOLE_KNOB_INT:
+            if (data->val_int == NULL) {
+                return nk_rect(0, 0, 0, 0);
+            }
+            break;
+        case NK_CONSOLE_PROPERTY_FLOAT:
+        case NK_CONSOLE_SLIDER_FLOAT:
+        case NK_CONSOLE_KNOB_FLOAT:
+            if (data->val_float == NULL) {
+                return nk_rect(0, 0, 0, 0);
+            }
+            break;
+        default:
             return nk_rect(0, 0, 0, 0);
-        }
-    }
-    else if (console->type == NK_CONSOLE_PROPERTY_FLOAT || console->type == NK_CONSOLE_SLIDER_FLOAT) {
-        if (data->val_float == NULL) {
-            return nk_rect(0, 0, 0, 0);
-        }
     }
 
     nk_console_layout_widget(console);
@@ -69,6 +77,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                 switch (console->type) {
                     case NK_CONSOLE_SLIDER_INT:
                     case NK_CONSOLE_PROPERTY_INT:
+                    case NK_CONSOLE_KNOB_INT:
                         *data->val_int = *data->val_int - data->step_int;
                         if (*data->val_int < data->min_int) {
                             *data->val_int = data->min_int;
@@ -76,6 +85,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         break;
                     case NK_CONSOLE_SLIDER_FLOAT:
                     case NK_CONSOLE_PROPERTY_FLOAT:
+                    case NK_CONSOLE_KNOB_FLOAT:
                         *data->val_float = *data->val_float - data->step_float;
                         if (*data->val_float < data->min_float) {
                             *data->val_float = data->min_float;
@@ -92,6 +102,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                 switch (console->type) {
                     case NK_CONSOLE_SLIDER_INT:
                     case NK_CONSOLE_PROPERTY_INT:
+                    case NK_CONSOLE_KNOB_INT:
                         *data->val_int = *data->val_int + data->step_int;
                         if (*data->val_int > data->max_int) {
                             *data->val_int = data->max_int;
@@ -99,6 +110,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         break;
                     case NK_CONSOLE_SLIDER_FLOAT:
                     case NK_CONSOLE_PROPERTY_FLOAT:
+                    case NK_CONSOLE_KNOB_FLOAT:
                         *data->val_float = *data->val_float + data->step_float;
                         if (*data->val_float > data->max_float) {
                             *data->val_float = data->max_float;
@@ -119,6 +131,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     enum nk_symbol_type right = console->ctx->style.property.sym_right;
     struct nk_color bar_normal = console->ctx->style.slider.bar_normal;
     struct nk_style_item cursor_normal = console->ctx->style.slider.cursor_normal;
+    struct nk_color knob_normal = console->ctx->style.knob.knob_normal;
+    struct nk_color knob_border_color = console->ctx->style.knob.knob_border_color;
+    struct nk_color border_color = console->ctx->style.knob.border_color;
 
     if (!nk_console_is_active_widget(console)) {
         console->ctx->style.property.sym_left = NK_SYMBOL_NONE;
@@ -127,6 +142,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     else {
         console->ctx->style.slider.bar_normal = console->ctx->style.slider.bar_hover;
         console->ctx->style.slider.cursor_normal = console->ctx->style.slider.cursor_hover;
+        console->ctx->style.knob.knob_normal = console->ctx->style.knob.cursor_hover;
+        console->ctx->style.knob.knob_border_color = console->ctx->style.knob.cursor_hover;
+        console->ctx->style.knob.border_color = console->ctx->style.knob.cursor_hover;
     }
 
     // Display the label
@@ -147,27 +165,38 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     }
 
     // Display the widget
-    char name[NK_MAX_NUMBER_BUFFER];
-    NK_MEMCPY(name + 2, console->label, (nk_size)(nk_strlen(console->label) + 1));
-    name[0] = '#';
-    name[1] = '#';
-
     int original_val_int = data->val_int != NULL ? *data->val_int : 0;
     float original_val_float = data->val_float != NULL ? *data->val_float : 0;
 
     switch (console->type) {
-        case NK_CONSOLE_PROPERTY_INT:
+        case NK_CONSOLE_PROPERTY_INT: {
+            char name[NK_MAX_NUMBER_BUFFER];
+            NK_MEMCPY(name + 2, console->label, (nk_size)(nk_strlen(console->label) + 1));
+            name[0] = '#';
+            name[1] = '#';
             nk_property_int(console->ctx, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);
-            break;
-        case NK_CONSOLE_PROPERTY_FLOAT:
+        } break;
+        case NK_CONSOLE_PROPERTY_FLOAT: {
+            char name[NK_MAX_NUMBER_BUFFER];
+            NK_MEMCPY(name + 2, console->label, (nk_size)(nk_strlen(console->label) + 1));
+            name[0] = '#';
+            name[1] = '#';
             nk_property_float(console->ctx, name, data->min_float, data->val_float, data->max_float, data->step_float, data->inc_per_pixel);
-            break;
+        } break;
         case NK_CONSOLE_SLIDER_INT:
             nk_slider_int(console->ctx, data->min_int, data->val_int, data->max_int, data->step_int);
             break;
         case NK_CONSOLE_SLIDER_FLOAT:
             nk_slider_float(console->ctx, data->min_float, data->val_float, data->max_float, data->step_float);
             break;
+        case NK_CONSOLE_KNOB_FLOAT: {
+            nk_console_knob_data* knob_data = (nk_console_knob_data*)console->data;
+            nk_knob_float(console->ctx, data->min_float, data->val_float, data->max_float, data->step_float, knob_data->zero_direction, knob_data->dead_zone_degrees);
+        } break;
+        case NK_CONSOLE_KNOB_INT: {
+            nk_console_knob_data* knob_data = (nk_console_knob_data*)console->data;
+            nk_knob_int(console->ctx, data->min_int, data->val_int, data->max_int, data->step_int, knob_data->zero_direction, knob_data->dead_zone_degrees);
+        } break;
         default:
             // Nothing
             break;
@@ -186,6 +215,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     else {
         console->ctx->style.slider.bar_normal = bar_normal;
         console->ctx->style.slider.cursor_normal = cursor_normal;
+        console->ctx->style.knob.knob_normal = knob_normal;
+        console->ctx->style.knob.knob_border_color = knob_border_color;
+        console->ctx->style.knob.border_color = border_color;
     }
 
     if (console->disabled) {
@@ -212,7 +244,7 @@ NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label
     data->inc_per_pixel = inc_per_pixel;
 
     nk_console* widget = nk_console_label(parent, label);
-    widget->render = nk_console_property_render;
+    widget->render = &nk_console_property_render;
     widget->type = NK_CONSOLE_PROPERTY_INT;
     widget->selectable = nk_true;
     widget->data = (void*)data;

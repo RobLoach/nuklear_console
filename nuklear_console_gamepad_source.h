@@ -68,6 +68,11 @@ NK_API void nk_console_gamepad_source_destroyed(nk_console* widget, void* user_d
 
 #ifndef NK_STRCAT
 #define NK_STRCAT nk_console_gamepad_source_strcat
+/**
+ * Concatenate a string.
+ *
+ * @see strcat()
+ */
 static char* nk_console_gamepad_source_strcat(char *dest, const char *src) {
     size_t i, j;
     for (i = 0; dest[i] != '\0'; i++);

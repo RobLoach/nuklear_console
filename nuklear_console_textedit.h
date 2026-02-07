@@ -1,16 +1,16 @@
 #ifndef NK_CONSOLE_TEXTEDIT_H__
 #define NK_CONSOLE_TEXTEDIT_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_textedit_data {
     nk_console_button_data button; // Inherited from button.
     char* buffer;
     int buffer_size;
     nk_bool shift;
 } nk_console_textedit_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Adds a textedit on-screen keyboard widget to the console given parent.

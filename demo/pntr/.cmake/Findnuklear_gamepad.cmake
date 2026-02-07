@@ -3,6 +3,6 @@ include(FetchContent)
 FetchContent_Declare(
     nuklear_gamepad
     GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-    GIT_TAG 4fb6094
+    GIT_TAG 985c692
 )
 FetchContent_MakeAvailable(nuklear_gamepad)

@@ -1,14 +1,14 @@
 #ifndef NK_CONSOLE_PROGRESS_H__
 #define NK_CONSOLE_PROGRESS_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_progress_data {
     nk_size max_size;
     nk_size* value_size;
 } nk_console_progress_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
 NK_API struct nk_rect nk_console_progress_render(nk_console* console);
