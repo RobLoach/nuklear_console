@@ -290,6 +290,24 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Messages
         nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
 
+        // Tabs
+        nk_console* tabs_button = nk_console_button(widgets, "Tabs");
+        {
+            nk_console* tabs = nk_console_tabs(tabs_button);
+            nk_console* tab1 = nk_console_tab(tabs, "Tab 1");
+            {
+                nk_console_label(tab1, "This is a label on Tab 1.");
+            }
+            nk_console* tab2 = nk_console_tab(tabs, "Tab 2");
+            {
+                nk_console_label(tab2, "This is a label on Tab 2.");
+            }
+            nk_console* tab3 = nk_console_tab(tabs, "Tab 3");
+            {
+                nk_console_label(tab3, "This is a label on Tab 3.");
+            }
+        }
+
         // Back Button
         nk_console_button_set_symbol(
             nk_console_button_onclick(widgets, "Back", &nk_console_button_back),

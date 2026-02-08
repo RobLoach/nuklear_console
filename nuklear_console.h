@@ -69,6 +69,8 @@ typedef enum {
     NK_CONSOLE_RADIO,
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
+    NK_CONSOLE_TABS,
+    NK_CONSOLE_TAB,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -216,6 +218,8 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_console_tabs.h"
+#include "nuklear_console_tab.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -296,6 +300,8 @@ extern "C" {
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_console_tab.h"
+#include "nuklear_console_tabs.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
