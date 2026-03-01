@@ -244,6 +244,18 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_onclick(spacing, "Back", &nk_console_button_back);
         }
 
+        // Horizontal Rule
+        nk_console* rules = nk_console_button(widgets, "Horizontal Rule");
+        {
+            nk_console_label(rules, "Horizontal Rule");
+            nk_console_rule_horizontal(rules, nk_rgb(175, 175, 175), nk_true);
+            nk_console_label(rules, "Red, not rounded");
+            nk_console_rule_horizontal(rules, nk_rgb(255, 0, 0), nk_false);
+            nk_console_label(rules, "Green, rounded");
+            nk_console_rule_horizontal(rules, nk_rgb(0, 255, 0), nk_true);
+            nk_console_button_onclick(rules, "Back", &nk_console_button_back);
+        }
+
         // Progress Bar
         nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
