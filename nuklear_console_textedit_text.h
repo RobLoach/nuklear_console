@@ -41,8 +41,6 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
     nk_console_top_data* top_data = (nk_console_top_data*)nk_console_get_top(widget)->data;
 
-            printf("Buffer %s\n", data->buffer);
-
     // Process checking the up/down switching in widgets before processing showing the widget itself
     if (nk_console_is_active_widget(widget) && top_data->input_processed == nk_false) {
         // Allow using ENTER to go back
