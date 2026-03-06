@@ -61,6 +61,7 @@ static int dir_buffer_size = 4096;
 // Textedit
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
+static char textedit_password_buffer[256] = "12345";
 
 // Input
 static int gamepad_number = 0;
@@ -279,6 +280,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Textedit
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
+        nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);
