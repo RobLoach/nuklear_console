@@ -64,8 +64,8 @@ typedef enum {
     NK_CONSOLE_IMAGE,
     NK_CONSOLE_SPACING,
     NK_CONSOLE_COLOR,
-    NK_CONSOLE_INPUT,
-    NK_CONSOLE_INPUT_ACTIVE,
+    NK_CONSOLE_GAMEPAD_BUTTON,
+    NK_CONSOLE_GAMEPAD_BUTTON_ACTIVE,
     NK_CONSOLE_RADIO,
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
@@ -206,7 +206,8 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #include "nuklear_console_file.h"
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
-#include "nuklear_console_input.h"
+#include "nuklear_console_gamepad_button.h"
+#include "nuklear_console_gamepad_source.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_message.h"
@@ -287,7 +288,8 @@ extern "C" {
 #include "nuklear_console_file.h"
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
-#include "nuklear_console_input.h"
+#include "nuklear_console_gamepad_button.h"
+#include "nuklear_console_gamepad_source.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_message.h"

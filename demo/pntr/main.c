@@ -8,9 +8,6 @@
 #include "pntr_nuklear.h"
 
 #define NK_GAMEPAD_PNTR
-#define NK_GAMEPAD_IMPLEMENTATION
-#include "nuklear_gamepad.h"
-
 #define NK_CONSOLE_ENABLE_TINYDIR
 #include "../common/nuklear_console_demo.c"
 
