@@ -645,6 +645,8 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
 static void nk_console_tooltip_display(struct nk_context* ctx, const char* text) {
     const struct nk_style* style;
     struct nk_vec2 padding;
+    struct nk_vec2 zero;
+    nk_zero_struct(zero);
 
     style = &ctx->style;
     padding = style->window.padding;
@@ -656,9 +658,9 @@ static void nk_console_tooltip_display(struct nk_context* ctx, const char* text)
     // Display the tooltip at the bottom of the window, manipulating the mouse position
     struct nk_rect windowbounds = nk_window_get_bounds(ctx);
     ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f;
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f - ctx->style.window.border;
 
-    if (nk_tooltip_begin(ctx, windowbounds.w)) {
+    if (nk_tooltip_begin_offset(ctx, windowbounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_text_wrap(ctx, text, nk_strlen(text));
         nk_tooltip_end(ctx);
@@ -989,7 +991,7 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
         case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_RIGHT);
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER);
-        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT) && nk_window_is_hovered(console->ctx));
+        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
