@@ -93,7 +93,8 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     }
 
     // Display the tooltip where the mocked mouse is.
-    if (nk_tooltip_begin(ctx, (float)bounds.w)) {
+    struct nk_vec2 zero = {0, 0};
+    if (nk_tooltip_begin_offset(ctx, bounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_label(ctx, message->text, NK_TEXT_LEFT);
         nk_tooltip_end(ctx);
