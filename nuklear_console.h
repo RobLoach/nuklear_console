@@ -105,6 +105,7 @@ typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
     nk_bool input_processed; /** Whether or not user input has been processed. */
     nk_bool scroll_requested; /** True if we've switched active widget and need to check scrolling */
+    nk_bool scrollbar_required; /** True when the scrollbar is needed to be rendered. @see nk_console_render_window() */
 
     /**
      * Message queue that is to be shown.
@@ -817,6 +818,8 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 /**
  * Renders the given console to a new window with the given properties.
  *
+ * By using this method, nuklear_console has the ability to determine whether or not the scrollbar should be active.
+ *
  * @param console The console to render.
  * @param title The title of the window.
  * @param bounds The bounds of the window.
@@ -827,10 +830,29 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
         return;
     }
 
+    // Determine if the scrollbar is needed.
+    nk_console_top_data* top_data = (nk_console_top_data*)console->data;
+    if (top_data->scrollbar_required) {
+        flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    }
+    else {
+        flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    }
+
+    // Process the Nuklear window.
     if (nk_begin(console->ctx, title, bounds, flags)) {
         nk_console_render(console);
     }
 
+    // After all elements have been rendered, update the layout flags.
+    top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
+    if (top_data->scrollbar_required) {
+        console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    } else {
+        console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    }
+
+    // Finish the window processing.
     nk_end(console->ctx);
 }
 

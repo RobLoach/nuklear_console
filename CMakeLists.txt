@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.11)
 project(nuklear_console
     DESCRIPTION "nuklear_console: Console-like interface for Nuklear GUI"
     HOMEPAGE_URL "https://github.com/robloach/nuklear_console"
-    VERSION 0.1.0
+    VERSION 0.1.1
     LANGUAGES C
 )
 

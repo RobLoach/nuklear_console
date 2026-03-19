@@ -372,7 +372,11 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
 nk_bool nuklear_console_demo_render() {
     nk_console_render(console);
 
-    return shouldClose;;
+    return shouldClose;
+}
+
+nk_bool nuklear_console_demo_should_close() {
+    return shouldClose;
 }
 
 void nuklear_console_demo_free() {
