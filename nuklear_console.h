@@ -132,6 +132,9 @@ typedef struct nk_console_top_data {
      * @see nk_console_set_user_data()
      */
     void* user_data;
+
+    float up_down_hold_timer; /** Total time up/down has been held continuously, used for acceleration. */
+    float up_down_repeat_timer; /** Time accumulator since the last repeated up/down move. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
@@ -157,6 +160,7 @@ NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void* old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void* ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
+NK_API nk_bool nk_console_button_down(nk_console* console, int button);
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads);
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
@@ -523,6 +527,26 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         data->scroll_requested = nk_false;
     }
 
+    // Handle hold-to-accelerate timers for up/down navigation.
+    nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
+    nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
+    nk_bool up_down_repeat_fire = nk_false;
+    if (up_held || down_held) {
+        if (top->ctx->delta_time_seconds > 0) {
+            data->up_down_hold_timer += top->ctx->delta_time_seconds;
+            data->up_down_repeat_timer += top->ctx->delta_time_seconds;
+            // 0.045s initial delay. Speeding up gradually
+            float interval = NK_MAX(0.045f, 0.5f - data->up_down_hold_timer * 0.125f);
+            if (data->up_down_repeat_timer >= interval) {
+                up_down_repeat_fire = nk_true;
+                data->up_down_repeat_timer -= interval;
+            }
+        }
+    } else {
+        data->up_down_hold_timer = 0;
+        data->up_down_repeat_timer = 0;
+    }
+
     // Only process an active input once.
     if (data->input_processed == nk_false) {
         // Page Up
@@ -558,7 +582,8 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             data->input_processed = nk_true;
         }
         // Up
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) ||
+                 (up_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -571,7 +596,8 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             data->input_processed = nk_true;
         }
         // Down
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
+                 (down_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -1021,6 +1047,32 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_BACK:
             return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
             // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+    }
+
+    return nk_false;
+}
+
+NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
+    if (console == NULL) {
+        return nk_false;
+    }
+
+    if (console->parent != NULL) {
+        console = nk_console_get_top(console);
+    }
+
+    // Gamepad
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    if (nk_gamepad_is_button_down(data->gamepads, -1, (enum nk_gamepad_button)button)) {
+        return nk_true;
+    }
+
+    // Keyboard/Mouse
+    switch (button) {
+        case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_down(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_down(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_down(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_down(&console->ctx->input, NK_KEY_RIGHT);
     }
 
     return nk_false;
