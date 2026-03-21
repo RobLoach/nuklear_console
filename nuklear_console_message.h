@@ -44,15 +44,30 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
-    // Create the new message.
-    nk_console_message message = {0};
-    message.duration = NK_CONSOLE_MESSAGE_DURATION;
-
-    // Copy the string.
+    // Grab the length of the string, limit length to 255.
     int len = nk_strlen(text);
     if (len > 255) {
         len = 255;
     }
+
+    // Only add the message if it's not already in the queue.
+    nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
+    for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
+        nk_bool same = nk_true;
+        for (int i = 0; i <= len; i++) {
+            if (it->text[i] != text[i]) {
+                same = nk_false;
+                break;
+            }
+        }
+        if (same) {
+            return;
+        }
+    }
+
+    // Create the new message.
+    nk_console_message message = {0};
+    message.duration = NK_CONSOLE_MESSAGE_DURATION;
     NK_MEMCPY(message.text, text, (nk_size)len);
     message.text[len] = '\0'; // Make sure it's null-terminated
 
