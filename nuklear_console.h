@@ -858,11 +858,12 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
 
     // Determine if the scrollbar is needed.
     nk_console_top_data* top_data = (nk_console_top_data*)console->data;
-    if (top_data->scrollbar_required) {
-        flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
-    }
-    else {
-        flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
+        if (top_data->scrollbar_required) {
+            flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        } else {
+            flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        }
     }
 
     // Process the Nuklear window.
@@ -871,11 +872,13 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
     }
 
     // After all elements have been rendered, update the layout flags.
-    top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
-    if (top_data->scrollbar_required) {
-        console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
-    } else {
-        console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
+        top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
+        if (top_data->scrollbar_required) {
+            console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        } else {
+            console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        }
     }
 
     // Finish the window processing.
