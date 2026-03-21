@@ -15,6 +15,7 @@ typedef enum {
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
     NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered after all the widgets have rendered, and the event is removed. */
     NK_CONSOLE_EVENT_PRE_PARENT_RENDER, /** Triggered before the parent widget is rendered. */
+    NK_CONSOLE_EVENT_BACK, /** Triggered on the active parent widget when the user navigates back. */
 } nk_console_event_type;
 
 /**
@@ -198,6 +199,18 @@ NK_API void* nk_console_user_data(nk_console* console);
  * @param user_data The custom user data to set.
  */
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
+
+/**
+ * Navigate back from the given widget to its parent, triggering NK_CONSOLE_EVENT_BACK.
+ *
+ * The event is triggered after the new parent is selected.
+ *
+ * @param leaving_parent The active parent widget being navigated away from.
+ *
+ * @see NK_CONSOLE_EVENT_BACK
+ * @see nk_console_button_back()
+ */
+NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 
 #if defined(__cplusplus)
 }
@@ -616,12 +629,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             }
 
             if (widget->parent != NULL) {
-                if (widget->parent == top) {
-                    nk_console_set_active_parent(top);
-                }
-                else if (widget->parent->parent != NULL) {
-                    nk_console_set_active_parent(widget->parent->parent);
-                }
+                nk_console_navigate_back(widget->parent);
                 data->scroll_requested = nk_true;
             }
 
@@ -1014,6 +1022,19 @@ NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console) {
         return NULL;
     }
     return data->gamepads;
+}
+
+NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
+    if (leaving_parent == NULL) {
+        return;
+    }
+    nk_console* top = nk_console_get_top(leaving_parent);
+    if (leaving_parent == top) {
+        return;
+    }
+    nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
+    nk_console_set_active_parent(destination);
+    nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {

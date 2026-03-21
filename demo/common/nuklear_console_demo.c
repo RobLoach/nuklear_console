@@ -100,6 +100,11 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     nk_console_show_message(button, message);
 }
 
+void nk_console_demo_username_back(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_show_message(widget, "Username has changed");
+}
+
 void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(radio, radio->label);
@@ -291,6 +296,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Textedit
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
+        // Tests out the BACK event on the textedit example.
+        nk_console_add_event(textedit, NK_CONSOLE_EVENT_BACK, nk_console_demo_username_back);
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);
