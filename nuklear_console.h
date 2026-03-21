@@ -754,14 +754,14 @@ static nk_bool nk_console_axis_tick(struct nk_console_axis_channel* ch, float st
         ch->hold_timer = 0.0f;
         return nk_false;
     }
-    ch->hold_timer += delta;
     if (ch->timer < 0.0f) {
         ch->timer = 0.0f;
         return nk_true; // Fire immediately on first active frame.
     }
-    ch->timer += delta * strength * (1.0f + ch->hold_timer * 0.5f);
+    ch->hold_timer += delta;
+    ch->timer += delta * strength * (1.0f + NK_MIN(ch->hold_timer, 4.0f) * 0.5f);
     if (ch->timer >= NK_CONSOLE_AXIS_REPEAT_INTERVAL) {
-        ch->timer -= NK_CONSOLE_AXIS_REPEAT_INTERVAL;
+        ch->timer = 0.0f; // Protect against hitting many frames at the same time.
         return nk_true;
     }
     return nk_false;
