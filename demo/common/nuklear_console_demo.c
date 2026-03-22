@@ -82,15 +82,15 @@ void theme_changed(struct nk_console* combobox, void* user_data) {
     set_style(combobox->ctx, (enum theme)theme);
 }
 
-void exclude_other_checkbox(nk_console* unused, void* user_data) {
+void exclude_other_checkbox(struct nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
     nk_console* other = (nk_console*)user_data;
     other->disabled = !other->disabled;
 }
 
-void toggle_visibility(nk_console* unused, void* user_data) {
+void toggle_visibility(struct nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
-    nk_console* other = (nk_console*)user_data;
+    struct nk_console* other = (nk_console*)user_data;
     other->visible = !other->visible;
 }
 
@@ -118,14 +118,14 @@ void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     nk_console_show_message(radio, radio->label);
 }
 
-nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
+struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
     console = nk_console_init(ctx);
 
     nk_gamepad_init(&gamepads, ctx, user_data);
     nk_console_set_gamepads(console, &gamepads);
 
     // New Game
-    nk_console* newgame = nk_console_button(console, "New Game");
+    struct nk_console* newgame = nk_console_button(console, "New Game");
     {
         nk_console_button_set_symbol(newgame, NK_SYMBOL_PLUS);
         nk_console_label(newgame, "This would start a new game!");
@@ -133,14 +133,14 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     }
 
     // Widgets
-    nk_console* widgets = nk_console_button(console, "Widgets");
+    struct nk_console* widgets = nk_console_button(console, "Widgets");
     {
         nk_console_set_tooltip(widgets, "Displays some random options!");
 
-        nk_console* label_button = nk_console_button(widgets, "Labels");
+        struct nk_console* label_button = nk_console_button(widgets, "Labels");
         {
             nk_console_label(label_button, "Simple label.");
-            nk_console* label1 = nk_console_label(label_button, "Selectable label #1");
+            struct nk_console* label1 = nk_console_label(label_button, "Selectable label #1");
             label1->selectable = nk_true;
             nk_console_add_event(label1, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message);
 
@@ -157,7 +157,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_onclick(label_button, "Back", &nk_console_button_back);
         }
 
-        nk_console* checkbox_button = nk_console_button(widgets, "Checkboxes");
+        struct nk_console* checkbox_button = nk_console_button(widgets, "Checkboxes");
         {
             nk_console_checkbox(checkbox_button, "Checkbox", &checkbox1)
                 ->tooltip = "This is a checkbox!";
@@ -168,20 +168,20 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
 
             // Onchange callbacks can be used to implement custom logic.
             // These two checkboxes disable each other when checked.
-            nk_console* exclude_a = nk_console_checkbox(checkbox_button, "Exclusive A (disables B)", &checkbox4);
-            nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
+            struct nk_console* exclude_a = nk_console_checkbox(checkbox_button, "Exclusive A (disables B)", &checkbox4);
+            struct nk_console* exclude_b = nk_console_checkbox(checkbox_button, "Exclusive B (disables A)", &checkbox5);
             nk_console_add_event_handler(exclude_a, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_b, NULL);
             nk_console_add_event_handler(exclude_b, NK_CONSOLE_EVENT_CHANGED, &exclude_other_checkbox, exclude_a, NULL);
 
             // Checkbox that will show/hide the below label.
-            nk_console* checkbox_show_label = nk_console_checkbox(checkbox_button, "Show Label", &checkbox6);
-            nk_console* label_to_show = nk_console_label(checkbox_button, "This label is only shown when the checkbox is checked.");
+            struct nk_console* checkbox_show_label = nk_console_checkbox(checkbox_button, "Show Label", &checkbox6);
+            struct nk_console* label_to_show = nk_console_label(checkbox_button, "This label is only shown when the checkbox is checked.");
             nk_console_add_event_handler(checkbox_show_label, NK_CONSOLE_EVENT_CHANGED, &toggle_visibility, label_to_show, NULL);
 
             nk_console_button_onclick(checkbox_button, "Back", &nk_console_button_back);
         }
 
-        nk_console* buttons = nk_console_button(widgets, "Buttons");
+        struct nk_console* buttons = nk_console_button(widgets, "Buttons");
         {
             nk_console_button(buttons, "Button");
             nk_console_button(buttons, "Button #2");
@@ -189,7 +189,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
                 ->disabled = nk_true;
 
             // Image Button
-            nk_console* image_button = nk_console_button(buttons, "Image");
+            struct nk_console* image_button = nk_console_button(buttons, "Image");
             nk_console_button_set_image(image_button, image);
             image_button->height = 128;
 
@@ -197,7 +197,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Radio Buttons
-        nk_console* radios = nk_console_button(widgets, "Radios");
+        struct nk_console* radios = nk_console_button(widgets, "Radios");
         {
             nk_console_label(radios, "Option A:");
             nk_console_radio(radios, "Radio #1", &radio_option);
@@ -219,9 +219,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Images
-        nk_console* images = nk_console_button(widgets, "Images");
+        struct nk_console* images = nk_console_button(widgets, "Images");
         {
-            nk_console* img = nk_console_image(images, image);
+            struct nk_console* img = nk_console_image(images, image);
             nk_console_set_height(img, image.h);
             img = nk_console_image_color(images, image, nk_rgb(255, 0, 0));
             nk_console_set_height(img, image.h);
@@ -230,11 +230,11 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Spacing
-        nk_console* spacing = nk_console_button(widgets, "Spacing");
+        struct nk_console* spacing = nk_console_button(widgets, "Spacing");
         {
-            nk_console* row = nk_console_row_begin(spacing);
+            struct nk_console* row = nk_console_row_begin(spacing);
             nk_console_spacing(row, 1);
-            nk_console* b = nk_console_button(row,"");
+            struct nk_console* b = nk_console_button(row,"");
             nk_console_button_set_symbol(b, NK_SYMBOL_TRIANGLE_UP);
             nk_console_spacing(row, 1);
             nk_console_row_end(row);
@@ -258,7 +258,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Horizontal Rule
-        nk_console* rules = nk_console_button(widgets, "Horizontal Rule");
+        struct nk_console* rules = nk_console_button(widgets, "Horizontal Rule");
         {
             nk_console_label(rules, "Horizontal Rule");
             nk_console_rule_horizontal(rules, nk_rgb(175, 175, 175), nk_true);
@@ -270,7 +270,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Progress Bar
-        nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
+        struct nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
@@ -284,7 +284,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             ->tooltip = "Choose a weapon! The chainsaw is the best!";
 
         // Property
-        nk_console* properties = nk_console_button(widgets, "Property");
+        struct nk_console* properties = nk_console_button(widgets, "Property");
         {
             nk_console_property_int(properties, "Property Int", 10, &property_int_test, 30, 1, 1);
             nk_console_property_float(properties, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
@@ -294,7 +294,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Sliders
-        nk_console* sliders = nk_console_button(widgets, "Sliders");
+        struct nk_console* sliders = nk_console_button(widgets, "Sliders");
         {
             nk_console_slider_float(sliders, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
             nk_console_slider_int(sliders, "Slider Int", 0, &slider_int_test, 20, 1);
@@ -302,9 +302,9 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         }
 
         // Textedit
-        nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
+        struct nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
-        nk_console* password = nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
+        struct nk_console* password = nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
         nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
 
         // Color
@@ -323,15 +323,15 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             NK_SYMBOL_TRIANGLE_LEFT);
     }
 
-    nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);
+    struct nk_console* theme_options = nk_console_combobox(console, "Theme", "Black;White;Red;Blue;Dark;Dracula;Default", ';', &theme);
     nk_console_add_event(theme_options, NK_CONSOLE_EVENT_CHANGED, &theme_changed);
     theme_options->tooltip = "Change the theme of the console!";
     set_style(ctx, (enum theme)theme);
 
     // Rows
-    nk_console* calc = nk_console_button(console, "Calculator");
+    struct nk_console* calc = nk_console_button(console, "Calculator");
     {
-      nk_console* row = nk_console_row_begin(calc);
+      struct nk_console* row = nk_console_row_begin(calc);
       nk_console_button(row, "sqrt");
       nk_console_button(row, "pi");
       nk_console_row_end(row);
@@ -379,7 +379,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
-    nk_console* quit_button = nk_console_button_onclick(console, "Quit Game", &button_clicked);
+    struct nk_console* quit_button = nk_console_button_onclick(console, "Quit Game", &button_clicked);
     nk_console_add_event(quit_button, NK_CONSOLE_EVENT_FOCUS, &nk_console_quit_button_focused);
 
     return console;
