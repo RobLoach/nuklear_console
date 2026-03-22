@@ -101,6 +101,11 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     nk_console_show_message(button, message);
 }
 
+void nk_console_quit_button_focused(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_show_message(widget, "Are you sure you want to quit?");
+}
+
 void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(radio, radio->label);
@@ -245,6 +250,18 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
             nk_console_button_onclick(spacing, "Back", &nk_console_button_back);
         }
 
+        // Horizontal Rule
+        nk_console* rules = nk_console_button(widgets, "Horizontal Rule");
+        {
+            nk_console_label(rules, "Horizontal Rule");
+            nk_console_rule_horizontal(rules, nk_rgb(175, 175, 175), nk_true);
+            nk_console_label(rules, "Red, not rounded");
+            nk_console_rule_horizontal(rules, nk_rgb(255, 0, 0), nk_false);
+            nk_console_label(rules, "Green, rounded");
+            nk_console_rule_horizontal(rules, nk_rgb(0, 255, 0), nk_true);
+            nk_console_button_onclick(rules, "Back", &nk_console_button_back);
+        }
+
         // Progress Bar
         nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
@@ -354,7 +371,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
-    nk_console_button_onclick(console, "Quit Game", &button_clicked);
+    nk_console* quit_button = nk_console_button_onclick(console, "Quit Game", &button_clicked);
+    nk_console_add_event(quit_button, NK_CONSOLE_EVENT_FOCUS, &nk_console_quit_button_focused);
 
     return console;
 }
@@ -362,7 +380,11 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
 nk_bool nuklear_console_demo_render() {
     nk_console_render(console);
 
-    return shouldClose;;
+    return shouldClose;
+}
+
+nk_bool nuklear_console_demo_should_close() {
+    return shouldClose;
 }
 
 void nuklear_console_demo_free() {

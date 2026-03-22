@@ -44,15 +44,30 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
-    // Create the new message.
-    nk_console_message message = {0};
-    message.duration = NK_CONSOLE_MESSAGE_DURATION;
-
-    // Copy the string.
+    // Grab the length of the string, limit length to 255.
     int len = nk_strlen(text);
     if (len > 255) {
         len = 255;
     }
+
+    // Only add the message if it's not already in the queue.
+    nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
+    for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
+        nk_bool same = nk_true;
+        for (int i = 0; i <= len; i++) {
+            if (it->text[i] != text[i]) {
+                same = nk_false;
+                break;
+            }
+        }
+        if (same) {
+            return;
+        }
+    }
+
+    // Create the new message.
+    nk_console_message message = {0};
+    message.duration = NK_CONSOLE_MESSAGE_DURATION;
     NK_MEMCPY(message.text, text, (nk_size)len);
     message.text[len] = '\0'; // Make sure it's null-terminated
 
@@ -93,7 +108,8 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     }
 
     // Display the tooltip where the mocked mouse is.
-    if (nk_tooltip_begin(ctx, (float)bounds.w)) {
+    struct nk_vec2 zero = {0, 0};
+    if (nk_tooltip_begin_offset(ctx, bounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_label(ctx, message->text, NK_TEXT_LEFT);
         nk_tooltip_end(ctx);

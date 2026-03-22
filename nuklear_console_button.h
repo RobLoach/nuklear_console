@@ -203,20 +203,7 @@ NK_API void nk_console_button_back(nk_console* button, void* user_data) {
     if (button == NULL) {
         return;
     }
-
-    nk_console* top = nk_console_get_top(button);
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
-
-    nk_console* parent = button->parent;
-    if (parent != NULL) {
-        parent = parent->parent;
-    }
-    if (parent != NULL) {
-        nk_console_set_active_parent(parent);
-    }
-    else {
-        data->active_parent = top;
-    }
+    nk_console_navigate_back(button->parent);
 }
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {

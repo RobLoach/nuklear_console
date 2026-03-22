@@ -62,12 +62,8 @@ void UpdateDrawFrame(void) {
     int padding = 0;
 
     // Nuklear GUI Code
-    if (nk_begin(ctx, "nuklear_console", nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2), flags)) {
-        if (nuklear_console_demo_render()) {
-            closeWindow = nk_true;
-        }
-    }
-    nk_end(ctx);
+    struct nk_rect size = nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2);
+    nk_console_render_window(console, "nuklear_console", size, flags);
 
     // Render
     BeginDrawing();
@@ -81,6 +77,10 @@ void UpdateDrawFrame(void) {
     #ifdef PLATFORM_WEB
         if (shouldClose) {
             emscripten_cancel_main_loop();
+        }
+    #else
+        if (nuklear_console_demo_should_close()) {
+            closeWindow = nk_true;
         }
     #endif
 }

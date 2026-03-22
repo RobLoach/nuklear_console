@@ -15,6 +15,9 @@ typedef enum {
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
     NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered after all the widgets have rendered, and the event is removed. */
     NK_CONSOLE_EVENT_PRE_PARENT_RENDER, /** Triggered before the parent widget is rendered. */
+    NK_CONSOLE_EVENT_FOCUS, /** Triggered when the widget gains focus/becomes the active widget. */
+    NK_CONSOLE_EVENT_BLUR, /** Triggered when the widget loses focus/is no longer the active widget. */
+    NK_CONSOLE_EVENT_BACK, /** Triggered on the active parent widget when the user navigates back. */
 } nk_console_event_type;
 
 /**
@@ -69,6 +72,7 @@ typedef enum {
     NK_CONSOLE_RADIO,
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
+    NK_CONSOLE_RULE_HORIZONTAL,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -104,6 +108,7 @@ typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
     nk_bool input_processed; /** Whether or not user input has been processed. */
     nk_bool scroll_requested; /** True if we've switched active widget and need to check scrolling */
+    nk_bool scrollbar_required; /** True when the scrollbar is needed to be rendered. @see nk_console_render_window() */
 
     /**
      * Message queue that is to be shown.
@@ -124,12 +129,34 @@ typedef struct nk_console_top_data {
     struct nk_gamepads* gamepads;
 
     /**
+     * Which gamepad number to use for input. -1 means any/all gamepads.
+     *
+     * @see nk_console_set_gamepad_num()
+     * @see nk_console_get_gamepad_num()
+     */
+    int gamepad_num;
+
+    /**
      * Custom user data. This is only applied to the top-level console.
      *
      * @see nk_console_user_data()
      * @see nk_console_set_user_data()
      */
     void* user_data;
+
+    float up_down_hold_timer; /** Total time up/down has been held continuously, used for acceleration. */
+    float up_down_repeat_timer; /** Time accumulator since the last repeated up/down move. */
+
+    /** State for one analog axis navigation channel (up/down or left/right). */
+    struct nk_console_axis_channel {
+        float timer;      /** Repeat accumulator. -1 when inactive. */
+        float hold_timer; /** Total active hold time, drives acceleration. */
+    } axis_ud, axis_lr;
+
+    nk_bool axis_up_fired;    /** True this frame if an axis fired an up event. */
+    nk_bool axis_down_fired;  /** True this frame if an axis fired a down event. */
+    nk_bool axis_left_fired;  /** True this frame if an axis fired a left event. */
+    nk_bool axis_right_fired; /** True this frame if an axis fired a right event. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
@@ -155,8 +182,11 @@ NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
 NK_API void* nk_console_malloc(nk_handle unused, void* old, nk_size size);
 NK_API void nk_console_mfree(nk_handle unused, void* ptr);
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
+NK_API nk_bool nk_console_button_down(nk_console* console, int button);
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads);
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
+NK_API void nk_console_set_gamepad_num(nk_console* console, int num);
+NK_API int nk_console_get_gamepad_num(nk_console* console);
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
 NK_API const char* nk_console_get_label(nk_console* widget);
@@ -193,6 +223,18 @@ NK_API void* nk_console_user_data(nk_console* console);
  */
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 
+/**
+ * Navigate back from the given widget to its parent, triggering NK_CONSOLE_EVENT_BACK.
+ *
+ * The event is triggered after the new parent is selected.
+ *
+ * @param leaving_parent The active parent widget being navigated away from.
+ *
+ * @see NK_CONSOLE_EVENT_BACK
+ * @see nk_console_button_back()
+ */
+NK_API void nk_console_navigate_back(nk_console* leaving_parent);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -216,6 +258,7 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_rule_horizontal.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -227,6 +270,13 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_IMPLEMENTATION_ONCE
+
+#ifndef NK_CONSOLE_AXIS_DEADZONE
+#define NK_CONSOLE_AXIS_DEADZONE 0.22f
+#endif
+#ifndef NK_CONSOLE_AXIS_REPEAT_INTERVAL
+#define NK_CONSOLE_AXIS_REPEAT_INTERVAL 0.5f
+#endif
 
 // NK_CONSOLE_MALLOC
 #ifndef NK_CONSOLE_MALLOC
@@ -296,6 +346,7 @@ extern "C" {
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
+#include "nuklear_rule_horizontal.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -391,7 +442,11 @@ NK_API void nk_console_set_active_widget(nk_console* widget) {
     }
 
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
-    parent->activeWidget = widget;
+    if (parent->activeWidget != widget) {
+        nk_console_trigger_event(parent->activeWidget, NK_CONSOLE_EVENT_BLUR);
+        parent->activeWidget = widget;
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_FOCUS);
+    }
 }
 
 /**
@@ -519,6 +574,26 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         data->scroll_requested = nk_false;
     }
 
+    // Handle hold-to-accelerate timers for up/down navigation.
+    nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
+    nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
+    nk_bool up_down_repeat_fire = nk_false;
+    if (up_held || down_held) {
+        if (top->ctx->delta_time_seconds > 0) {
+            data->up_down_hold_timer += top->ctx->delta_time_seconds;
+            data->up_down_repeat_timer += top->ctx->delta_time_seconds;
+            // 0.045s initial delay. Speeding up gradually
+            float interval = NK_MAX(0.045f, 0.5f - data->up_down_hold_timer * 0.125f);
+            if (data->up_down_repeat_timer >= interval) {
+                up_down_repeat_fire = nk_true;
+                data->up_down_repeat_timer -= interval;
+            }
+        }
+    } else {
+        data->up_down_hold_timer = 0;
+        data->up_down_repeat_timer = 0;
+    }
+
     // Only process an active input once.
     if (data->input_processed == nk_false) {
         // Page Up
@@ -554,7 +629,8 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             data->input_processed = nk_true;
         }
         // Up
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) ||
+                 (up_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -567,7 +643,8 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             data->input_processed = nk_true;
         }
         // Down
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
+                 (down_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -586,12 +663,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             }
 
             if (widget->parent != NULL) {
-                if (widget->parent == top) {
-                    nk_console_set_active_parent(top);
-                }
-                else if (widget->parent->parent != NULL) {
-                    nk_console_set_active_parent(widget->parent->parent);
-                }
+                nk_console_navigate_back(widget->parent);
                 data->scroll_requested = nk_true;
             }
 
@@ -642,6 +714,8 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
 static void nk_console_tooltip_display(struct nk_context* ctx, const char* text) {
     const struct nk_style* style;
     struct nk_vec2 padding;
+    struct nk_vec2 zero;
+    nk_zero_struct(zero);
 
     style = &ctx->style;
     padding = style->window.padding;
@@ -653,9 +727,9 @@ static void nk_console_tooltip_display(struct nk_context* ctx, const char* text)
     // Display the tooltip at the bottom of the window, manipulating the mouse position
     struct nk_rect windowbounds = nk_window_get_bounds(ctx);
     ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f;
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f - ctx->style.window.border;
 
-    if (nk_tooltip_begin(ctx, windowbounds.w)) {
+    if (nk_tooltip_begin_offset(ctx, windowbounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
         nk_text_wrap(ctx, text, nk_strlen(text));
         nk_tooltip_end(ctx);
@@ -684,6 +758,81 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
  *
  * @param console The console widget to display.
  */
+/**
+ * Tick one axis navigation channel. Returns nk_true if a navigation event should fire this frame.
+ * @internal
+ */
+static nk_bool nk_console_axis_tick(struct nk_console_axis_channel* ch, float strength, float delta) {
+    if (strength <= 0.0f) {
+        ch->timer = -1.0f;
+        ch->hold_timer = 0.0f;
+        return nk_false;
+    }
+    if (ch->timer < 0.0f) {
+        ch->timer = 0.0f;
+        return nk_true; // Fire immediately on first active frame.
+    }
+    ch->hold_timer += delta;
+    ch->timer += delta * strength * (1.0f + NK_MIN(ch->hold_timer, 4.0f) * 0.5f);
+    if (ch->timer >= NK_CONSOLE_AXIS_REPEAT_INTERVAL) {
+        ch->timer = 0.0f; // Protect against hitting many frames at the same time.
+        return nk_true;
+    }
+    return nk_false;
+}
+
+/**
+ * Checks all the gamepad input states, and combines all the gamepad axis into one.
+ *
+ * @internal
+ */
+static void nk_console_axis_update(nk_console* console) {
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    data->axis_up_fired = data->axis_down_fired = data->axis_left_fired = data->axis_right_fired = nk_false;
+    if (data->gamepads == NULL || console->ctx->delta_time_seconds <= 0) {
+        return;
+    }
+
+    // Grab the axis data.
+    float left_y  = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_Y);
+    float left_x  = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_X);
+    float right_y = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_Y);
+    float right_x = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_X);
+    float ltrig   = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_TRIGGER);
+    float rtrig   = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_TRIGGER);
+
+    // Per-direction strengths.
+    float up_strength    = 0.0f, down_strength  = 0.0f;
+    float left_strength  = 0.0f, right_strength = 0.0f;
+    if (left_x  < -NK_CONSOLE_AXIS_DEADZONE) left_strength  = NK_MAX(left_strength, -left_x  * 2.0f);
+    if (left_x  >  NK_CONSOLE_AXIS_DEADZONE) right_strength = NK_MAX(right_strength, left_x  * 2.0f);
+    if (left_y  < -NK_CONSOLE_AXIS_DEADZONE) up_strength    = NK_MAX(up_strength,   -left_y * 2.0f);
+    if (left_y  >  NK_CONSOLE_AXIS_DEADZONE) down_strength  = NK_MAX(down_strength,  left_y * 2.0f);
+    if (right_x < -NK_CONSOLE_AXIS_DEADZONE) left_strength  = NK_MAX(left_strength, -right_x * 5.0f);
+    if (right_x >  NK_CONSOLE_AXIS_DEADZONE) right_strength = NK_MAX(right_strength, right_x * 5.0f);
+    if (right_y < -NK_CONSOLE_AXIS_DEADZONE) up_strength    = NK_MAX(up_strength,   -right_y * 5.0f);
+    if (right_y >  NK_CONSOLE_AXIS_DEADZONE) down_strength  = NK_MAX(down_strength,  right_y * 5.0f);
+    if (ltrig   >  NK_CONSOLE_AXIS_DEADZONE) up_strength    = NK_MAX(up_strength,    ltrig   * 10.0f);
+    if (rtrig   >  NK_CONSOLE_AXIS_DEADZONE) down_strength  = NK_MAX(down_strength,  rtrig   * 10.0f);
+
+    // Up/Down
+    if (nk_console_axis_tick(&data->axis_ud, NK_MAX(up_strength, down_strength), console->ctx->delta_time_seconds)) {
+        if (up_strength >= down_strength) {
+            data->axis_up_fired = nk_true;
+        }
+        else {
+            data->axis_down_fired = nk_true;
+        }
+    }
+    // Left/Right
+    if (nk_console_axis_tick(&data->axis_lr, NK_MAX(left_strength, right_strength), console->ctx->delta_time_seconds)) {
+        if (left_strength >= right_strength)
+            data->axis_left_fired = nk_true;
+        else
+            data->axis_right_fired = nk_true;
+    }
+}
+
 NK_API void nk_console_render(nk_console* console) {
     if (console == NULL || console->visible == nk_false) {
         return;
@@ -693,8 +842,9 @@ NK_API void nk_console_render(nk_console* console) {
     if (console->parent == NULL) {
         nk_console_top_data* data = (nk_console_top_data*)console->data;
 
-        // Reset the input state.
+        // Reset the input state and calculate new axis data.
         data->input_processed = nk_false;
+        nk_console_axis_update(console);
 
         nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
 
@@ -803,6 +953,9 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
+    data->axis_ud.timer = -1.0f;
+    data->axis_lr.timer = -1.0f;
+    data->gamepad_num = -1;
     data->active_parent = console;
     console->data = data;
 
@@ -811,6 +964,8 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 
 /**
  * Renders the given console to a new window with the given properties.
+ *
+ * By using this method, nuklear_console has the ability to determine whether or not the scrollbar should be active.
  *
  * @param console The console to render.
  * @param title The title of the window.
@@ -822,10 +977,32 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
         return;
     }
 
+    // Determine if the scrollbar is needed.
+    nk_console_top_data* top_data = (nk_console_top_data*)console->data;
+    if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
+        if (top_data->scrollbar_required) {
+            flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        } else {
+            flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        }
+    }
+
+    // Process the Nuklear window.
     if (nk_begin(console->ctx, title, bounds, flags)) {
         nk_console_render(console);
     }
 
+    // After all elements have been rendered, update the layout flags.
+    if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
+        top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
+        if (top_data->scrollbar_required) {
+            console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        } else {
+            console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        }
+    }
+
+    // Finish the window processing.
     nk_end(console->ctx);
 }
 
@@ -963,6 +1140,43 @@ NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console) {
     return data->gamepads;
 }
 
+NK_API void nk_console_set_gamepad_num(nk_console* console, int num) {
+    nk_console* top = nk_console_get_top(console);
+    if (top == NULL) {
+        return;
+    }
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data == NULL) {
+        return;
+    }
+    data->gamepad_num = num;
+}
+
+NK_API int nk_console_get_gamepad_num(nk_console* console) {
+    nk_console* top = nk_console_get_top(console);
+    if (top == NULL) {
+        return -1;
+    }
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data == NULL) {
+        return -1;
+    }
+    return data->gamepad_num;
+}
+
+NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
+    if (leaving_parent == NULL) {
+        return;
+    }
+    nk_console* top = nk_console_get_top(leaving_parent);
+    if (leaving_parent == top) {
+        return;
+    }
+    nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
+    nk_console_set_active_parent(destination);
+    nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
+}
+
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
     if (console == NULL) {
         return nk_false;
@@ -975,18 +1189,18 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Gamepad
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    if (nk_gamepad_is_button_pressed(data->gamepads, -1, (enum nk_gamepad_button)button)) {
+    if (nk_gamepad_is_button_pressed(data->gamepads, data->gamepad_num, (enum nk_gamepad_button)button)) {
         return nk_true;
     }
 
-    // Keyboard/Mouse
+    // Keyboard/Mouse/Axis
     switch (button) {
-        case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
-        case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN);
-        case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
-        case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_RIGHT);
+        case NK_GAMEPAD_BUTTON_UP:    return data->axis_up_fired    || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN:  return data->axis_down_fired  || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT:  return data->axis_left_fired  || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return data->axis_right_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_RIGHT);
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER);
-        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT) && nk_window_is_hovered(console->ctx));
+        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
@@ -994,6 +1208,32 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_BACK:
             return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
             // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+    }
+
+    return nk_false;
+}
+
+NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
+    if (console == NULL) {
+        return nk_false;
+    }
+
+    if (console->parent != NULL) {
+        console = nk_console_get_top(console);
+    }
+
+    // Gamepad
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    if (nk_gamepad_is_button_down(data->gamepads, data->gamepad_num, (enum nk_gamepad_button)button)) {
+        return nk_true;
+    }
+
+    // Keyboard/Mouse
+    switch (button) {
+        case NK_GAMEPAD_BUTTON_UP: return nk_input_is_key_down(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return nk_input_is_key_down(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return nk_input_is_key_down(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return nk_input_is_key_down(&console->ctx->input, NK_KEY_RIGHT);
     }
 
     return nk_false;
