@@ -15,6 +15,7 @@ typedef enum {
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
     NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered after all the widgets have rendered, and the event is removed. */
     NK_CONSOLE_EVENT_PRE_PARENT_RENDER, /** Triggered before the parent widget is rendered. */
+    NK_CONSOLE_EVENT_BACK, /** Triggered on the active parent widget when the user navigates back. */
 } nk_console_event_type;
 
 /**
@@ -219,6 +220,18 @@ NK_API void* nk_console_user_data(nk_console* console);
  * @param user_data The custom user data to set.
  */
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
+
+/**
+ * Navigate back from the given widget to its parent, triggering NK_CONSOLE_EVENT_BACK.
+ *
+ * The event is triggered after the new parent is selected.
+ *
+ * @param leaving_parent The active parent widget being navigated away from.
+ *
+ * @see NK_CONSOLE_EVENT_BACK
+ * @see nk_console_button_back()
+ */
+NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 
 #if defined(__cplusplus)
 }
@@ -644,12 +657,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             }
 
             if (widget->parent != NULL) {
-                if (widget->parent == top) {
-                    nk_console_set_active_parent(top);
-                }
-                else if (widget->parent->parent != NULL) {
-                    nk_console_set_active_parent(widget->parent->parent);
-                }
+                nk_console_navigate_back(widget->parent);
                 data->scroll_requested = nk_true;
             }
 
@@ -965,11 +973,12 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
 
     // Determine if the scrollbar is needed.
     nk_console_top_data* top_data = (nk_console_top_data*)console->data;
-    if (top_data->scrollbar_required) {
-        flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
-    }
-    else {
-        flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
+        if (top_data->scrollbar_required) {
+            flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        } else {
+            flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        }
     }
 
     // Process the Nuklear window.
@@ -978,11 +987,13 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
     }
 
     // After all elements have been rendered, update the layout flags.
-    top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
-    if (top_data->scrollbar_required) {
-        console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
-    } else {
-        console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+    if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
+        top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
+        if (top_data->scrollbar_required) {
+            console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        } else {
+            console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+        }
     }
 
     // Finish the window processing.
@@ -1145,6 +1156,19 @@ NK_API int nk_console_get_gamepad_num(nk_console* console) {
         return -1;
     }
     return data->gamepad_num;
+}
+
+NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
+    if (leaving_parent == NULL) {
+        return;
+    }
+    nk_console* top = nk_console_get_top(leaving_parent);
+    if (leaving_parent == top) {
+        return;
+    }
+    nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
+    nk_console_set_active_parent(destination);
+    nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
