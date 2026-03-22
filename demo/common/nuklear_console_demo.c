@@ -298,7 +298,7 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         nk_console_set_tooltip(textedit, "Enter your username!");
 
         // Color
-        nk_console* color_widget = nk_console_color(widgets, "Select Color", &color, NK_RGBA);
+        nk_console_color(widgets, "Select Color", &color, NK_RGBA);
 
         // File
         nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
