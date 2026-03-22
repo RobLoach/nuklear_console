@@ -94,6 +94,13 @@ void toggle_visibility(nk_console* unused, void* user_data) {
     other->visible = !other->visible;
 }
 
+void nk_console_password_back(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    char message[512];
+    snprintf(message, sizeof(message), "Password: %s", textedit_password_buffer);
+    nk_console_show_message(widget, message);
+}
+
 void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     char message[128];
@@ -297,7 +304,8 @@ nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, s
         // Textedit
         nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
         nk_console_set_tooltip(textedit, "Enter your username!");
-        nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
+        nk_console* password = nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
+        nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);
