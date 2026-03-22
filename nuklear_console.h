@@ -15,6 +15,8 @@ typedef enum {
     NK_CONSOLE_EVENT_CLICKED, /** Triggered when the widget is clicked. */
     NK_CONSOLE_EVENT_POST_RENDER_ONCE, /** Triggered after all the widgets have rendered, and the event is removed. */
     NK_CONSOLE_EVENT_PRE_PARENT_RENDER, /** Triggered before the parent widget is rendered. */
+    NK_CONSOLE_EVENT_FOCUS, /** Triggered when the widget gains focus/becomes the active widget. */
+    NK_CONSOLE_EVENT_BLUR, /** Triggered when the widget loses focus/is no longer the active widget. */
     NK_CONSOLE_EVENT_BACK, /** Triggered on the active parent widget when the user navigates back. */
 } nk_console_event_type;
 
@@ -412,7 +414,11 @@ NK_API void nk_console_set_active_widget(nk_console* widget) {
     }
 
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
-    parent->activeWidget = widget;
+    if (parent->activeWidget != widget) {
+        nk_console_trigger_event(parent->activeWidget, NK_CONSOLE_EVENT_BLUR);
+        parent->activeWidget = widget;
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_FOCUS);
+    }
 }
 
 /**
