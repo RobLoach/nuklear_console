@@ -39,6 +39,11 @@ static float knob_float_test = 0.4f;
 static int radio_option = 1;
 static int radio_option2 = 0;
 
+// Tree
+static nk_bool tree_expanded = nk_true;
+static nk_bool tree_option_a = nk_false;
+static nk_bool tree_option_b = nk_true;
+
 // Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
@@ -267,6 +272,16 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_label(rules, "Green, rounded");
             nk_console_rule_horizontal(rules, nk_rgb(0, 255, 0), nk_true);
             nk_console_button_onclick(rules, "Back", &nk_console_button_back);
+        }
+
+        // Tree
+        struct nk_console* tree_button = nk_console_button(widgets, "Tree");
+        {
+            struct nk_console* tree = nk_console_tree(tree_button, "Options", &tree_expanded);
+            nk_console_checkbox(tree, "Option A", &tree_option_a);
+            nk_console_checkbox(tree, "Option B", &tree_option_b);
+            nk_console_label(tree, "A label inside the tree");
+            nk_console_button_onclick(tree_button, "Back", &nk_console_button_back);
         }
 
         // Progress Bar

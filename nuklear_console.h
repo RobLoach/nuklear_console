@@ -73,6 +73,7 @@ typedef enum {
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
     NK_CONSOLE_RULE_HORIZONTAL,
+    NK_CONSOLE_TREE,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -259,6 +260,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_rule_horizontal.h"
+#include "nuklear_console_tree.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -347,6 +349,7 @@ extern "C" {
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_rule_horizontal.h"
+#include "nuklear_console_tree.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -1038,6 +1041,14 @@ NK_API void nk_console_free(nk_console* console) {
                 data->messages = NULL;
             }
         }
+        else if (console->type == NK_CONSOLE_TREE) {
+            nk_console_tree_data* data = (nk_console_tree_data*)console->data;
+            if (data->owned_children != NULL) {
+                // Only free the tracking vector; the child widgets live in tree->parent->children.
+                cvector_free(data->owned_children);
+                data->owned_children = NULL;
+            }
+        }
 
         nk_console_mfree(handle, console->data);
         console->data = NULL;
@@ -1241,6 +1252,25 @@ NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
 
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
     if (parent == NULL || child == NULL) {
+        return;
+    }
+
+    // If the parent is a tree, insert child as a sibling so navigation works naturally.
+    if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL) {
+        nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
+        // Insert position: immediately after the tree and any previously owned children.
+        int insert_pos = nk_console_get_widget_index(parent) + 1
+                         + (int)cvector_size(tree_data->owned_children);
+        child->parent = parent->parent;
+        child->visible = *tree_data->expanded;
+        // Grow the array by one, then shift elements right to make room.
+        cvector_push_back(parent->parent->children, NULL);
+        size_t total = cvector_size(parent->parent->children);
+        for (size_t i = total - 1; i > (size_t)insert_pos; i--) {
+            parent->parent->children[i] = parent->parent->children[i - 1];
+        }
+        parent->parent->children[insert_pos] = child;
+        cvector_push_back(tree_data->owned_children, child);
         return;
     }
 
