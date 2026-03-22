@@ -1,11 +1,20 @@
 #ifndef NK_CONSOLE_TEXTEDIT_H__
 #define NK_CONSOLE_TEXTEDIT_H__
 
+#ifndef NK_CONSOLE_TEXTEDIT_MASKED_LENGTH
+    /**
+     * How long masked text should be when displayed.
+     */
+    #define NK_CONSOLE_TEXTEDIT_MASKED_LENGTH 8
+#endif
+
 typedef struct nk_console_textedit_data {
     nk_console_button_data button; // Inherited from button.
     char* buffer;
     int buffer_size;
     nk_bool shift;
+    nk_bool masked; // When true, displays '*' instead of the actual buffer content.
+    char masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH + 4]; // Space for null-terminator and some protection.
 } nk_console_textedit_data;
 
 #if defined(__cplusplus)
@@ -21,6 +30,7 @@ extern "C" {
  * @return The created textedit widget.
  */
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
+NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
 NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data);
 NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data);
@@ -359,8 +369,26 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     textedit->render = nk_console_textedit_render;
     textedit->data = data;
 
+    // Initialize the mask with '*'.
+    data->masked = nk_false;
+    for (int i = 0; i < NK_CONSOLE_TEXTEDIT_MASKED_LENGTH; ++i) {
+        data->masked_display[i] = '*';
+    }
+    data->masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH] = '\0';
+
     nk_console_add_event(textedit, NK_CONSOLE_EVENT_CLICKED, &nk_console_textedit_button_main_click);
 
+    return textedit;
+}
+
+NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* label, char* buffer, int buffer_size) {
+    nk_console* textedit = nk_console_textedit(parent, label, buffer, buffer_size);
+    if (textedit == NULL) {
+        return NULL;
+    }
+
+    nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
+    data->masked = nk_true;
     return textedit;
 }
 
@@ -390,10 +418,19 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
 
+    // Display the label, which is the buffer.
     console->label = data->buffer;
     console->label_length = console->label == NULL ? 0 : nk_strlen(console->label);
     if (console->label_length > 10) {
         console->label_length = 10;
+    }
+
+    // Mask it, if needed.
+    if (data->masked) {
+        console->label = data->masked_display;
+        if (console->label_length > NK_CONSOLE_TEXTEDIT_MASKED_LENGTH) {
+            console->label_length = NK_CONSOLE_TEXTEDIT_MASKED_LENGTH;
+        }
     }
 
     struct nk_rect widget_bounds = nk_console_button_render(console);
