@@ -269,7 +269,6 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
 
     // Create the textedit_text widget, which is the input box.
     nk_console_textedit_text(button);
-    nk_console_add_event(button, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
 
     // TODO: Add option for UTF-8 keys with nk_glyph.
 
