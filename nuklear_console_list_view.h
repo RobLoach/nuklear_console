@@ -81,9 +81,7 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     if (data->selected < 0 || data->selected >= data->row_count)
         return NULL;
-    if (data->get_label_callback)
-        return data->get_label_callback(list_view, data->selected);
-    return NULL;
+    return data->get_label_callback(list_view, data->selected);
 }
 
 NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
@@ -231,8 +229,12 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         struct nk_color saved_text = top->ctx->style.button.text_normal;
 
         nk_layout_row_dynamic(top->ctx, row_height, 1);
-        for (int i = 0; i <= data->view.count; ++i) {
-            const char* label = (data->get_label_callback == NULL) ? "" : data->get_label_callback(widget, data->view.begin + i);
+        for (int i = 0; i < data->view.count; ++i) {
+            const char* label = data->get_label_callback(widget, data->view.begin + i);
+            if (label == NULL) {
+                break;
+            }
+
             // Render each row as a selectable button, highlighting if selected
             nk_bool is_selected = (data->view.begin + i) == data->selected;
 
@@ -261,7 +263,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int count, nk_console_list_view_get_label get_label_callback) {
-    if (parent == NULL) {
+    if (parent == NULL || get_label_callback == NULL) {
         return NULL;
     }
 
