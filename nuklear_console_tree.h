@@ -85,7 +85,6 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
         top_data->scroll_requested = nk_true;
         top_data->scrollbar_required = nk_true;
     }
-    }
 }
 
 NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded) {
