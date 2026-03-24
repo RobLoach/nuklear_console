@@ -278,10 +278,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         struct nk_console* tree_button = nk_console_button(widgets, "Tree");
         {
             struct nk_console* tree = nk_console_tree(tree_button, "Options", nk_true);
-            nk_console_radio(tree, "Be Cool", &tree_option1);
-            nk_console_radio(tree, "720p", &tree_option1);
-            nk_console_radio(tree, "480p", &tree_option1);
-            nk_console_radio(tree, "Potato", &tree_option1);
+            nk_console_radio(tree, "Easy", &tree_option1);
+            nk_console_radio(tree, "Medium", &tree_option1);
+            nk_console_radio(tree, "Hard", &tree_option1);
             nk_console_label(tree, "A label inside the Options tree");
 
             struct nk_console* tree2 = nk_console_tree(tree_button, "Video", nk_false);
