@@ -106,8 +106,7 @@ static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
         return;
     }
     NK_UNUSED(user_data);
-    nk_bool collapsed = !nk_console_tree_expanded(tree);
-    nk_console_tree_apply_expanded(tree, collapsed);
+    nk_console_tree_apply_expanded(tree, !nk_console_tree_expanded(tree));
     nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
 }
 
