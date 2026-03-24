@@ -31,6 +31,7 @@ typedef struct nk_console_list_view_data {
     float height;
     nk_uint scroll_pointer;
     nk_uint selected;
+    nk_uint _scroll_y;
 
     nk_console_list_view_get_label get_label_callback;
 } nk_console_list_view_data;
@@ -95,8 +96,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_bool is_active = nk_console_is_active_widget(widget);
 
-    int row_height = data->row_height > 0 ? data->row_height : 40;//(int)(top->ctx->style.font->height + top->ctx->style.window.spacing.y);
-    float height = data->height >= 0 ? data->height : 400.0f;
+    int row_height = (int)(top->ctx->style.font->height + top->ctx->style.window.spacing.y);
+    float height = data->height > 0 ? data->height : 400.0f;
 
     /* Layout the widget with the correct visible height so widget_bounds is accurate. */
     //nk_layout_row_dynamic(top->ctx, height, 1);
@@ -143,10 +144,10 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             if (data->selected > 0) {
                 data->selected--;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
-                // nk_uint sel_top = (nk_uint)(data->selected * row_height);
-                // if (sel_top < data->_scroll_y) {
-                //     data->_scroll_y = sel_top;
-                // }
+                nk_uint sel_top = (nk_uint)(data->selected * row_height);
+                if (sel_top < data->_scroll_y) {
+                    data->_scroll_y = sel_top;
+                }
             } else {
                 /* At top: move focus to the previous sibling widget. */
                 int idx = nk_console_get_widget_index(widget);
@@ -166,9 +167,10 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 data->selected++;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
                 nk_uint sel_bot = (nk_uint)((data->selected + 1) * row_height);
-                // if (sel_bot > data->_scroll_y + (nk_uint)visible_height) {
-                //     data->_scroll_y = sel_bot - (nk_uint)visible_height;
-                // }
+                float visible_height = height;
+                if (sel_bot > data->_scroll_y + (nk_uint)visible_height) {
+                    data->_scroll_y = sel_bot - (nk_uint)visible_height;
+                }
             } else {
                 /* At bottom: move focus to the next sibling widget. */
                 int idx = nk_console_get_widget_index(widget);
@@ -220,13 +222,37 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
     }
 
+    // TODO: Fix the scroll of the list view.
+
     nk_layout_row_dynamic(top->ctx, height, 1);
-    if (nk_list_view_begin(top->ctx, &data->view, widget->label, NK_WINDOW_BORDER, row_height, data->row_count)) {
+    if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, row_height, data->row_count)) {
+        /* Highlight the selected row when the list is focused. */
+        struct nk_style_item saved_normal = top->ctx->style.button.normal;
+        struct nk_color saved_text = top->ctx->style.button.text_normal;
+
         nk_layout_row_dynamic(top->ctx, row_height, 1);
         for (int i = 0; i <= data->view.count; ++i) {
             const char* label = (data->get_label_callback == NULL) ? "" : data->get_label_callback(widget, data->view.begin + i);
-            // TODO: Replace with buttons, considering the selected item.
-            nk_label(top->ctx, label, NK_TEXT_CENTERED);
+            // Render each row as a selectable button, highlighting if selected
+            nk_bool is_selected = (data->view.begin + i) == data->selected;
+
+            if (is_selected && is_active) {
+                top->ctx->style.button.normal = top->ctx->style.button.hover;
+                top->ctx->style.button.text_normal = top->ctx->style.button.text_hover;
+            }
+
+            nk_bool clicked = nk_button_label(top->ctx, label);
+
+            if (is_selected && is_active) {
+                top->ctx->style.button.normal      = saved_normal;
+                top->ctx->style.button.text_normal = saved_text;
+            }
+
+            if (clicked) {
+                data->selected = data->view.begin + i;
+                top_data->input_processed = nk_true;
+                nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
+            }
         }
         nk_list_view_end(&data->view);
     }
@@ -238,13 +264,11 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
     if (parent == NULL) {
         return NULL;
     }
-    printf("list_view: Setup\n");
 
     nk_console_list_view_data* data = (nk_console_list_view_data*)nk_console_malloc(nk_handle_ptr(NULL), NULL, sizeof(nk_console_list_view_data));
     if (data == NULL) {
         return NULL;
     }
-    printf("list_view: data done\n");
     nk_zero(data, sizeof(nk_console_list_view_data));
     data->row_count = count;
     data->get_label_callback = get_label_callback;
@@ -254,7 +278,6 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
         NK_CONSOLE_FREE(nk_handle_id(0), data);
         return NULL;
     }
-    printf("list_view: list view done\n");
 
     widget->selectable = nk_true;
     widget->type = NK_CONSOLE_LIST_VIEW;
