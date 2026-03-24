@@ -50,12 +50,22 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 extern "C" {
 #endif
 
+/**
+ * Frees all the children for the given textedit as an event.
+ */
 static void nk_console_textedit_free_children(nk_console* textedit, void* user_data) {
-    if (textedit == NULL) {
-        return;
-    }
     NK_UNUSED(user_data);
     nk_console_free_children(textedit);
+}
+
+/**
+ * Adds a post-render event to clear out the children when going back.
+ *
+ * This is done in post-render so that if there are any existing elements that are referencing the elements, it is cleared out afterwards.
+ */
+static void nk_console_textedit_text_event_back(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
 /**
@@ -74,9 +84,6 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user
 
     // Invoke the back button behavior on the button.
     nk_console_button_back(button, NULL);
-
-    // Clear out all the children for the textedit, after it finishes rendering.
-    nk_console_add_event(button->parent, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
 NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
@@ -260,6 +267,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
     nk_console_textedit_data* data = (nk_console_textedit_data*)button->data;
     nk_console* key;
 
+    // Create the textedit_text widget, which is the input box.
     nk_console_textedit_text(button);
 
     // TODO: Add option for UTF-8 keys with nk_glyph.

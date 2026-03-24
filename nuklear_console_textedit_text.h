@@ -121,6 +121,9 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
     textedit_text->columns = 1;
     textedit_text->selectable = nk_true;
     textedit_text->render = nk_console_textedit_text_render;
+
+    // Register the back event to unload the keyboard.
+    nk_console_add_event(parent, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
     return textedit_text;
 }
 
