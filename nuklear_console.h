@@ -74,6 +74,7 @@ typedef enum {
     NK_CONSOLE_KNOB_FLOAT,
     NK_CONSOLE_RULE_HORIZONTAL,
     NK_CONSOLE_TREE,
+    NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -261,6 +262,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
+#include "nuklear_console_list_view.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -351,6 +353,7 @@ extern "C" {
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
+#include "nuklear_console_list_view.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {

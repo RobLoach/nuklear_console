@@ -44,6 +44,17 @@ static int tree_option1 = 0;
 static int tree_option2 = 0;
 static int tree_option3 = 0;
 
+// List View
+#define NK_CONSOLE_DEMO_LIST_VIEW_COUNT 200
+char list_view_labels[NK_CONSOLE_DEMO_LIST_VIEW_COUNT][32];
+
+const char* list_view_event_get_label(struct nk_console* list_view, int index) {
+    if (index < 0 || index >= NK_CONSOLE_DEMO_LIST_VIEW_COUNT) {
+        return NULL;
+    }
+    return list_view_labels[index];
+}
+
 // Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
@@ -121,6 +132,15 @@ void nk_console_quit_button_focused(struct nk_console* widget, void* user_data) 
 void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(radio, radio->label);
+}
+
+void nk_console_demo_list_view_item_clicked(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    char message[64];
+    int selected = nk_console_list_view_selected(widget);
+    const char* label = nk_console_list_view_selected_label(widget);
+    snprintf(message, sizeof(message), "Selected: %s", label);
+    nk_console_show_message(widget, message);
 }
 
 struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
@@ -301,6 +321,24 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_label(tree3, "A label inside the Language tree");
 
             nk_console_button_onclick(tree_button, "Back", &nk_console_button_back);
+        }
+
+        // List View
+        struct nk_console* list_view_button = nk_console_button(widgets, "List View");
+        {
+            nk_console_set_tooltip(list_view_button, "Demonstrates virtual scrolling with 200 items.");
+
+            // Build the Liste View labels
+            for (int i = 0; i < NK_CONSOLE_DEMO_LIST_VIEW_COUNT; i++) {
+                snprintf(list_view_labels[i], sizeof(list_view_labels[i]), "Item #%d", i + 1);
+            }
+
+            // Add the List View
+            struct nk_console* list_view = nk_console_list_view(list_view_button, "The List View", NK_CONSOLE_DEMO_LIST_VIEW_COUNT, &list_view_event_get_label);
+            nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_list_view_item_clicked);
+
+            // Back button
+            nk_console_button_onclick(list_view_button, "Back", &nk_console_button_back);
         }
 
         // Progress Bar
