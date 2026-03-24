@@ -319,7 +319,8 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
 #endif
 #ifndef cvector_clib_memmove
-#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+// TODO: Implement our own memmove() using Nuklear's allocators
+//#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
 #endif
 #ifndef CVECTOR_H
 #define CVECTOR_H "vendor/c-vector/cvector.h"
