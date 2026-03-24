@@ -39,6 +39,11 @@ static float knob_float_test = 0.4f;
 static int radio_option = 1;
 static int radio_option2 = 0;
 
+// Tree
+static int tree_option1 = 0;
+static int tree_option2 = 0;
+static int tree_option3 = 0;
+
 // Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
@@ -267,6 +272,35 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_label(rules, "Green, rounded");
             nk_console_rule_horizontal(rules, nk_rgb(0, 255, 0), nk_true);
             nk_console_button_onclick(rules, "Back", &nk_console_button_back);
+        }
+
+        // Tree
+        struct nk_console* tree_button = nk_console_button(widgets, "Tree");
+        {
+            struct nk_console* tree = nk_console_tree(tree_button, "Options", nk_true);
+            nk_console_radio(tree, "Easy", &tree_option1);
+            nk_console_radio(tree, "Medium", &tree_option1);
+            nk_console_radio(tree, "Hard", &tree_option1);
+            nk_console_label(tree, "A label inside the Options tree");
+
+            struct nk_console* tree2 = nk_console_tree(tree_button, "Video", nk_false);
+            nk_console_radio(tree2, "1080p", &tree_option2);
+            nk_console_radio(tree2, "720p", &tree_option2);
+            nk_console_radio(tree2, "480p", &tree_option2);
+            nk_console_radio(tree2, "Potato", &tree_option2);
+            nk_console_label(tree2, "A label inside the Video tree");
+
+            struct nk_console* tree3 = nk_console_tree(tree_button, "Language", nk_false);
+            nk_console_radio(tree3, "English", &tree_option3);
+            nk_console_radio(tree3, "Chinese", &tree_option3);
+            nk_console_radio(tree3, "Hindi", &tree_option3);
+            nk_console_radio(tree3, "Spanish", &tree_option3);
+            nk_console_radio(tree3, "French", &tree_option3);
+            nk_console_radio(tree3, "Ukrainian", &tree_option3);
+            nk_console_radio(tree3, "Portuguese", &tree_option3);
+            nk_console_label(tree3, "A label inside the Language tree");
+
+            nk_console_button_onclick(tree_button, "Back", &nk_console_button_back);
         }
 
         // Progress Bar

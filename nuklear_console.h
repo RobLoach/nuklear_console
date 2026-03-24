@@ -73,6 +73,7 @@ typedef enum {
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
     NK_CONSOLE_RULE_HORIZONTAL,
+    NK_CONSOLE_TREE,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -258,7 +259,8 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_rule_horizontal.h"
+#include "nuklear_console_rule_horizontal.h"
+#include "nuklear_console_tree.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -317,7 +319,8 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
 #endif
 #ifndef cvector_clib_memmove
-#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+// TODO: Implement our own memmove() using Nuklear's allocators
+//#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
 #endif
 #ifndef CVECTOR_H
 #define CVECTOR_H "vendor/c-vector/cvector.h"
@@ -346,7 +349,8 @@ extern "C" {
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_rule_horizontal.h"
+#include "nuklear_console_rule_horizontal.h"
+#include "nuklear_console_tree.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -1077,9 +1081,11 @@ NK_API void nk_console_free_children(nk_console* console) {
     console->activeWidget = NULL;
 
     // Clear them all.
-    size_t count = cvector_size(console->children);
-    for (size_t i = 0; i < count; i++) {
-        nk_console_free(console->children[i]);
+    for (struct nk_console** it = cvector_begin(console->children); it != cvector_end(console->children); ++it) {
+        if (*it != NULL) {
+            nk_console_free(*it);
+            *it = NULL;
+        }
     }
 
     cvector_free(console->children);
@@ -1241,6 +1247,31 @@ NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
 
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
     if (parent == NULL || child == NULL) {
+        return;
+    }
+
+    // If we are adding it to a TREE, insert child as a sibling so navigation works naturally.
+    if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL && parent->data != NULL) {
+        nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
+
+        // Set the visibility of the child based on whether the tree is expanded.
+        child->visible = nk_console_tree_expanded(parent);
+
+        // Insert position: immediately after the tree and any previously owned children.
+        int widget_index = nk_console_get_widget_index(parent);
+        if (widget_index < 0) {
+            child->parent = parent;
+            cvector_push_back(parent->children, child);
+            cvector_push_back(tree_data->referenced_children, child);
+            return;
+        }
+
+        // We are adding it to the middle of the parent, so insert accordingly.
+        int insert_pos = widget_index + 1 + (int)cvector_size(tree_data->referenced_children);
+        insert_pos = NK_MIN(insert_pos, (int)cvector_size(parent->parent->children));
+        child->parent = parent->parent;
+        cvector_insert(parent->parent->children, insert_pos, child);
+        cvector_push_back(tree_data->referenced_children, child);
         return;
     }
 
