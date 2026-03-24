@@ -27,7 +27,16 @@ NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_boo
  * @param tree The tree widget to check against.
  * @return True if the tree is opened, false otherwise.
  */
-NK_API nk_bool nk_console_tree_is_expanded(nk_console* tree);
+NK_API nk_bool nk_console_tree_expanded(nk_console* tree);
+
+/**
+ * Sets whether or not the tree should be expanded.
+ *
+ * @param tree The tree widget to check against.
+ * @param expanded True to expand the tree, false otherwise.
+ * @return True if the tree is opened, false otherwise.
+ */
+NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded);
 
 #if defined(__cplusplus)
 }
@@ -43,12 +52,24 @@ NK_API nk_bool nk_console_tree_is_expanded(nk_console* tree);
 extern "C" {
 #endif
 
-NK_API nk_bool nk_console_tree_is_expanded(nk_console* tree) {
-    if (tree == NULL || tree->data == NULL) {
+NK_API nk_bool nk_console_tree_expanded(nk_console* tree) {
+    if (tree == NULL || tree->data == NULL || tree->type != NK_CONSOLE_TREE) {
         return nk_false;
     }
     nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
     return (data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN) ? nk_true : nk_false;
+}
+
+NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded) {
+    if (tree == NULL || tree->data == NULL || tree->type != NK_CONSOLE_TREE) {
+        return nk_false;
+    }
+
+    nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
+    data->button.symbol = expanded ? NK_SYMBOL_TRIANGLE_DOWN : NK_SYMBOL_TRIANGLE_RIGHT;
+
+    // Invoke the click event so that the children update their visibility.
+    nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CLICKED);
 }
 
 static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {

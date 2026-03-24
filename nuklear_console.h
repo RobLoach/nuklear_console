@@ -1253,7 +1253,7 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
 
         // Set the visility of the child based on whether the tree is expanded.
-        child->visible = nk_console_tree_is_expanded(parent);
+        child->visible = nk_console_tree_expanded(parent);
 
         // Insert position: immediately after the tree and any previously owned children.
         int widget_index = nk_console_get_widget_index(parent);
