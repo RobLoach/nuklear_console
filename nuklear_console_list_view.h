@@ -26,7 +26,6 @@ typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_vi
 typedef struct nk_console_list_view_data {
     struct nk_list_view view;
     nk_flags flags;
-    int row_height;
     int row_count;
     float height;
     nk_uint scroll_pointer;
@@ -94,7 +93,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_bool is_active = nk_console_is_active_widget(widget);
 
-    int row_height = (int)(top->ctx->style.font->height + top->ctx->style.window.spacing.y);
+    float row_height = top->ctx->style.font->height + top->ctx->style.window.spacing.y;
     float height = data->height > 0 ? data->height : 400.0f;
 
     /* Layout the widget with the correct visible height so widget_bounds is accurate. */
@@ -142,9 +141,10 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             if (data->selected > 0) {
                 data->selected--;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
-                nk_uint sel_top = (nk_uint)(data->selected * row_height);
-                if (sel_top < data->_scroll_y) {
-                    data->_scroll_y = sel_top;
+                if (data->view.scroll_pointer && (int)data->selected < data->view.begin) {
+                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)row_height;
+                    *data->view.scroll_pointer = new_scroll;
+                    data->_scroll_y = new_scroll;
                 }
             } else {
                 /* At top: move focus to the previous sibling widget. */
@@ -164,10 +164,19 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             if (data->row_count > 0 && data->selected < data->row_count - 1) {
                 data->selected++;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
-                nk_uint sel_bot = (nk_uint)((data->selected + 1) * row_height);
-                float visible_height = height;
-                if (sel_bot > data->_scroll_y + (nk_uint)visible_height) {
-                    data->_scroll_y = sel_bot - (nk_uint)visible_height;
+                if (data->view.scroll_pointer && data->view.count > 0) {
+                    /* Scroll if selected is at or past the last fully-visible row. */
+                    int last_full = data->view.begin + data->view.count - 2;
+                    if ((int)data->selected > last_full) {
+                        int new_begin = (int)data->selected - (data->view.count - 2);
+                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - data->view.count) * (nk_uint)row_height;
+                        nk_uint new_scroll = (float)NK_MAX(0, new_begin) * row_height;
+                        if (new_scroll > max_scroll) new_scroll = max_scroll;
+                        if (new_scroll != data->_scroll_y) {
+                            *data->view.scroll_pointer = new_scroll;
+                            data->_scroll_y = new_scroll;
+                        }
+                    }
                 }
             } else {
                 /* At bottom: move focus to the next sibling widget. */
@@ -257,6 +266,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
         }
         nk_list_view_end(&data->view);
+        if (data->view.scroll_pointer) data->_scroll_y = *data->view.scroll_pointer;
     }
 
     return widget_bounds;
