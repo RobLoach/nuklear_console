@@ -1253,7 +1253,7 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
     if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL && parent->data != NULL) {
         nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
 
-        // Set the visility of the child based on whether the tree is expanded.
+        // Set the visibility of the child based on whether the tree is expanded.
         child->visible = nk_console_tree_expanded(parent);
 
         // Insert position: immediately after the tree and any previously owned children.

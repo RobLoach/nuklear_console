@@ -30,11 +30,11 @@ NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_boo
 NK_API nk_bool nk_console_tree_expanded(nk_console* tree);
 
 /**
- * Sets whether or not the tree should be expanded.
+ * Expand or collapse the given tree.
  *
- * @param tree The tree widget to check against.
- * @param expanded True to expand the tree, false otherwise.
- * @return True if the tree is opened, false otherwise.
+ * @param tree The tree widget to expand/collapse.
+ * @param expanded True to expand the tree, false to collapse.
+ * @return True if the tree is now opened, false otherwise.
  */
 NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded);
 
