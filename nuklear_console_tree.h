@@ -59,16 +59,16 @@ static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
         }
     }
 
-    // Update the scrollbar.
-    nk_console* top = nk_console_get_top(tree);
-    if (top == NULL || top->data == NULL) {
-        return;
+    // Force the scrollbar to update if needed.
+    if (!expanded) {
+        nk_console* top = nk_console_get_top(tree);
+        if (top == NULL || top->data == NULL) {
+            return;
+        }
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        top_data->scroll_requested = nk_true;
+        top_data->scrollbar_required = nk_true;
     }
-    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    top_data->scroll_requested = nk_true;
-
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(tree->ctx);
-    nk_console_check_up_down(tree, widget_bounds);
 }
 
 static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {

@@ -1247,21 +1247,27 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         return;
     }
 
-    // If the parent is a tree, insert child as a sibling so navigation works naturally.
+    // If we are adding it to a TREE, insert child as a sibling so navigation works naturally.
     if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL) {
         nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
-        // Insert position: immediately after the tree and any previously owned children.
-        int insert_pos = nk_console_get_widget_index(parent) + 1
-                         + (int)cvector_size(tree_data->referenced_children);
-        child->parent = parent->parent;
-        child->visible = tree_data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN;
-        // Grow the array by one, then shift elements right to make room.
-        cvector_push_back(parent->parent->children, NULL);
-        size_t total = cvector_size(parent->parent->children);
-        for (size_t i = total - 1; i > (size_t)insert_pos; i--) {
-            parent->parent->children[i] = parent->parent->children[i - 1];
+        if (tree_data == NULL) {
+            child->parent = parent;
+            cvector_push_back(parent->children, child);
+            return;
         }
-        parent->parent->children[insert_pos] = child;
+        // Insert position: immediately after the tree and any previously owned children.
+        int widget_index = nk_console_get_widget_index(parent);
+        if (widget_index < 0) {
+            child->parent = parent;
+            cvector_push_back(parent->children, child);
+            cvector_push_back(tree_data->referenced_children, child);
+            return;
+        }
+        int insert_pos = widget_index + 1 + (int)cvector_size(tree_data->referenced_children);
+        child->visible = tree_data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN;
+        insert_pos = NK_MIN(insert_pos, (int)cvector_size(parent->parent->children));
+        child->parent = parent->parent;
+        cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);
         return;
     }
