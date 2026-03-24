@@ -119,16 +119,20 @@ static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
         return;
     }
 
-    // Free all referenced children and remove them from their parent's children vector.
+    // Free up all the referenced children, removing them from the parent.
     for (size_t i = 0; i < cvector_size(data->referenced_children); i++) {
         nk_console* child = data->referenced_children[i];
         if (child == NULL) {
             continue;
         }
+
+        // Find the child index in the parent.
         int index = nk_console_get_widget_index(child);
         if (index >= 0) {
             cvector_erase(child->parent->children, index);
         }
+
+        // Free it up.
         nk_console_free(child);
     }
 
