@@ -259,7 +259,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_rule_horizontal.h"
+#include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
@@ -348,7 +348,7 @@ extern "C" {
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_rule_horizontal.h"
+#include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
@@ -1080,9 +1080,10 @@ NK_API void nk_console_free_children(nk_console* console) {
     console->activeWidget = NULL;
 
     // Clear them all.
-    for (nk_console** it = cvector_begin(console->children); it != cvector_end(console->children); ++it) {
+    for (struct nk_console** it = cvector_begin(console->children); it != cvector_end(console->children); ++it) {
         if (*it != NULL) {
             nk_console_free(*it);
+            *it = NULL;
         }
     }
 

@@ -60,36 +60,18 @@ NK_API nk_bool nk_console_tree_expanded(nk_console* tree) {
     return (data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN) ? nk_true : nk_false;
 }
 
-NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded) {
-    if (tree == NULL || tree->data == NULL || tree->type != NK_CONSOLE_TREE) {
-        return nk_false;
-    }
-
+/**
+ * Applies the expansion or collapse of the tree.
+ *
+ * @param tree The tree to act on.
+ * @param expanded True to expand the widget, false to collapse.
+ */
+static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
     data->button.symbol = expanded ? NK_SYMBOL_TRIANGLE_DOWN : NK_SYMBOL_TRIANGLE_RIGHT;
 
-    // Invoke the click event so that the children update their visibility.
-    nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CLICKED);
-}
-
-static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
-    if (tree == NULL || tree->data == NULL) {
-        return;
-    }
-    NK_UNUSED(user_data);
-    nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
+    // Toggle visibility of the children for the tree.
     nk_console** referenced_children = data->referenced_children;
-
-    nk_bool expanded;
-    if (data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN) {
-        data->button.symbol = NK_SYMBOL_TRIANGLE_RIGHT;
-        expanded = nk_false;
-    }
-    else {
-        data->button.symbol = NK_SYMBOL_TRIANGLE_DOWN;
-        expanded = nk_true;
-    }
-
     for (size_t i = 0; i < cvector_size(referenced_children); i++) {
         if (referenced_children[i] != NULL) {
             referenced_children[i]->visible = expanded;
@@ -99,15 +81,34 @@ static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
     // Force the scrollbar to update if needed.
     if (!expanded) {
         nk_console* top = nk_console_get_top(tree);
-        if (top == NULL || top->data == NULL) {
-            return;
+        if (top != NULL && top->data != NULL) {
+            nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+            top_data->scroll_requested = nk_true;
+            top_data->scrollbar_required = nk_true;
         }
-        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        top_data->scroll_requested = nk_true;
-        top_data->scrollbar_required = nk_true;
+    }
+}
+
+NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded) {
+    if (tree == NULL || tree->data == NULL || tree->type != NK_CONSOLE_TREE) {
+        return nk_false;
     }
 
-    // Finally, invoke the changed event since it opened/closed.
+    nk_bool current = nk_console_tree_expanded(tree);
+    nk_console_tree_apply_expanded(tree, expanded);
+    if (current != expanded) {
+        nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
+    }
+    return expanded;
+}
+
+static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
+    if (tree == NULL || tree->data == NULL) {
+        return;
+    }
+    NK_UNUSED(user_data);
+    nk_bool collapsed = !nk_console_tree_expanded(tree);
+    nk_console_tree_apply_expanded(tree, collapsed);
     nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
 }
 
@@ -138,7 +139,7 @@ NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_boo
 
     nk_console* widget = nk_console_label(parent, label);
     if (widget == NULL) {
-
+        NK_CONSOLE_FREE(nk_handle_id(0), data);
         return NULL;
     }
     widget->type = NK_CONSOLE_TREE;
