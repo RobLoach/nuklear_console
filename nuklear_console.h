@@ -1080,9 +1080,10 @@ NK_API void nk_console_free_children(nk_console* console) {
     console->activeWidget = NULL;
 
     // Clear them all.
-    size_t count = cvector_size(console->children);
-    for (size_t i = 0; i < count; i++) {
-        nk_console_free(console->children[i]);
+    for (nk_console** it = cvector_begin(console->children); it != cvector_end(console->children); ++it) {
+        if (*it != NULL) {
+            nk_console_free(*it);
+        }
     }
 
     cvector_free(console->children);
@@ -1248,13 +1249,12 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
     }
 
     // If we are adding it to a TREE, insert child as a sibling so navigation works naturally.
-    if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL) {
+    if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL && parent->data != NULL) {
         nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
-        if (tree_data == NULL) {
-            child->parent = parent;
-            cvector_push_back(parent->children, child);
-            return;
-        }
+
+        // Set the visility of the child based on whether the tree is expanded.
+        child->visible = nk_console_tree_is_expanded(parent);
+
         // Insert position: immediately after the tree and any previously owned children.
         int widget_index = nk_console_get_widget_index(parent);
         if (widget_index < 0) {
@@ -1263,8 +1263,9 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
             cvector_push_back(tree_data->referenced_children, child);
             return;
         }
+
+        // We are adding it to the middle of the parent, so insert accordingly.
         int insert_pos = widget_index + 1 + (int)cvector_size(tree_data->referenced_children);
-        child->visible = tree_data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN;
         insert_pos = NK_MIN(insert_pos, (int)cvector_size(parent->parent->children));
         child->parent = parent->parent;
         cvector_insert(parent->parent->children, insert_pos, child);

@@ -15,11 +15,19 @@ extern "C" {
  *
  * @param parent The parent widget.
  * @param label The label for the widget
- * @param expanded Whether or not the tree should begin as expanded.
+ * @param expanded The starting state of whether or not the tree should be expanded.
  *
  * @return The created widget.
  */
 NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_bool expanded);
+
+/**
+ * Retrieves whether or not the given tree is expanded.
+ *
+ * @param tree The tree widget to check against.
+ * @return True if the tree is opened, false otherwise.
+ */
+NK_API nk_bool nk_console_tree_is_expanded(nk_console* tree);
 
 #if defined(__cplusplus)
 }
@@ -34,6 +42,14 @@ NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_boo
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+NK_API nk_bool nk_console_tree_is_expanded(nk_console* tree) {
+    if (tree == NULL || tree->data == NULL) {
+        return nk_false;
+    }
+    nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
+    return (data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN) ? nk_true : nk_false;
+}
 
 static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
     if (tree == NULL || tree->data == NULL) {
@@ -69,6 +85,9 @@ static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
         top_data->scroll_requested = nk_true;
         top_data->scrollbar_required = nk_true;
     }
+
+    // Finally, invoke the changed event since it opened/closed.
+    nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
 }
 
 static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
