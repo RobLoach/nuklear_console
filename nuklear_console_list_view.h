@@ -11,14 +11,14 @@
 typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_view, int index);
 
 typedef struct nk_console_list_view_data {
-    struct nk_list_view view;
+    struct nk_list_view view; /** The Nuklear list view object itself. */
     nk_flags flags;
-    int row_count;
-    int rows_visible;
-    nk_uint scroll_pointer;
-    nk_uint selected;
-    nk_uint _scroll_y;
-    nk_console_list_view_get_label get_label_callback;
+    int row_count; /** The number of available rows in the dataset. */
+    int rows_visible; /** The number of rows to display when the user is looking at the list. */
+    nk_uint scroll_pointer; /** Tracks where the user is scrolling the list. */
+    nk_uint selected; /** Which item has been selected. */
+    nk_uint _scroll_y; /** Helps calculate the list view scroll. */
+    nk_console_list_view_get_label get_label_callback; /** The callback used to retrieve the labels for each item. */
 } nk_console_list_view_data;
 
 #if defined(__cplusplus)
@@ -82,6 +82,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     nk_console* top = nk_console_get_top(widget);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_bool is_active = nk_console_is_active_widget(widget);
+    nk_uint original_selected = data->selected;
 
     float row_height = top->ctx->style.font->height + top->ctx->style.button.border * 2 + top->ctx->style.button.padding.y * 2;
     float scroll_row_height = row_height + top->ctx->style.window.spacing.y;
@@ -242,8 +243,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
     }
 
-    // TODO: Fix the scroll of the list view.
-
+    // Display all the items.
     nk_layout_row_dynamic(top->ctx, height, 1);
     if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, row_height, data->row_count)) {
         /* Highlight the selected row when the list is focused. */
@@ -287,6 +287,11 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
         nk_list_view_end(&data->view);
         if (data->view.scroll_pointer) data->_scroll_y = *data->view.scroll_pointer;
+    }
+
+    // Trigger the changed event if they've selected a different element.
+    if (original_selected != data->selected) {
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
     }
 
     return widget_bounds;
