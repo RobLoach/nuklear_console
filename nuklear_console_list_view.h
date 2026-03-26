@@ -73,7 +73,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_bool is_active = nk_console_is_active_widget(widget);
 
-    float row_height = top->ctx->style.font->height + top->ctx->style.button.border * 2 + top->ctx->style.button.padding.y * 2 + top->ctx->style.window.spacing.y;
+    float row_height = top->ctx->style.font->height + top->ctx->style.button.border * 2 + top->ctx->style.button.padding.y * 2;
+    float scroll_row_height = row_height + top->ctx->style.window.spacing.y;
     float height = data->height > 0 ? data->height : 400.0f;
 
     /* Layout the widget with the correct visible height so widget_bounds is accurate. */
@@ -108,7 +109,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 data->selected--;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
                 if (data->view.scroll_pointer && (int)data->selected < data->view.begin) {
-                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)row_height;
+                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
                     data->_scroll_y = new_scroll;
                 }
@@ -135,8 +136,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     int last_full = data->view.begin + data->view.count - 2;
                     if ((int)data->selected > last_full) {
                         int new_begin = (int)data->selected - (data->view.count - 2);
-                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - data->view.count) * (nk_uint)row_height;
-                        nk_uint new_scroll = (float)NK_MAX(0, new_begin) * row_height;
+                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - data->view.count) * (nk_uint)scroll_row_height;
+                        nk_uint new_scroll = (float)NK_MAX(0, new_begin) * scroll_row_height;
                         if (new_scroll > max_scroll) new_scroll = max_scroll;
                         if (new_scroll != data->_scroll_y) {
                             *data->view.scroll_pointer = new_scroll;
