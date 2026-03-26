@@ -1,26 +1,6 @@
 #ifndef NK_CONSOLE_LIST_VIEW_H__
 #define NK_CONSOLE_LIST_VIEW_H__
 
-/**
- * TODO: Fix this...
- *
-
- static const char *list[1024] = {
-};
-struct nk_list_view view;
-nk_layout_row_dynamic(ctx, 400, 1);
-if (nk_list_view_begin(ctx, &view, "test", NK_WINDOW_BORDER, 25, 1024)) {
-    nk_layout_row_dynamic(ctx, 25, 1);
-    for (int i = 0; i <= view.count; ++i) {
-        nk_label(ctx, list[view.begin + i], NK_TEXT_CENTERED);
-    nk_list_view_end(&view);
-}
- */
-
-#ifndef NK_CONSOLE_LIST_VIEW_LABEL_SIZE
-#define NK_CONSOLE_LIST_VIEW_LABEL_SIZE 128
-#endif
-
 typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_view, int index);
 
 typedef struct nk_console_list_view_data {
@@ -93,26 +73,12 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_bool is_active = nk_console_is_active_widget(widget);
 
-    float row_height = top->ctx->style.font->height + top->ctx->style.window.spacing.y;
+    float row_height = top->ctx->style.font->height + top->ctx->style.button.border * 2 + top->ctx->style.button.padding.y * 2 + top->ctx->style.window.spacing.y;
     float height = data->height > 0 ? data->height : 400.0f;
 
     /* Layout the widget with the correct visible height so widget_bounds is accurate. */
     //nk_layout_row_dynamic(top->ctx, height, 1);
     struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
-
-    // /* Scroll the parent window to bring this widget into view when focused. */
-    // if (is_active && top_data->scroll_requested) {
-    //     struct nk_rect cr = nk_window_get_content_region(console->ctx);
-    //     nk_uint ox, oy;
-    //     nk_window_get_scroll(console->ctx, &ox, &oy);
-    //     if (widget_bounds.y + widget_bounds.h > cr.y + cr.h + (float)oy) {
-    //         nk_window_set_scroll(console->ctx, ox,
-    //             (nk_uint)(widget_bounds.y + widget_bounds.h - cr.y - cr.h));
-    //     } else if (widget_bounds.y < cr.y + (float)oy) {
-    //         nk_window_set_scroll(console->ctx, ox, (nk_uint)(widget_bounds.y - cr.y));
-    //     }
-    //     top_data->scroll_requested = nk_false;
-    // }
 
     /* Handle keyboard/gamepad navigation. */
     if (is_active && !top_data->input_processed) {

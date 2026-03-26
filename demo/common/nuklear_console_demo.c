@@ -326,7 +326,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         // List View
         struct nk_console* list_view_button = nk_console_button(widgets, "List View");
         {
-            nk_console_set_tooltip(list_view_button, "Demonstrates virtual scrolling with 200 items.");
+            nk_console_button_onclick(list_view_button, "List View Demonstration", &nk_console_button_back);
 
             // Build the Liste View labels
             for (int i = 0; i < NK_CONSOLE_DEMO_LIST_VIEW_COUNT; i++) {
