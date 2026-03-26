@@ -2,7 +2,7 @@
 #define NK_CONSOLE_LIST_VIEW_H__
 
 /**
- * Callback that will be used to retrieve the label of a given liste view item.
+ * Callback that will be used to retrieve the label of a given list view item.
  *
  * @param list_view The list view widget.
  * @param index Which row to get the label for.
@@ -68,7 +68,7 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
     if (!list_view || !list_view->data || list_view->type != NK_CONSOLE_LIST_VIEW)
         return NULL;
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
-    if (data->selected < 0 || data->selected >= data->row_count)
+    if (data->selected >= (nk_uint)data->row_count)
         return NULL;
     return data->get_label_callback(list_view, data->selected);
 }
@@ -89,7 +89,6 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     float height = row_height * data->rows_visible;
 
     /* Layout the widget with the correct visible height so widget_bounds is accurate. */
-    //nk_layout_row_dynamic(top->ctx, height, 1);
     struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
 
     /* Handle keyboard/gamepad navigation. */
@@ -113,7 +112,6 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->up_down_hold_timer  = 0;
             top_data->up_down_repeat_timer = 0;
         }
-
 
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             /* Page up: jump selection up by rows_visible items. */
@@ -243,7 +241,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
     }
 
-    // Display all the items.
+    /* Display all the items. */
     nk_layout_row_dynamic(top->ctx, height, 1);
     if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, row_height, data->row_count)) {
         /* Highlight the selected row when the list is focused. */
@@ -257,7 +255,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 break;
             }
 
-            // Render each row as a selectable button, highlighting if selected
+            /* Render each row as a selectable button, highlighting if selected. */
             nk_bool is_selected = (data->view.begin + i) == data->selected;
 
             if (is_selected && is_active) {
@@ -289,7 +287,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         if (data->view.scroll_pointer) data->_scroll_y = *data->view.scroll_pointer;
     }
 
-    // Trigger the changed event if they've selected a different element.
+    /* Trigger the changed event if they've selected a different element. */
     if (original_selected != data->selected) {
         nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
     }
