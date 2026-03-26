@@ -334,7 +334,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             }
 
             // Add the List View
-            struct nk_console* list_view = nk_console_list_view(list_view_button, "The List View", NK_CONSOLE_DEMO_LIST_VIEW_COUNT, &list_view_event_get_label);
+            struct nk_console* list_view = nk_console_list_view(list_view_button, "The List View", 10, NK_CONSOLE_DEMO_LIST_VIEW_COUNT, &list_view_event_get_label);
             nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_list_view_item_clicked);
 
             // Back button

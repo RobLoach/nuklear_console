@@ -18,7 +18,7 @@ nk_bool closeWindow = nk_false;
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(800, 600, "nuklear_console_demo");
+    InitWindow(1280, 720, "nuklear_console_demo");
     SetWindowMinSize(200, 200);
 
     // Create the Nuklear Context

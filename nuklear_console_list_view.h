@@ -1,17 +1,23 @@
 #ifndef NK_CONSOLE_LIST_VIEW_H__
 #define NK_CONSOLE_LIST_VIEW_H__
 
+/**
+ * Callback that will be used to retrieve the label of a given liste view item.
+ *
+ * @param list_view The list view widget.
+ * @param index Which row to get the label for.
+ * @return The label for the item.
+ */
 typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_view, int index);
 
 typedef struct nk_console_list_view_data {
     struct nk_list_view view;
     nk_flags flags;
     int row_count;
-    float height;
+    int rows_visible;
     nk_uint scroll_pointer;
     nk_uint selected;
     nk_uint _scroll_y;
-
     nk_console_list_view_get_label get_label_callback;
 } nk_console_list_view_data;
 
@@ -24,9 +30,13 @@ extern "C" {
  *
  * @param parent Where the element should be placed.
  * @param id A unique identifier for the list view.
- * @param count The number of items.
+ * @param rows_visible The number of rows to be shown at any given time.
+ * @param item_count The number of items in the data set.
+ * @param get_label_callback The callback that will be used to retrieve individual labels.
+ *
+ * @see nk_console_list_view_get_label
  */
-NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int count, nk_console_list_view_get_label get_label_callback);
+NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, int item_count, nk_console_list_view_get_label get_label_callback);
 
 /**
  * Get the currently selected index.
@@ -75,7 +85,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     float row_height = top->ctx->style.font->height + top->ctx->style.button.border * 2 + top->ctx->style.button.padding.y * 2;
     float scroll_row_height = row_height + top->ctx->style.window.spacing.y;
-    float height = data->height > 0 ? data->height : 400.0f;
+    float height = row_height * data->rows_visible;
 
     /* Layout the widget with the correct visible height so widget_bounds is accurate. */
     //nk_layout_row_dynamic(top->ctx, height, 1);
@@ -226,6 +236,13 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 top->ctx->style.button.text_normal = saved_text;
             }
 
+            if (nk_widget_is_hovered(top->ctx)) {
+                int hovered_index = data->view.begin + i;
+                if ((int)data->selected != hovered_index) {
+                    data->selected = hovered_index;
+                }
+            }
+
             if (clicked) {
                 data->selected = data->view.begin + i;
                 top_data->input_processed = nk_true;
@@ -239,7 +256,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     return widget_bounds;
 }
 
-NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int count, nk_console_list_view_get_label get_label_callback) {
+NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, int item_count, nk_console_list_view_get_label get_label_callback) {
     if (parent == NULL || get_label_callback == NULL) {
         return NULL;
     }
@@ -249,7 +266,8 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
         return NULL;
     }
     nk_zero(data, sizeof(nk_console_list_view_data));
-    data->row_count = count;
+    data->row_count = item_count;
+    data->rows_visible = rows_visible;
     data->get_label_callback = get_label_callback;
 
     nk_console* widget = nk_console_label(parent, id);
