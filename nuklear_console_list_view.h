@@ -113,17 +113,48 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->up_down_repeat_timer = 0;
         }
 
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) ||
+
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
+            /* Page up: jump selection up by rows_visible items. */
+            if (data->selected > 0) {
+                data->selected = (nk_uint)NK_MAX(0, (int)data->selected - data->rows_visible);
+                if (data->view.scroll_pointer) {
+                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
+                    *data->view.scroll_pointer = new_scroll;
+                    data->_scroll_y = new_scroll;
+                }
+            }
+            top_data->input_processed = nk_true;
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
+            /* Page down: jump selection down by rows_visible items. */
+            if (data->row_count > 0 && (int)data->selected < data->row_count - 1) {
+                data->selected = (nk_uint)NK_MIN(data->row_count - 1, (int)data->selected + data->rows_visible);
+                if (data->view.scroll_pointer && data->view.count > 0) {
+                    int last_full = data->view.begin + data->view.count - 2;
+                    if ((int)data->selected > last_full) {
+                        int new_begin = (int)data->selected - (data->view.count - 2);
+                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - data->view.count) * (nk_uint)scroll_row_height;
+                        nk_uint new_scroll = (float)NK_MAX(0, new_begin) * scroll_row_height;
+                        if (new_scroll > max_scroll) new_scroll = max_scroll;
+                        *data->view.scroll_pointer = new_scroll;
+                        data->_scroll_y = new_scroll;
+                    }
+                }
+            }
+            top_data->input_processed = nk_true;
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) ||
                 (up_held && repeat_fire)) {
             if (data->selected > 0) {
                 data->selected--;
-                nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
                 if (data->view.scroll_pointer && (int)data->selected < data->view.begin) {
                     nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
                     data->_scroll_y = new_scroll;
                 }
-            } else {
+            }
+            else {
                 /* At top: move focus to the previous sibling widget. */
                 int idx = nk_console_get_widget_index(widget);
                 while (--idx >= 0) {
@@ -136,11 +167,11 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 }
             }
             top_data->input_processed = nk_true;
-        } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
                 (down_held && repeat_fire)) {
             if (data->row_count > 0 && data->selected < data->row_count - 1) {
                 data->selected++;
-                nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
                 if (data->view.scroll_pointer && data->view.count > 0) {
                     /* Scroll if selected is at or past the last fully-visible row. */
                     int last_full = data->view.begin + data->view.count - 2;
@@ -155,7 +186,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                         }
                     }
                 }
-            } else {
+            }
+            else {
                 /* At bottom: move focus to the next sibling widget. */
                 int idx = nk_console_get_widget_index(widget);
                 int sibling_count = (int)cvector_size(widget->parent->children);
@@ -169,7 +201,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 }
             }
             top_data->input_processed = nk_true;
-        } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             /* Move focus to the previous sibling widget. */
             int idx = nk_console_get_widget_index(widget);
             while (--idx >= 0) {
@@ -181,7 +214,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 }
             }
             top_data->input_processed = nk_true;
-        } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             /* Move focus to the next sibling widget. */
             int idx = nk_console_get_widget_index(widget);
             int sibling_count = (int)cvector_size(widget->parent->children);
@@ -194,10 +228,12 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 }
             }
             top_data->input_processed = nk_true;
-        } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
             top_data->input_processed = nk_true;
-        } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
+        }
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (widget->parent != NULL) {
                 nk_console_navigate_back(widget->parent);
                 top_data->scroll_requested = nk_true;
