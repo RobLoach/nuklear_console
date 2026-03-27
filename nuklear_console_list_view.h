@@ -7,14 +7,19 @@
  * @param list_view The list view widget.
  * @param index Which row to get the label for.
  * @return The label for the item.
+ *
+ * @see nk_console_list_view_data
  */
-typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_view, int index);
+typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_view, nk_uint index);
 
+/**
+ * Data associated with a List View Widget.
+ */
 typedef struct nk_console_list_view_data {
     struct nk_list_view view; /** The Nuklear list view object itself. */
     nk_flags flags; /** Flags that are used for the list_view. */
-    int row_count; /** The number of available rows in the dataset. */
-    int rows_visible; /** The number of rows to display when the user is looking at the list. */
+    nk_uint row_count; /** The number of available rows in the dataset. */
+    nk_uint rows_visible; /** The number of rows to display when the user is looking at the list. */
     nk_uint scroll_pointer; /** Tracks where the user is scrolling the list. */
     nk_uint selected; /** Which item has been selected. */
     nk_uint _scroll_y; /** Helps calculate the list view scroll. */
@@ -36,7 +41,7 @@ extern "C" {
  *
  * @see nk_console_list_view_get_label
  */
-NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, int item_count, nk_console_list_view_get_label get_label_callback);
+NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, nk_uint item_count, nk_console_list_view_get_label get_label_callback);
 
 /**
  * Get the currently selected index.
@@ -60,7 +65,19 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view);
  * @param list_view The List View widget.
  * @return The height of an individual row.
  */
-NK_API int nk_console_list_view_row_height(nk_console* list_view);
+NK_API float nk_console_list_view_row_height(nk_console* list_view);
+
+/**
+ * Retrieve the flags for the given List View Widget.
+ */
+NK_API nk_flags nk_console_list_view_flags(nk_console* list_view);
+
+/**
+ * Set the flags for the given List View Widget.
+ *
+ * For example: NK_WINDOW_BORDER, NK_WINDOW_TITLE
+ */
+NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags);
 
 #if defined(__cplusplus)
 }
@@ -72,11 +89,44 @@ NK_API int nk_console_list_view_row_height(nk_console* list_view);
 #ifndef NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 
-NK_API int nk_console_list_view_row_height(nk_console* list_view) {
+
+NK_API nk_flags nk_console_list_view_item_count(nk_console* list_view) {
+    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
+        return 0;
+    }
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    return data->row_count;
+}
+
+NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint item_count) {
+    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
+        return;
+    }
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    data->row_count = item_count;
+}
+
+NK_API nk_flags nk_console_list_view_flags(nk_console* list_view) {
+    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
+        return 0;
+    }
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    return data->flags;
+}
+
+NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags) {
+    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
+        return;
+    }
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    data->flags = flags;
+}
+
+NK_API float nk_console_list_view_row_height(nk_console* list_view) {
     if (list_view == NULL) {
         return 0;
     }
-    return list_view->ctx->style.font->height + list_view->ctx->style.button.border * 2 + list_view->ctx->style.button.padding.y * 2;
+    return list_view->ctx->style.font->height + list_view->ctx->style.button.border * 2.0f + list_view->ctx->style.button.padding.y * 2.0f;
 }
 
 NK_API nk_uint nk_console_list_view_selected(nk_console* list_view) {
@@ -111,7 +161,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     // Layout the widget with the correct visible height so widget_bounds is accurate.
     struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
-    widget_bounds.h = row_height * data->rows_visible;
+    widget_bounds.h = row_height * (float)data->rows_visible;
 
     if (widget->disabled) {
         nk_widget_disable_begin(top->ctx);
@@ -142,7 +192,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             // Page up: jump selection up by rows_visible items.
             if (data->selected > 0) {
-                data->selected = (nk_uint)NK_MAX(0, (int)data->selected - data->rows_visible);
+                data->selected = NK_MAX(0, data->selected - data->rows_visible);
                 if (data->view.scroll_pointer) {
                     nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
@@ -153,14 +203,14 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
             // Page down: jump selection down by rows_visible items.
-            if (data->row_count > 0 && (int)data->selected < data->row_count - 1) {
-                data->selected = (nk_uint)NK_MIN(data->row_count - 1, (int)data->selected + data->rows_visible);
+            if (data->row_count > 0 && data->selected < data->row_count - 1) {
+                data->selected = NK_MIN(data->row_count - 1, data->selected + data->rows_visible);
                 if (data->view.scroll_pointer && data->view.count > 0) {
                     int last_full = data->view.begin + data->view.count - 2;
                     if ((int)data->selected > last_full) {
                         int new_begin = (int)data->selected - (data->view.count - 2);
-                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - data->view.count) * (nk_uint)scroll_row_height;
-                        nk_uint new_scroll = (float)NK_MAX(0, new_begin) * scroll_row_height;
+                        nk_uint max_scroll = (nk_uint)((float)(NK_MAX(0, data->row_count - (nk_uint)data->view.count)) * scroll_row_height);
+                        nk_uint new_scroll = (nk_uint)((float)NK_MAX(0, new_begin) * scroll_row_height);
                         if (new_scroll > max_scroll) new_scroll = max_scroll;
                         *data->view.scroll_pointer = new_scroll;
                         data->_scroll_y = new_scroll;
@@ -202,8 +252,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     int last_full = data->view.begin + data->view.count - 2;
                     if ((int)data->selected > last_full) {
                         int new_begin = (int)data->selected - (data->view.count - 2);
-                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - data->view.count) * (nk_uint)scroll_row_height;
-                        nk_uint new_scroll = (float)NK_MAX(0, new_begin) * scroll_row_height;
+                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - (nk_uint)data->view.count) * (nk_uint)scroll_row_height;
+                        nk_uint new_scroll = (nk_uint)((float)NK_MAX(0, new_begin) * scroll_row_height);
                         if (new_scroll > max_scroll) new_scroll = max_scroll;
                         if (new_scroll != data->_scroll_y) {
                             *data->view.scroll_pointer = new_scroll;
@@ -269,14 +319,14 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     // Display the visible rows.
     nk_layout_row_dynamic(top->ctx, widget_bounds.h, 1);
-    if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, row_height, data->row_count)) {
+    if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, (int)row_height, (int)data->row_count)) {
         // Cache the normal button style to restore it later on.
         struct nk_style_item saved_normal = top->ctx->style.button.normal;
         struct nk_color saved_text = top->ctx->style.button.text_normal;
 
         nk_layout_row_dynamic(top->ctx, row_height, 1);
         for (int i = 0; i < data->view.count; ++i) {
-            const char* label = data->get_label_callback(widget, data->view.begin + i);
+            const char* label = data->get_label_callback(widget, (nk_uint)(data->view.begin + i));
             if (label == NULL) {
                 // TODO: When the list view item doesn't have a label, figure out a way to continue without misaligning selected.
                 break;
@@ -284,12 +334,12 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
             // Mouse Selection
             if (nk_input_is_mouse_moved(&top->ctx->input) && nk_widget_is_hovered(top->ctx) && !widget->disabled) {
-                data->selected = data->view.begin + i;
+                data->selected = (nk_uint)(data->view.begin + i);
                 nk_console_set_active_widget(widget);
             }
 
             // Render each row as a selectable button, highlighting if selected.
-            nk_bool is_selected = (data->view.begin + i) == data->selected;
+            nk_bool is_selected = (nk_uint)(data->view.begin + i) == data->selected;
 
             // Active items should get the active button style.
             if (is_selected && is_active) {
@@ -306,7 +356,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
 
             if (mouse_clicked && top_data->input_processed == nk_false) {
-                data->selected = data->view.begin + i;
+                data->selected = (nk_uint)(data->view.begin + i);
                 top_data->input_processed = nk_true;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
             }
@@ -331,7 +381,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     return widget_bounds;
 }
 
-NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, int item_count, nk_console_list_view_get_label get_label_callback) {
+NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, nk_uint item_count, nk_console_list_view_get_label get_label_callback) {
     if (parent == NULL || get_label_callback == NULL) {
         return NULL;
     }
@@ -342,7 +392,7 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
     }
     nk_zero(data, sizeof(nk_console_list_view_data));
     data->row_count = item_count;
-    data->rows_visible = rows_visible;
+    data->rows_visible = rows_visible <= 0 ? (nk_uint)10 : (nk_uint)rows_visible;
     data->get_label_callback = get_label_callback;
     data->flags = NK_WINDOW_BORDER;
 

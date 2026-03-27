@@ -476,7 +476,7 @@ NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
     return parent->activeWidget == widget;
 }
 
-nk_console* nk_console_active_parent(nk_console* console) {
+NK_API nk_console* nk_console_active_parent(nk_console* console) {
     if (console == NULL) {
         return NULL;
     }
@@ -1269,8 +1269,8 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         }
 
         // We are adding it to the middle of the parent, so insert accordingly.
-        int insert_pos = widget_index + 1 + (int)cvector_size(tree_data->referenced_children);
-        insert_pos = NK_MIN(insert_pos, (int)cvector_size(parent->parent->children));
+        size_t insert_pos = (size_t)widget_index + (size_t)1 + cvector_size(tree_data->referenced_children);
+        insert_pos = NK_MIN(insert_pos, cvector_size(parent->parent->children));
         child->parent = parent->parent;
         cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);

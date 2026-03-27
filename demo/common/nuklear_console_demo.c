@@ -48,7 +48,7 @@ static int tree_option3 = 0;
 #define NK_CONSOLE_DEMO_LIST_VIEW_COUNT 200
 char list_view_labels[NK_CONSOLE_DEMO_LIST_VIEW_COUNT][32];
 
-const char* list_view_event_get_label(struct nk_console* list_view, int index) {
+const char* list_view_event_get_label(struct nk_console* list_view, nk_uint index) {
     if (index < 0 || index >= NK_CONSOLE_DEMO_LIST_VIEW_COUNT) {
         return NULL;
     }
@@ -325,7 +325,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         // List View
         struct nk_console* list_view_button = nk_console_button(widgets, "List View");
         {
-            nk_console_button_onclick(list_view_button, "List View Demonstration", &nk_console_button_back);
+            nk_console_button_onclick(list_view_button, "List View", &nk_console_button_back);
 
             // Build the List View labels
             for (int i = 0; i < NK_CONSOLE_DEMO_LIST_VIEW_COUNT; i++) {

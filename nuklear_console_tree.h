@@ -129,7 +129,8 @@ static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
         // Find the child index in the parent.
         int index = nk_console_get_widget_index(child);
         if (index >= 0) {
-            cvector_erase(child->parent->children, index);
+            size_t size_index = (size_t)index;
+            cvector_erase(child->parent->children, size_index);
         }
 
         // Free it up.
