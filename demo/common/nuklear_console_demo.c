@@ -137,7 +137,6 @@ void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
 void nk_console_demo_list_view_item_clicked(struct nk_console* widget, void* user_data) {
     NK_UNUSED(user_data);
     char message[64];
-    int selected = nk_console_list_view_selected(widget);
     const char* label = nk_console_list_view_selected_label(widget);
     snprintf(message, sizeof(message), "Selected: %s", label);
     nk_console_show_message(widget, message);
@@ -328,7 +327,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         {
             nk_console_button_onclick(list_view_button, "List View Demonstration", &nk_console_button_back);
 
-            // Build the Liste View labels
+            // Build the List View labels
             for (int i = 0; i < NK_CONSOLE_DEMO_LIST_VIEW_COUNT; i++) {
                 snprintf(list_view_labels[i], sizeof(list_view_labels[i]), "Item #%d", i + 1);
             }
