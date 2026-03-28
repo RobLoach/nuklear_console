@@ -109,7 +109,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
             console->ctx->style.progress.cursor_normal = cursor_active;
         }
         else {
-            console->ctx->style.progress.cursor_normal = cursor_active;
+            console->ctx->style.progress.cursor_normal = cursor_hover;
         }
     }
 

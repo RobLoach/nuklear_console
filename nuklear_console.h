@@ -666,6 +666,7 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (nk_console_active_parent(top) == NULL) {
+                data->input_processed = nk_true;
                 return;
             }
 

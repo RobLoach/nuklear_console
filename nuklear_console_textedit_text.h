@@ -85,7 +85,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         int mask_strlen = (int)nk_strlen(mask);
         if (mask_strlen < buffer_strlen) { // Characters deleted
             int real_len = (int)nk_strlen(data->buffer);
-            int new_real_len = real_len - buffer_strlen - mask_strlen;
+            int new_real_len = real_len - (buffer_strlen - mask_strlen);
             if (new_real_len < 0) {
                 new_real_len = 0;
             }
