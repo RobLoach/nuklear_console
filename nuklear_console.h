@@ -595,14 +595,16 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             while (--widgetIndex >= 0) {
                 nk_console* t = widget->parent->children[widgetIndex];
                 if (t != NULL && nk_console_selectable(t)) {
-                    nk_console_set_active_widget(t);
                     target = t;
                     if (++count > 4) {
                         break;
                     }
                 }
             }
-            if (target != NULL) data->scroll_to_widget = target;
+            if (target != NULL) {
+                nk_console_set_active_widget(target);
+                data->scroll_to_widget = target;
+            }
             data->input_processed = nk_true;
         }
         // Page Down
@@ -610,17 +612,21 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             int widgetIndex = nk_console_get_widget_index(widget);
             nk_console* target = NULL;
             int count = 0;
-            while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
-                nk_console* t = widget->parent->children[widgetIndex];
-                if (nk_console_selectable(t)) {
-                    nk_console_set_active_widget(t);
-                    target = t;
-                    if (++count > 4) {
-                        break;
+            if (widget->parent != NULL) {
+                while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
+                    nk_console* t = widget->parent->children[widgetIndex];
+                    if (t != NULL && nk_console_selectable(t)) {
+                        target = t;
+                        if (++count > 4) {
+                            break;
+                        }
                     }
                 }
             }
-            if (target != NULL) data->scroll_to_widget = target;
+            if (target != NULL) {
+                nk_console_set_active_widget(target);
+                data->scroll_to_widget = target;
+            }
             data->input_processed = nk_true;
         }
         // Up
@@ -629,7 +635,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (nk_console_selectable(target)) {
+                if (target != NULL && nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
                     data->scroll_to_widget = target;
                     break;
@@ -641,12 +647,14 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
                  (down_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
-            while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
-                nk_console* target = widget->parent->children[widgetIndex];
-                if (nk_console_selectable(target)) {
-                    nk_console_set_active_widget(target);
-                    data->scroll_to_widget = target;
-                    break;
+            if (widget->parent != NULL) {
+                while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
+                    nk_console* target = widget->parent->children[widgetIndex];
+                    if (target != NULL && nk_console_selectable(target)) {
+                        nk_console_set_active_widget(target);
+                        data->scroll_to_widget = target;
+                        break;
+                    }
                 }
             }
             data->input_processed = nk_true;

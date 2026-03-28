@@ -121,7 +121,7 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
 
 NK_API void nk_console_render_message(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    if (data->messages == NULL || cvector_size(data->messages) == 0) {
+    if (data->messages == NULL || cvector_empty(data->messages)) {
         return;
     }
 

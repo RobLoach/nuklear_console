@@ -244,7 +244,7 @@ static const char* nk_console_file_list_view_get_label(struct nk_console* list_v
         return NULL;
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
-    if (cvector_size(data->entries) == 0) {
+    if (cvector_empty(data->entries)) {
         return "(Empty directory)";
     }
     if (index >= cvector_size(data->entries)) {
@@ -474,7 +474,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 
     // Build the static children (cancel, directory label, parent dir button) on the first call only.
     // children[1]'s label points directly to data->directory, so it auto-updates on subsequent calls.
-    if (widget->children == NULL || cvector_size(widget->children) == 0) {
+    if (widget->children == NULL || cvector_empty(widget->children)) {
         // Add the back/cancel button
         nk_console* cancelButton = nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
         nk_console_button_set_symbol(cancelButton, NK_SYMBOL_X);
@@ -508,7 +508,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
 
     // Show at least 1 item so the get_label callback can display "(Empty directory)".
-    nk_uint display_count = cvector_size(data->entries) == 0 ? 1 : (nk_uint)cvector_size(data->entries);
+    nk_uint display_count = cvector_empty(data->entries) ? 1 : (nk_uint)cvector_size(data->entries);
     if (cvector_size(widget->children) >= 4 && widget->children[3]->type == NK_CONSOLE_LIST_VIEW) {
         // Update the existing list view in place.
         nk_console_list_view_set_item_count(widget->children[3], display_count);
