@@ -536,8 +536,6 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 static void nk_console_file_back_free_children(nk_console* file, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_free_children(file);
-
-    NK_UNUSED(file);
 }
 
 static void nk_console_file_back(nk_console* file, void* user_data) {
