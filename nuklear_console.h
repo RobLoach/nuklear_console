@@ -1184,6 +1184,12 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
     }
     nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
     nk_console_set_active_parent(destination);
+    nk_console_set_active_widget(leaving_parent);
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data != NULL) {
+        data->scroll_requested = nk_true;
+        data->input_processed = nk_true;
+    }
     nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
 }
 

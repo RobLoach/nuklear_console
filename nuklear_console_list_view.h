@@ -79,6 +79,9 @@ NK_API nk_flags nk_console_list_view_flags(nk_console* list_view);
  */
 NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags);
 
+NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint item_count);
+NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -89,8 +92,7 @@ NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags
 #ifndef NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 
-
-NK_API nk_flags nk_console_list_view_item_count(nk_console* list_view) {
+NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view) {
     if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
         return 0;
     }
@@ -104,6 +106,11 @@ NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint i
     }
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     data->row_count = item_count;
+    data->selected = 0;
+    data->_scroll_y = 0;
+    if (data->view.scroll_pointer) {
+        *data->view.scroll_pointer = 0;
+    }
 }
 
 NK_API nk_flags nk_console_list_view_flags(nk_console* list_view) {
