@@ -537,11 +537,7 @@ static void nk_console_file_back_free_children(nk_console* file, void* user_data
     NK_UNUSED(user_data);
     nk_console_free_children(file);
 
-    if (file && file->data) {
-        nk_console* top = nk_console_get_top(file);
-        nk_console_top_data* data = (nk_console_top_data*)top->data;
-        data->scroll_requested = nk_true;
-    }
+    NK_UNUSED(file);
 }
 
 static void nk_console_file_back(nk_console* file, void* user_data) {

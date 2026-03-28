@@ -243,7 +243,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     nk_console* t = widget->parent->children[idx];
                     if (nk_console_selectable(t)) {
                         nk_console_set_active_widget(t);
-                        top_data->scroll_requested = nk_true;
+                        top_data->scroll_to_widget = t;
                         break;
                     }
                 }
@@ -277,7 +277,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     nk_console* t = widget->parent->children[idx];
                     if (nk_console_selectable(t)) {
                         nk_console_set_active_widget(t);
-                        top_data->scroll_requested = nk_true;
+                        top_data->scroll_to_widget = t;
                         break;
                     }
                 }
@@ -291,7 +291,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 nk_console* t = widget->parent->children[idx];
                 if (nk_console_selectable(t)) {
                     nk_console_set_active_widget(t);
-                    top_data->scroll_requested = nk_true;
+                    top_data->scroll_to_widget = t;
                     break;
                 }
             }
@@ -305,7 +305,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 nk_console* t = widget->parent->children[idx];
                 if (nk_console_selectable(t)) {
                     nk_console_set_active_widget(t);
-                    top_data->scroll_requested = nk_true;
+                    top_data->scroll_to_widget = t;
                     break;
                 }
             }
@@ -318,7 +318,6 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (widget->parent != NULL) {
                 nk_console_navigate_back(widget->parent);
-                top_data->scroll_requested = nk_true;
             }
             top_data->input_processed = nk_true;
         }

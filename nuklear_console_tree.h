@@ -82,7 +82,7 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     nk_console* top = nk_console_get_top(tree);
     if (top != NULL && top->data != NULL) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        top_data->scroll_requested = nk_true;
+        top_data->scroll_to_widget = tree;
         top_data->scrollbar_required = nk_true;
     }
 }
