@@ -548,6 +548,25 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 }
 
 /**
+ * BACK event handler for the file widget — frees the children so they are rebuilt on next open.
+ */
+static void nk_console_file_back_free_children(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_free_children(file);
+
+    if (file && file->data) {
+        nk_console* top = nk_console_get_top(file);
+        nk_console_top_data* data = (nk_console_top_data*)top->data;
+        data->scroll_requested = nk_true;
+    }
+}
+
+static void nk_console_file_back(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_back_free_children);
+}
+
+/**
  * Button callback for the main file button.
  */
 static void nk_console_file_main_click(nk_console* button, void* user_data) {
@@ -616,6 +635,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->data = data;
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_back);
     nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_destroy);
     return widget;
 }
