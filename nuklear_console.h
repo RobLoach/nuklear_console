@@ -175,7 +175,7 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
 NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API int nk_console_get_widget_index(nk_console* widget);
 NK_API void nk_console_check_tooltip(nk_console* console);
-NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
+NK_API void nk_console_check_up_down(nk_console* widget);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API nk_console* nk_console_active_parent(nk_console* console);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
@@ -561,7 +561,7 @@ NK_API int nk_console_get_widget_index(nk_console* widget) {
 /**
  * Allow the user to move up and down between widgets.
  */
-NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
+NK_API void nk_console_check_up_down(nk_console* widget) {
     nk_console* top = nk_console_get_top(widget);
     nk_console_top_data* data = (nk_console_top_data*)top->data;
 

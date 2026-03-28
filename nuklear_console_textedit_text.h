@@ -51,7 +51,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         }
         // Allow changing up/down only if they're not pressing backspace
         else if (!nk_input_is_key_pressed(&widget->ctx->input, NK_KEY_BACKSPACE)) {
-            nk_console_check_up_down(widget, widget_bounds);
+            nk_console_check_up_down(widget);
         }
 
         // Display the tooltip for the textedit.

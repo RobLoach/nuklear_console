@@ -224,7 +224,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     // Consume directional input before children have a chance to.
     if (nk_console_is_active_widget(console)) {
         nk_console_row_check_left_right(console, top);
-        nk_console_check_up_down(console, widget_bounds);
+        nk_console_check_up_down(console);
         nk_console* active = nk_console_get_active_widget(console);
 
         // Attempt to accurately move vertically if the new widget is also a row.

@@ -93,7 +93,7 @@ NK_API struct nk_rect nk_console_image_render(nk_console* widget) {
     }
 
     if (nk_console_is_active_widget(widget)) {
-        nk_console_check_up_down(widget, widget_bounds);
+        nk_console_check_up_down(widget);
         nk_console_check_tooltip(widget);
     }
 
