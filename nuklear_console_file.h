@@ -28,9 +28,7 @@ typedef struct nk_console_file_data {
     void* file_user_data; /** Custom user data for the file system. */
     nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
-    nk_console_file_entry* entries; /** Array of file/directory entries for the list view. */
-    int entry_count; /** Number of valid entries. */
-    int entry_capacity; /** Allocated capacity of the entries array. */
+    nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -207,19 +205,19 @@ static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
 }
 
 /**
- * Free all file entries stored in the file data, resetting the count.
+ * Free all file entries stored in the file data.
  */
 static void nk_console_file_entries_clear(nk_console_file_data* data) {
-    if (data == NULL || data->entries == NULL) {
+    if (data == NULL) {
         return;
     }
-    for (int i = 0; i < data->entry_count; i++) {
+    for (size_t i = 0; i < cvector_size(data->entries); i++) {
         if (data->entries[i].label != NULL) {
             nk_console_mfree(nk_handle_id(0), data->entries[i].label);
             data->entries[i].label = NULL;
         }
     }
-    data->entry_count = 0;
+    cvector_clear(data->entries);
 }
 
 /**
@@ -232,11 +230,8 @@ static void nk_console_file_destroy(nk_console* file, void* user_data) {
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     nk_console_file_entries_clear(data);
-    if (data->entries != NULL) {
-        nk_console_mfree(nk_handle_id(0), data->entries);
-        data->entries = NULL;
-        data->entry_capacity = 0;
-    }
+    cvector_free(data->entries);
+    data->entries = NULL;
 }
 
 /**
@@ -248,10 +243,10 @@ static const char* nk_console_file_list_view_get_label(struct nk_console* list_v
         return NULL;
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
-    if (data->entry_count == 0) {
+    if (cvector_size(data->entries) == 0) {
         return "(Empty directory)";
     }
-    if ((int)index >= data->entry_count) {
+    if (index >= cvector_size(data->entries)) {
         return NULL;
     }
     nk_console_file_entry* entry = &data->entries[index];
@@ -316,7 +311,7 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
 
     nk_console_list_view_data* lv_data = (nk_console_list_view_data*)list_view->data;
     nk_uint selected = lv_data->selected;
-    if ((int)selected >= data->entry_count) {
+    if (selected >= cvector_size(data->entries)) {
         return;
     }
 
@@ -423,22 +418,6 @@ NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* pat
         return NULL;
     }
 
-    // Grow the entries array if needed.
-    if (data->entry_count >= data->entry_capacity) {
-        int new_capacity = data->entry_capacity == 0 ? 16 : data->entry_capacity * 2;
-        nk_console_file_entry* new_entries = (nk_console_file_entry*)NK_CONSOLE_MALLOC(
-            nk_handle_id(0), NULL, (nk_size)(sizeof(nk_console_file_entry) * (nk_size)new_capacity));
-        if (new_entries == NULL) {
-            return NULL;
-        }
-        if (data->entries != NULL) {
-            NK_MEMCPY(new_entries, data->entries, (nk_size)(sizeof(nk_console_file_entry) * (nk_size)data->entry_count));
-            nk_console_mfree(nk_handle_id(0), data->entries);
-        }
-        data->entries = new_entries;
-        data->entry_capacity = new_capacity;
-    }
-
     // Copy the basename as the entry label.
     const char* basename = nk_console_file_basename(path);
     nk_size basename_len = (nk_size)nk_strlen(basename);
@@ -449,14 +428,14 @@ NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* pat
     NK_MEMCPY(label, basename, basename_len);
     label[basename_len] = '\0';
 
-    data->entries[data->entry_count].label = label;
-    data->entries[data->entry_count].is_directory = is_directory;
-    data->entry_count++;
+    nk_console_file_entry entry;
+    entry.label = label;
+    entry.is_directory = is_directory;
+    cvector_push_back(data->entries, entry);
 
     // Return the file widget as a non-NULL success indicator.
     return file;
 }
-
 
 /**
  * Gets the length of the directory string of the given file path.
@@ -525,7 +504,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
 
     // Show at least 1 item so the get_label callback can display "(Empty directory)".
-    nk_uint display_count = data->entry_count == 0 ? 1 : (nk_uint)data->entry_count;
+    nk_uint display_count = cvector_size(data->entries) == 0 ? 1 : (nk_uint)cvector_size(data->entries);
     if (cvector_size(widget->children) >= 4 && widget->children[3]->type == NK_CONSOLE_LIST_VIEW) {
         // Update the existing list view in place.
         nk_console_list_view_set_item_count(widget->children[3], display_count);
