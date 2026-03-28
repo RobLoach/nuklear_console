@@ -234,6 +234,7 @@ static void nk_console_file_destroy(nk_console* file, void* user_data) {
     data->entries = NULL;
 }
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
 /**
  * get_label callback for the file list view. Appends "/" to directory entries.
  */
@@ -262,6 +263,7 @@ static const char* nk_console_file_list_view_get_label(struct nk_console* list_v
     }
     return entry->label;
 }
+#endif
 
 /**
  * Appends a path component to data->directory, inserting the platform separator.
@@ -298,6 +300,7 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
     return nk_true;
 }
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
 /**
  * Click handler for the file list view. Navigates into directories or selects files.
  */
@@ -342,6 +345,7 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
         nk_console_navigate_back(file);
     }
 }
+#endif
 
 /**
  * Click handler for the "select this directory" button in directory-selection mode.
