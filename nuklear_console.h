@@ -74,6 +74,7 @@ typedef enum {
     NK_CONSOLE_KNOB_FLOAT,
     NK_CONSOLE_RULE_HORIZONTAL,
     NK_CONSOLE_TREE,
+    NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -261,6 +262,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
+#include "nuklear_console_list_view.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -351,6 +353,7 @@ extern "C" {
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
+#include "nuklear_console_list_view.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -473,7 +476,7 @@ NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
     return parent->activeWidget == widget;
 }
 
-nk_console* nk_console_active_parent(nk_console* console) {
+NK_API nk_console* nk_console_active_parent(nk_console* console) {
     if (console == NULL) {
         return NULL;
     }
@@ -1209,11 +1212,10 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
-        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_BACK:
-            return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
-            // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
+        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
+        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
+        // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
     }
 
     return nk_false;
@@ -1267,8 +1269,8 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         }
 
         // We are adding it to the middle of the parent, so insert accordingly.
-        int insert_pos = widget_index + 1 + (int)cvector_size(tree_data->referenced_children);
-        insert_pos = NK_MIN(insert_pos, (int)cvector_size(parent->parent->children));
+        size_t insert_pos = (size_t)widget_index + (size_t)1 + cvector_size(tree_data->referenced_children);
+        insert_pos = NK_MIN(insert_pos, cvector_size(parent->parent->children));
         child->parent = parent->parent;
         cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);
