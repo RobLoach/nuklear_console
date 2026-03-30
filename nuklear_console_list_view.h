@@ -196,19 +196,19 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->up_down_repeat_timer = 0;
         }
 
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) { // TODO: Add Page Up with NK_KEY_SCROLL_UP
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_UP)) {
             // Page up: jump selection up by rows_visible items.
             if (data->selected > 0) {
-                data->selected = NK_MAX(0, data->selected - data->rows_visible);
+                data->selected = (nk_uint)NK_MAX(0, (int)data->selected - (int)data->rows_visible);
                 if (data->view.scroll_pointer) {
-                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
+                    nk_uint new_scroll = data->selected * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
                     data->_scroll_y = new_scroll;
                 }
             }
             top_data->input_processed = nk_true;
         }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) { // TODO: Add Page Down with NK_KEY_SCROLL_DOWN
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_DOWN)) {
             // Page down: jump selection down by rows_visible items.
             if (data->row_count > 0 && data->selected < data->row_count - 1) {
                 data->selected = NK_MIN(data->row_count - 1, data->selected + data->rows_visible);
