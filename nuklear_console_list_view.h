@@ -79,6 +79,9 @@ NK_API nk_flags nk_console_list_view_flags(nk_console* list_view);
  */
 NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags);
 
+NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint item_count);
+NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -89,8 +92,7 @@ NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags
 #ifndef NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 
-
-NK_API nk_flags nk_console_list_view_item_count(nk_console* list_view) {
+NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view) {
     if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
         return 0;
     }
@@ -104,6 +106,11 @@ NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint i
     }
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     data->row_count = item_count;
+    data->selected = 0;
+    data->_scroll_y = 0;
+    if (data->view.scroll_pointer) {
+        *data->view.scroll_pointer = 0;
+    }
 }
 
 NK_API nk_flags nk_console_list_view_flags(nk_console* list_view) {
@@ -189,19 +196,19 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->up_down_repeat_timer = 0;
         }
 
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_UP)) {
             // Page up: jump selection up by rows_visible items.
             if (data->selected > 0) {
-                data->selected = NK_MAX(0, data->selected - data->rows_visible);
+                data->selected = (nk_uint)NK_MAX(0, (int)data->selected - (int)data->rows_visible);
                 if (data->view.scroll_pointer) {
-                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
+                    nk_uint new_scroll = data->selected * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
                     data->_scroll_y = new_scroll;
                 }
             }
             top_data->input_processed = nk_true;
         }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_DOWN)) {
             // Page down: jump selection down by rows_visible items.
             if (data->row_count > 0 && data->selected < data->row_count - 1) {
                 data->selected = NK_MIN(data->row_count - 1, data->selected + data->rows_visible);
@@ -236,7 +243,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     nk_console* t = widget->parent->children[idx];
                     if (nk_console_selectable(t)) {
                         nk_console_set_active_widget(t);
-                        top_data->scroll_requested = nk_true;
+                        top_data->scroll_to_widget = t;
                         break;
                     }
                 }
@@ -270,7 +277,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     nk_console* t = widget->parent->children[idx];
                     if (nk_console_selectable(t)) {
                         nk_console_set_active_widget(t);
-                        top_data->scroll_requested = nk_true;
+                        top_data->scroll_to_widget = t;
                         break;
                     }
                 }
@@ -284,7 +291,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 nk_console* t = widget->parent->children[idx];
                 if (nk_console_selectable(t)) {
                     nk_console_set_active_widget(t);
-                    top_data->scroll_requested = nk_true;
+                    top_data->scroll_to_widget = t;
                     break;
                 }
             }
@@ -298,7 +305,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 nk_console* t = widget->parent->children[idx];
                 if (nk_console_selectable(t)) {
                     nk_console_set_active_widget(t);
-                    top_data->scroll_requested = nk_true;
+                    top_data->scroll_to_widget = t;
                     break;
                 }
             }
@@ -311,7 +318,6 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (widget->parent != NULL) {
                 nk_console_navigate_back(widget->parent);
-                top_data->scroll_requested = nk_true;
             }
             top_data->input_processed = nk_true;
         }

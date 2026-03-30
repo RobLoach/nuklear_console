@@ -49,7 +49,8 @@ static int tree_option3 = 0;
 char list_view_labels[NK_CONSOLE_DEMO_LIST_VIEW_COUNT][32];
 
 const char* list_view_event_get_label(struct nk_console* list_view, nk_uint index) {
-    if (index < 0 || index >= NK_CONSOLE_DEMO_LIST_VIEW_COUNT) {
+    NK_UNUSED(list_view);
+    if (index >= NK_CONSOLE_DEMO_LIST_VIEW_COUNT) {
         return NULL;
     }
     return list_view_labels[index];
