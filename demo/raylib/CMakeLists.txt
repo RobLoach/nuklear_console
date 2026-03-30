@@ -70,6 +70,7 @@ endif()
 
 # Setup the example
 add_executable(${PROJECT_NAME} main.c)
+target_compile_options(${PROJECT_NAME} PRIVATE -g)
 
 # Link dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC

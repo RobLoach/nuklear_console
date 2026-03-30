@@ -100,11 +100,9 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
 NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
 
 /**
- * Refreshes the file widget to display the contents of the current directory.
+ * Refreshes the file widget with the contents with its given directory.
  *
- * @param widget The file widget to refresh.
- *
- * @see nk_console_file_data::directory
+ * @internal
  */
 NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 
@@ -126,6 +124,8 @@ extern "C" {
 
 /**
  * Gets the base name of a file path.
+ *
+ * @internal
  */
 static const char* nk_console_file_basename(const char* path) {
     if (path == NULL) {
@@ -186,6 +186,8 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
 
 /**
  * Gets the file widget from a child button.
+ *
+ * @internal
  */
 static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
     if (button == NULL) {
@@ -206,6 +208,8 @@ static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
 
 /**
  * Free all file entries stored in the file data.
+ *
+ * @internal
  */
 static void nk_console_file_entries_clear(nk_console_file_data* data) {
     if (data == NULL) {
@@ -221,14 +225,18 @@ static void nk_console_file_entries_clear(nk_console_file_data* data) {
 }
 
 /**
- * Destroy handler for the file widget — frees the entries array.
+ * Event handler: Destroy the file widget.
+ *
+ * @internal
  */
-static void nk_console_file_destroy(nk_console* file, void* user_data) {
+static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
     NK_UNUSED(user_data);
     if (file == NULL || file->data == NULL) {
         return;
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    // Clear all the file entries.
     nk_console_file_entries_clear(data);
     cvector_free(data->entries);
     data->entries = NULL;
@@ -237,6 +245,8 @@ static void nk_console_file_destroy(nk_console* file, void* user_data) {
 #ifdef NK_CONSOLE_FILE_ADD_FILES
 /**
  * get_label callback for the file list view. Appends "/" to directory entries.
+ *
+ * @internal
  */
 static const char* nk_console_file_list_view_get_label(struct nk_console* list_view, nk_uint index) {
     nk_console* file = nk_console_file_button_get_file_widget(list_view);
@@ -268,6 +278,8 @@ static const char* nk_console_file_list_view_get_label(struct nk_console* list_v
 /**
  * Appends a path component to data->directory, inserting the platform separator.
  * Returns nk_false and shows an error if the result would overflow the buffer.
+ *
+ * @internal
  */
 static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, nk_console* file, const char* label) {
     int len = nk_strlen(data->directory);
@@ -303,6 +315,8 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
 #ifdef NK_CONSOLE_FILE_ADD_FILES
 /**
  * Click handler for the file list view. Navigates into directories or selects files.
+ *
+ * @internal
  */
 static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_data) {
     NK_UNUSED(user_data);
@@ -349,6 +363,8 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
 
 /**
  * Click handler for the "select this directory" button in directory-selection mode.
+ *
+ * @internal
  */
 static void nk_console_file_select_dir_onclick(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
@@ -373,6 +389,11 @@ static void nk_console_file_select_dir_onclick(nk_console* button, void* user_da
     nk_console_navigate_back(file);
 }
 
+/**
+ * Event hanlder for when the user clicks on an individual file entry.
+ *
+ * @internal
+ */
 static void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (button == NULL || button->label == NULL) {
@@ -443,6 +464,8 @@ NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* pat
 
 /**
  * Gets the length of the directory string of the given file path.
+ *
+ * @internal
  */
 static int nk_console_file_get_directory_len(const char* file_path) {
     if (file_path == NULL) {
@@ -514,7 +537,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
         nk_console_list_view_set_item_count(widget->children[3], display_count);
     }
     else {
-        // Create the list view for the first time.
+        // Create the list view.
         nk_console* list_view = nk_console_list_view(widget, "file_entries", 10, display_count, &nk_console_file_list_view_get_label);
         nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_list_view_onclick);
     }
@@ -531,22 +554,37 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 }
 
 /**
- * BACK event handler for the file widget — frees the children so they are rebuilt on next open.
+ * Event handler to clear out unneeded data for the file widget.
+ *
+ * @see nk_console_file_event_back
+ * @internal
  */
-static void nk_console_file_back_free_children(nk_console* file, void* user_data) {
-    NK_UNUSED(user_data);
+static void nk_console_file_event_back_post_render(nk_console* file, void* user_data) {
+    // Remove all the children, since we don't need them.
     nk_console_free_children(file);
-}
 
-static void nk_console_file_back(nk_console* file, void* user_data) {
-    NK_UNUSED(user_data);
-    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_back_free_children);
+    // Clear out all the file entries too.
+    nk_console_file_event_destroy(file, user_data);
 }
 
 /**
- * Button callback for the main file button.
+ * Event handler to clear out all unneeded data when not using the widget.
+ * @internal
  */
-static void nk_console_file_main_click(nk_console* button, void* user_data) {
+static void nk_console_file_event_back(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+    // Clear it out at post-render to avoid segfaults.
+    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_event_back_post_render);
+}
+
+/**
+ * Event handler: Called when the make file button is clicked.
+ *
+ * Will build out the sub-elements to select a file.
+ *
+ * @internal
+ */
+static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (button == NULL || button->data == NULL) {
         return;
@@ -611,9 +649,10 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->selectable = nk_true;
     widget->data = data;
 
-    nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
-    nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_back);
-    nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_destroy);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_event_clicked);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_event_back);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_event_destroy);
+
     return widget;
 }
 

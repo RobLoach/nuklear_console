@@ -4,7 +4,7 @@ BIN = nuklear_console_demo_sdl
 # Flags
 
 # Use C++
-CFLAGS += -std=c99 -pedantic -O0
+CFLAGS += -std=c99 -pedantic -O0 -g
 CXXFLAGS += -pedantic -O0 -fpermissive -std=c++17
 
 CFLAGS += `sdl2-config --cflags`
