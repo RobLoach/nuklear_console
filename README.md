@@ -27,7 +27,7 @@ int main() {
     {
         nk_console_button(options, "Some cool option!");
         nk_console_button(options, "Option #2");
-        nk_console_button_onclick(options, "Back", nk_console_button_back);
+        nk_console_button_onclick(options, "Back", &nk_console_button_back);
     }
     nk_console_button(console, "Load Game");
     nk_console_button(console, "Save Game");
