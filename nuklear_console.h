@@ -237,6 +237,33 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
  */
 NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 
+/**
+ * Get a widget by a slash-separated path of labels, starting from the top-level console.
+ *
+ * Example: nk_console_find_by_path(console, "Widgets/Labels")
+ * A leading slash is optional: "/Widgets" and "Widgets" are equivalent.
+ *
+ * @param console Any widget within the console family.
+ * @param path Slash-separated widget labels (e.g. "Widgets/Labels").
+ *
+ * @return The matching widget, or NULL if not found.
+ */
+NK_API nk_console* nk_console_find_by_path(nk_console* console, const char* path);
+
+/**
+ * Navigate to a widget by a slash-separated path of labels.
+ *
+ * If the target widget has children, it becomes the active parent. If it has no children, its parent becomes the active parent and the widget is selected as the active widget.
+ *
+ * Example: nk_console_navigate_to_path(console, "Widgets/Labels")
+ *
+ * @param console Any widget within the console family.
+ * @param path Slash-separated widget labels (e.g. "Widgets/Labels").
+ *
+ * @return nk_true if navigation succeeded, nk_false if the path was not found.
+ */
+NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -1204,6 +1231,79 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
         data->input_processed = nk_true;
     }
     nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
+}
+
+NK_API nk_console* nk_console_find_by_path(nk_console* console, const char* path) {
+    if (console == NULL || path == NULL) {
+        return NULL;
+    }
+
+    nk_console* current = nk_console_get_top(console);
+    if (path[0] == '\0') {
+        return current;
+    }
+    if (path[0] == '/') {
+        path++;
+    }
+
+    char segment[256];
+    while (path[0] != '\0') {
+        const char* slash = strchr(path, '/');
+        int len = (slash != NULL) ? (int)(slash - path) : (int)nk_strlen(path);
+        if (len == 0) {
+            path++;
+            continue;
+        }
+
+        int copy_len = len < 255 ? len : 255;
+        NK_MEMCPY(segment, path, (nk_size)copy_len);
+        segment[copy_len] = '\0';
+
+        nk_console* found = NULL;
+        if (current->children != NULL) {
+            for (size_t i = 0; i < cvector_size(current->children); i++) {
+                nk_console* child = current->children[i];
+                if (child == NULL || child->label == NULL) {
+                    continue;
+                }
+                int label_len = child->label_length > 0
+                    ? child->label_length
+                    : (int)nk_strlen(child->label);
+                if (label_len == copy_len &&
+                    strncmp(child->label, segment, (size_t)copy_len) == 0) {
+                    found = child;
+                    break;
+                }
+            }
+        }
+        if (found == NULL) {
+            return NULL;
+        }
+        current = found;
+        path += len;
+        if (path[0] == '/') {
+            path++;
+        }
+    }
+    return current;
+}
+
+NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path) {
+    nk_console* target = nk_console_find_by_path(console, path);
+    if (target == NULL) {
+        return nk_false;
+    }
+
+    if (target->children != NULL) {
+        nk_console_set_active_parent(target);
+    }
+    else {
+        if (target->parent != NULL) {
+            nk_console_set_active_parent(target->parent);
+        }
+        nk_console_set_active_widget(target);
+    }
+    return nk_true;
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
