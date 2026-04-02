@@ -27,7 +27,7 @@ int main() {
     {
         nk_console_button(options, "Some cool option!");
         nk_console_button(options, "Option #2");
-        nk_console_button_onclick(options, "Back", nk_console_button_back);
+        nk_console_button_onclick(options, "Back", &nk_console_button_back);
     }
     nk_console_button(console, "Load Game");
     nk_console_button(console, "Save Game");
@@ -44,7 +44,7 @@ int main() {
 
 ## Widgets
 
-Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Gamepad Input Buttons, Labels, Properties, Sliders, Knobs, Radio Options, Images, Knob, Rows, TextEdit, Rule Horizontal, Messages.
+Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Gamepad Input Buttons, Labels, Properties, Sliders, Knobs, Radio Options, Images, Knob, Rows, TextEdit, Tree, Rule Horizontal, List View, Messages.
 
 ## API
 
@@ -80,7 +80,7 @@ nk_console* nk_console_button_onclick(nk_console* parent, const char* text, void
 nk_console* nk_console_get_top(nk_console* widget);
 int nk_console_get_widget_index(nk_console* widget);
 void nk_console_check_tooltip(nk_console* console);
-void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
+void nk_console_check_up_down(nk_console* widget);
 nk_bool nk_console_is_active_widget(nk_console* widget);
 void nk_console_set_active_parent(nk_console* new_parent);
 void nk_console_set_active_widget(nk_console* widget);

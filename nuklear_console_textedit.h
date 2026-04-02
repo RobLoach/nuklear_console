@@ -50,12 +50,22 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 extern "C" {
 #endif
 
+/**
+ * Frees all the children for the given textedit as an event.
+ */
 static void nk_console_textedit_free_children(nk_console* textedit, void* user_data) {
-    if (textedit == NULL) {
-        return;
-    }
     NK_UNUSED(user_data);
     nk_console_free_children(textedit);
+}
+
+/**
+ * Adds a post-render event to clear out the children when going back.
+ *
+ * This is done in post-render so that if there are any existing elements that are referencing the elements, it is cleared out afterwards.
+ */
+static void nk_console_textedit_text_event_back(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
 /**
@@ -74,9 +84,6 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user
 
     // Invoke the back button behavior on the button.
     nk_console_button_back(button, NULL);
-
-    // Clear out all the children for the textedit, after it finishes rendering.
-    nk_console_add_event(button->parent, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
 NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
@@ -211,7 +218,9 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
         case NK_SYMBOL_TRIANGLE_LEFT: {
             int len = nk_strlen(data->buffer);
             if (len > 0) {
-                data->buffer[len - 1] = '\0';
+                // Walk back past UTF-8 continuation bytes (0x80-0xBF) to erase the full codepoint.
+                do { len--; } while (len > 0 && ((unsigned char)data->buffer[len] & 0xC0) == 0x80);
+                data->buffer[len] = '\0';
                 nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
             }
         } break;
@@ -228,11 +237,11 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
 
         // Any key character
         case NK_SYMBOL_NONE: {
-            // Add the character to the buffer.
+            // Append all bytes of the key label to support multi-byte UTF-8 glyphs.
             int len = nk_strlen(data->buffer);
-            if (len < data->buffer_size - 1) {
-                data->buffer[len] = key->label[0];
-                data->buffer[len + 1] = '\0';
+            int key_len = nk_strlen(key->label);
+            if (len + key_len < data->buffer_size) {
+                NK_MEMCPY(data->buffer + len, key->label, (nk_size)(key_len + 1));
                 nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
             }
         } break;
@@ -260,9 +269,10 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
     nk_console_textedit_data* data = (nk_console_textedit_data*)button->data;
     nk_console* key;
 
+    // Create the textedit_text widget, which is the input box.
     nk_console_textedit_text(button);
 
-    // TODO: Add option for UTF-8 keys with nk_glyph.
+    // TODO: Add non-ASCII keyboard layouts (e.g. accented characters, CJK) using nk_glyph key labels.
 
     // First row: 1 - 0
     nk_console* row = nk_console_row_begin(button);

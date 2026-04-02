@@ -39,6 +39,23 @@ static float knob_float_test = 0.4f;
 static int radio_option = 1;
 static int radio_option2 = 0;
 
+// Tree
+static int tree_option1 = 0;
+static int tree_option2 = 0;
+static int tree_option3 = 0;
+
+// List View
+#define NK_CONSOLE_DEMO_LIST_VIEW_COUNT 200
+char list_view_labels[NK_CONSOLE_DEMO_LIST_VIEW_COUNT][32];
+
+const char* list_view_event_get_label(struct nk_console* list_view, nk_uint index) {
+    NK_UNUSED(list_view);
+    if (index >= NK_CONSOLE_DEMO_LIST_VIEW_COUNT) {
+        return NULL;
+    }
+    return list_view_labels[index];
+}
+
 // Checkbox
 static nk_bool checkbox1 = nk_false;
 static nk_bool checkbox2 = nk_false;
@@ -116,6 +133,14 @@ void nk_console_quit_button_focused(struct nk_console* widget, void* user_data) 
 void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(radio, radio->label);
+}
+
+void nk_console_demo_list_view_item_clicked(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    char message[64];
+    const char* label = nk_console_list_view_selected_label(widget);
+    snprintf(message, sizeof(message), "Selected: %s", label);
+    nk_console_show_message(widget, message);
 }
 
 struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
@@ -267,6 +292,53 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_label(rules, "Green, rounded");
             nk_console_rule_horizontal(rules, nk_rgb(0, 255, 0), nk_true);
             nk_console_button_onclick(rules, "Back", &nk_console_button_back);
+        }
+
+        // Tree
+        struct nk_console* tree_button = nk_console_button(widgets, "Tree");
+        {
+            struct nk_console* tree = nk_console_tree(tree_button, "Options", nk_true);
+            nk_console_radio(tree, "Easy", &tree_option1);
+            nk_console_radio(tree, "Medium", &tree_option1);
+            nk_console_radio(tree, "Hard", &tree_option1);
+            nk_console_label(tree, "A label inside the Options tree");
+
+            struct nk_console* tree2 = nk_console_tree(tree_button, "Video", nk_false);
+            nk_console_radio(tree2, "1080p", &tree_option2);
+            nk_console_radio(tree2, "720p", &tree_option2);
+            nk_console_radio(tree2, "480p", &tree_option2);
+            nk_console_radio(tree2, "Potato", &tree_option2);
+            nk_console_label(tree2, "A label inside the Video tree");
+
+            struct nk_console* tree3 = nk_console_tree(tree_button, "Language", nk_false);
+            nk_console_radio(tree3, "English", &tree_option3);
+            nk_console_radio(tree3, "Chinese", &tree_option3);
+            nk_console_radio(tree3, "Hindi", &tree_option3);
+            nk_console_radio(tree3, "Spanish", &tree_option3);
+            nk_console_radio(tree3, "French", &tree_option3);
+            nk_console_radio(tree3, "Ukrainian", &tree_option3);
+            nk_console_radio(tree3, "Portuguese", &tree_option3);
+            nk_console_label(tree3, "A label inside the Language tree");
+
+            nk_console_button_onclick(tree_button, "Back", &nk_console_button_back);
+        }
+
+        // List View
+        struct nk_console* list_view_button = nk_console_button(widgets, "List View");
+        {
+            nk_console_button_onclick(list_view_button, "List View", &nk_console_button_back);
+
+            // Build the List View labels
+            for (int i = 0; i < NK_CONSOLE_DEMO_LIST_VIEW_COUNT; i++) {
+                snprintf(list_view_labels[i], sizeof(list_view_labels[i]), "Item #%d", i + 1);
+            }
+
+            // Add the List View
+            struct nk_console* list_view = nk_console_list_view(list_view_button, "The List View", 10, NK_CONSOLE_DEMO_LIST_VIEW_COUNT, &list_view_event_get_label);
+            nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_list_view_item_clicked);
+
+            // Back button
+            nk_console_button_onclick(list_view_button, "Back", &nk_console_button_back);
         }
 
         // Progress Bar

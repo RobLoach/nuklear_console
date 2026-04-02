@@ -61,7 +61,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
             nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
         }
         else {
-            nk_console_check_up_down(widget, widget_bounds);
+            nk_console_check_up_down(widget);
         }
         nk_console_check_tooltip(widget);
     }

@@ -110,19 +110,15 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 
     nk_bool result = nk_false;
 
-    // Directories
-    for (int i = 0; i < filePathList.count; i++) {
-        if (DirectoryExists(filePathList.paths[i])) {
-            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_true) != NULL) {
-                result = nk_true;
+    // Directories first, then files (two passes to group them).
+    for (int pass = 0; pass < 2; pass++) {
+        nk_bool want_dir = (pass == 0) ? nk_true : nk_false;
+        for (int i = 0; i < (int)filePathList.count; i++) {
+            nk_bool is_dir = DirectoryExists(filePathList.paths[i]) ? nk_true : nk_false;
+            if (is_dir != want_dir) {
+                continue;
             }
-        }
-    }
-
-    // Files
-    for (int i = 0; i < filePathList.count; i++) {
-        if (FileExists(filePathList.paths[i]) && !DirectoryExists(filePathList.paths[i])) {
-            if (nk_console_file_add_entry(console, filePathList.paths[i], nk_false) != NULL) {
+            if (nk_console_file_add_entry(console, filePathList.paths[i], is_dir) != NULL) {
                 result = nk_true;
             }
         }

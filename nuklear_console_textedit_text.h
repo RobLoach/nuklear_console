@@ -51,7 +51,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         }
         // Allow changing up/down only if they're not pressing backspace
         else if (!nk_input_is_key_pressed(&widget->ctx->input, NK_KEY_BACKSPACE)) {
-            nk_console_check_up_down(widget, widget_bounds);
+            nk_console_check_up_down(widget);
         }
 
         // Display the tooltip for the textedit.
@@ -85,7 +85,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         int mask_strlen = (int)nk_strlen(mask);
         if (mask_strlen < buffer_strlen) { // Characters deleted
             int real_len = (int)nk_strlen(data->buffer);
-            int new_real_len = real_len - buffer_strlen - mask_strlen;
+            int new_real_len = real_len - (buffer_strlen - mask_strlen);
             if (new_real_len < 0) {
                 new_real_len = 0;
             }
@@ -121,6 +121,9 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
     textedit_text->columns = 1;
     textedit_text->selectable = nk_true;
     textedit_text->render = nk_console_textedit_text_render;
+
+    // Register the back event to unload the keyboard.
+    nk_console_add_event(parent, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
     return textedit_text;
 }
 

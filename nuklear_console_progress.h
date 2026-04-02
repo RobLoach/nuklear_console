@@ -109,7 +109,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
             console->ctx->style.progress.cursor_normal = cursor_active;
         }
         else {
-            console->ctx->style.progress.cursor_normal = cursor_active;
+            console->ctx->style.progress.cursor_normal = cursor_hover;
         }
     }
 
@@ -129,7 +129,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
-        nk_console_check_up_down(console, widget_bounds);
+        nk_console_check_up_down(console);
         nk_console_check_tooltip(console);
     }
 

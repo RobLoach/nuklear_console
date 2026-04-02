@@ -30,7 +30,7 @@ if (NOT raylib_nuklear_FOUND)
     FetchContent_Declare(
         raylib_nuklear
         GIT_REPOSITORY https://github.com/RobLoach/raylib-nuklear.git
-        GIT_TAG 1985c13
+        GIT_TAG 26fef0d
     )
     FetchContent_GetProperties(raylib_nuklear)
     if (NOT raylib_nuklear_POPULATED) # Have we downloaded raylib yet?
@@ -47,7 +47,7 @@ if (NOT nuklear_gamepad_FOUND)
     FetchContent_Declare(
         nuklear_gamepad
         GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG bd0eedd
+        GIT_TAG 625d716
     )
     FetchContent_GetProperties(nuklear_gamepad)
     if (NOT nuklear_gamepad_POPULATED) # Have we downloaded raylib yet?
@@ -70,6 +70,7 @@ endif()
 
 # Setup the example
 add_executable(${PROJECT_NAME} main.c)
+target_compile_options(${PROJECT_NAME} PRIVATE -g)
 
 # Link dependencies
 target_link_libraries(${PROJECT_NAME} PUBLIC

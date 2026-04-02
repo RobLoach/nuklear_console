@@ -73,6 +73,8 @@ typedef enum {
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
     NK_CONSOLE_RULE_HORIZONTAL,
+    NK_CONSOLE_TREE,
+    NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
@@ -107,8 +109,8 @@ typedef struct nk_console {
 typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
     nk_bool input_processed; /** Whether or not user input has been processed. */
-    nk_bool scroll_requested; /** True if we've switched active widget and need to check scrolling */
     nk_bool scrollbar_required; /** True when the scrollbar is needed to be rendered. @see nk_console_render_window() */
+    nk_console* scroll_to_widget; /** When set by nk_console_navigate_back, the render loop scrolls the window to this widget's bounds. */
 
     /**
      * Message queue that is to be shown.
@@ -173,7 +175,7 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
 NK_API nk_console* nk_console_get_top(nk_console* widget);
 NK_API int nk_console_get_widget_index(nk_console* widget);
 NK_API void nk_console_check_tooltip(nk_console* console);
-NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds);
+NK_API void nk_console_check_up_down(nk_console* widget);
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
 NK_API nk_console* nk_console_active_parent(nk_console* console);
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
@@ -258,7 +260,9 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_rule_horizontal.h"
+#include "nuklear_console_rule_horizontal.h"
+#include "nuklear_console_tree.h"
+#include "nuklear_console_list_view.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -317,7 +321,8 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
 #endif
 #ifndef cvector_clib_memmove
-#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+// TODO: Implement our own memmove() using Nuklear's allocators
+//#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
 #endif
 #ifndef CVECTOR_H
 #define CVECTOR_H "vendor/c-vector/cvector.h"
@@ -346,7 +351,9 @@ extern "C" {
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_rule_horizontal.h"
+#include "nuklear_console_rule_horizontal.h"
+#include "nuklear_console_tree.h"
+#include "nuklear_console_list_view.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -469,7 +476,7 @@ NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
     return parent->activeWidget == widget;
 }
 
-nk_console* nk_console_active_parent(nk_console* console) {
+NK_API nk_console* nk_console_active_parent(nk_console* console) {
     if (console == NULL) {
         return NULL;
     }
@@ -554,25 +561,9 @@ NK_API int nk_console_get_widget_index(nk_console* widget) {
 /**
  * Allow the user to move up and down between widgets.
  */
-NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) {
+NK_API void nk_console_check_up_down(nk_console* widget) {
     nk_console* top = nk_console_get_top(widget);
     nk_console_top_data* data = (nk_console_top_data*)top->data;
-
-    // Scroll to the active widget if needed.
-    if (data->scroll_requested) {
-        struct nk_rect content_region = nk_window_get_content_region(widget->ctx);
-
-        nk_uint offsetx, offsety;
-        nk_window_get_scroll(widget->ctx, &offsetx, &offsety);
-        if (bounds.y + bounds.h > content_region.y + content_region.h + (float)offsety) {
-            nk_window_set_scroll(widget->ctx, offsetx, (nk_uint)(bounds.y + bounds.h - content_region.y - content_region.h));
-        }
-        else if (bounds.y < content_region.y + (float)offsety) {
-            nk_window_set_scroll(widget->ctx, offsetx, (nk_uint)(bounds.y - content_region.y));
-        }
-
-        data->scroll_requested = nk_false;
-    }
 
     // Handle hold-to-accelerate timers for up/down navigation.
     nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
@@ -599,32 +590,42 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         // Page Up
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
+            nk_console* target = NULL;
             int count = 0;
             while (--widgetIndex >= 0) {
-                nk_console* target = widget->parent->children[widgetIndex];
-                if (target != NULL && nk_console_selectable(target)) {
-                    nk_console_set_active_widget(target);
-                    data->scroll_requested = nk_true;
+                nk_console* t = widget->parent->children[widgetIndex];
+                if (t != NULL && nk_console_selectable(t)) {
+                    target = t;
                     if (++count > 4) {
                         break;
                     }
                 }
+            }
+            if (target != NULL) {
+                nk_console_set_active_widget(target);
+                data->scroll_to_widget = target;
             }
             data->input_processed = nk_true;
         }
         // Page Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
+            nk_console* target = NULL;
             int count = 0;
-            while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
-                nk_console* target = widget->parent->children[widgetIndex];
-                if (nk_console_selectable(target)) {
-                    nk_console_set_active_widget(target);
-                    data->scroll_requested = nk_true;
-                    if (++count > 4) {
-                        break;
+            if (widget->parent != NULL) {
+                while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
+                    nk_console* t = widget->parent->children[widgetIndex];
+                    if (t != NULL && nk_console_selectable(t)) {
+                        target = t;
+                        if (++count > 4) {
+                            break;
+                        }
                     }
                 }
+            }
+            if (target != NULL) {
+                nk_console_set_active_widget(target);
+                data->scroll_to_widget = target;
             }
             data->input_processed = nk_true;
         }
@@ -634,9 +635,9 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
-                if (nk_console_selectable(target)) {
+                if (target != NULL && nk_console_selectable(target)) {
                     nk_console_set_active_widget(target);
-                    data->scroll_requested = nk_true;
+                    data->scroll_to_widget = target;
                     break;
                 }
             }
@@ -646,12 +647,14 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
                  (down_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
-            while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
-                nk_console* target = widget->parent->children[widgetIndex];
-                if (nk_console_selectable(target)) {
-                    nk_console_set_active_widget(target);
-                    data->scroll_requested = nk_true;
-                    break;
+            if (widget->parent != NULL) {
+                while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
+                    nk_console* target = widget->parent->children[widgetIndex];
+                    if (target != NULL && nk_console_selectable(target)) {
+                        nk_console_set_active_widget(target);
+                        data->scroll_to_widget = target;
+                        break;
+                    }
                 }
             }
             data->input_processed = nk_true;
@@ -659,12 +662,12 @@ NK_API void nk_console_check_up_down(nk_console* widget, struct nk_rect bounds) 
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (nk_console_active_parent(top) == NULL) {
+                data->input_processed = nk_true;
                 return;
             }
 
             if (widget->parent != NULL) {
                 nk_console_navigate_back(widget->parent);
-                data->scroll_requested = nk_true;
             }
 
             data->input_processed = nk_true;
@@ -906,6 +909,24 @@ NK_API void nk_console_render(nk_console* console) {
     // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
 
+    // When nk_console_navigate_back targeted this widget, scroll the window to show it.
+    if (widget_bounds.w > 0 && widget_bounds.h > 0) {
+        nk_console* top = nk_console_get_top(console);
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (top_data->scroll_to_widget == console) {
+            struct nk_rect content_region = nk_window_get_content_region(console->ctx);
+            nk_uint offsetx, offsety;
+            nk_window_get_scroll(console->ctx, &offsetx, &offsety);
+            if (widget_bounds.y + widget_bounds.h > content_region.y + content_region.h + (float)offsety) {
+                nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y + widget_bounds.h - content_region.y - content_region.h));
+            }
+            else if (widget_bounds.y < content_region.y + (float)offsety) {
+                nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y - content_region.y));
+            }
+            top_data->scroll_to_widget = NULL;
+        }
+    }
+
     // Allow the mouse to switch focus to the widget.
     if (widget_bounds.w > 0 && widget_bounds.h > 0 && nk_input_is_mouse_moved(&console->ctx->input)) {
         // Make sure we consider the active scroll position of the window.
@@ -1096,9 +1117,11 @@ NK_API void nk_console_free_children(nk_console* console) {
     console->activeWidget = NULL;
 
     // Clear them all.
-    size_t count = cvector_size(console->children);
-    for (size_t i = 0; i < count; i++) {
-        nk_console_free(console->children[i]);
+    for (struct nk_console** it = cvector_begin(console->children); it != cvector_end(console->children); ++it) {
+        if (*it != NULL) {
+            nk_console_free(*it);
+            *it = NULL;
+        }
     }
 
     cvector_free(console->children);
@@ -1193,6 +1216,12 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
     }
     nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
     nk_console_set_active_parent(destination);
+    nk_console_set_active_widget(leaving_parent);
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    if (data != NULL) {
+        data->scroll_to_widget = leaving_parent;
+        data->input_processed = nk_true;
+    }
     nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
 }
 
@@ -1222,11 +1251,10 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
-        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_CTRL);
-        case NK_GAMEPAD_BUTTON_BACK:
-            return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
-            // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
+        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
+        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
+        // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
     }
 
     return nk_false;
@@ -1260,6 +1288,31 @@ NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
 
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
     if (parent == NULL || child == NULL) {
+        return;
+    }
+
+    // If we are adding it to a TREE, insert child as a sibling so navigation works naturally.
+    if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL && parent->data != NULL) {
+        nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
+
+        // Set the visibility of the child based on whether the tree is expanded.
+        child->visible = nk_console_tree_expanded(parent);
+
+        // Insert position: immediately after the tree and any previously owned children.
+        int widget_index = nk_console_get_widget_index(parent);
+        if (widget_index < 0) {
+            child->parent = parent;
+            cvector_push_back(parent->children, child);
+            cvector_push_back(tree_data->referenced_children, child);
+            return;
+        }
+
+        // We are adding it to the middle of the parent, so insert accordingly.
+        size_t insert_pos = (size_t)widget_index + (size_t)1 + cvector_size(tree_data->referenced_children);
+        insert_pos = NK_MIN(insert_pos, cvector_size(parent->parent->children));
+        child->parent = parent->parent;
+        cvector_insert(parent->parent->children, insert_pos, child);
+        cvector_push_back(tree_data->referenced_children, child);
         return;
     }
 
