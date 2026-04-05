@@ -152,8 +152,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     int w, h;
     SDL_GetWindowSize(app->window, &w, &h);
     // Scale logical size back to window coords
-    int lw = (int)(w / SDL_GetWindowDisplayScale(app->window));
-    int lh = (int)(h / SDL_GetWindowDisplayScale(app->window));
+    float lw = (float)w / SDL_GetWindowDisplayScale(app->window);
+    float lh = (float)h / SDL_GetWindowDisplayScale(app->window);
 
     int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, (float)lw, (float)lh), flags)) {

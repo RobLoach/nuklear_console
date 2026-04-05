@@ -109,7 +109,9 @@ int main(int argc, char *argv[]) {
         /* Input */
         SDL_Event evt;
         nk_input_begin(ctx);
+
         nk_gamepad_update(nk_console_get_gamepads(console));
+        
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) goto cleanup;
             if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) running = 0;

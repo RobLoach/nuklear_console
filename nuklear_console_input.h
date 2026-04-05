@@ -201,6 +201,9 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     if (((int)(data->timer * 2)) % 2 == 0) {
         nk_label(console->ctx, "Press a Button", NK_TEXT_CENTERED);
     }
+    else {
+        nk_spacer(console->ctx);
+    }
 
     // Check for input.
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;

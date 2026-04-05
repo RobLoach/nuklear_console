@@ -451,8 +451,14 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
+
     struct nk_console* quit_button = nk_console_button_onclick(console, "Quit Game", &button_clicked);
     nk_console_add_event(quit_button, NK_CONSOLE_EVENT_FOCUS, &nk_console_quit_button_focused);
+
+    // Don't display the quit button on Emscripten.
+    #ifdef PLATFORM_WEB
+    quit_button->visible = nk_false;
+    #endif
 
     return console;
 }

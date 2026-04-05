@@ -169,7 +169,7 @@ extern "C" {
 NK_API nk_console* nk_console_init(struct nk_context* context);
 NK_API void nk_console_free(nk_console* console);
 NK_API void nk_console_render(nk_console* console);
-NK_API void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
+NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
 // Utilities
 NK_API nk_console* nk_console_get_top(nk_console* widget);
@@ -992,14 +992,22 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
  * @param title The title of the window.
  * @param bounds The bounds of the window.
  * @param flags The flags to apply to the window.
+ *
+ * @return The resulting size of the window.
  */
-NK_API void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags) {
+NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags) {
+    nk_console_top_data* top_data;
+    struct nk_rect window_bounds;
     if (console == NULL) {
-        return;
+        window_bounds.x = 0;
+        window_bounds.y = 0;
+        window_bounds.w = 0;
+        window_bounds.h = 0;
+        return window_bounds;
     }
 
     // Determine if the scrollbar is needed.
-    nk_console_top_data* top_data = (nk_console_top_data*)console->data;
+    top_data = (nk_console_top_data*)console->data;
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
         if (top_data->scrollbar_required) {
             flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
@@ -1023,8 +1031,19 @@ NK_API void nk_console_render_window(nk_console* console, const char* title, str
         }
     }
 
+    // Calculate the content size.
+    {
+        struct nk_rect outer = nk_window_get_bounds(console->ctx);
+        struct nk_rect content = nk_window_get_content_region(console->ctx);
+        float chrome_h = outer.h - content.h;
+        float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
+        window_bounds = outer;
+        window_bounds.h = chrome_h + rendered_h;
+    }
+
     // Finish the window processing.
     nk_end(console->ctx);
+    return window_bounds;
 }
 
 /**
