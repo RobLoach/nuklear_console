@@ -1,0 +1,5 @@
+- [ ] Add a new widget type
+- [ ] Write more tests
+- [x] Create the demo
+- [ ] Update the documentation
+- [ ] Release a new version

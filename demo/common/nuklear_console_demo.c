@@ -87,6 +87,60 @@ static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
+// TODO List
+#define TODO_MAX_ITEMS 64
+#define TODO_LABEL_SIZE 256
+typedef struct {
+    char label[TODO_LABEL_SIZE];
+    nk_bool checked;
+} todo_item_t;
+static todo_item_t todo_items[TODO_MAX_ITEMS];
+static int todo_item_count = 0;
+
+static void todo_save(void) {
+    FILE* f = fopen("TODO.md", "w");
+    if (f == NULL) {
+        return;
+    }
+    for (int i = 0; i < todo_item_count; i++) {
+        fprintf(f, "- [%c] %s\n", todo_items[i].checked ? 'x' : ' ', todo_items[i].label);
+    }
+    fclose(f);
+}
+
+static void todo_checkbox_changed(struct nk_console* widget, void* user_data) {
+    NK_UNUSED(widget);
+    NK_UNUSED(user_data);
+    todo_save();
+}
+
+static void todo_load(void) {
+    todo_item_count = 0;
+    FILE* f = fopen("TODO.md", "r");
+    if (f == NULL) {
+        return;
+    }
+    char line[TODO_LABEL_SIZE + 16];
+    while (fgets(line, sizeof(line), f) != NULL && todo_item_count < TODO_MAX_ITEMS) {
+        if (line[0] == '-' && line[1] == ' ' && line[2] == '[') {
+            nk_bool checked = (line[3] == 'x' || line[3] == 'X') ? nk_true : nk_false;
+            if (line[4] == ']' && line[5] == ' ') {
+                const char* label_start = line + 6;
+                int len = (int)strlen(label_start);
+                while (len > 0 && (label_start[len - 1] == '\n' || label_start[len - 1] == '\r')) {
+                    len--;
+                }
+                if (len > 0) {
+                    snprintf(todo_items[todo_item_count].label, TODO_LABEL_SIZE, "%.*s", len, label_start);
+                    todo_items[todo_item_count].checked = checked;
+                    todo_item_count++;
+                }
+            }
+        }
+    }
+    fclose(f);
+}
+
 void button_clicked(struct nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
@@ -448,6 +502,17 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         NK_SYMBOL_TRIANGLE_LEFT);
 
       calc->tooltip = "Demo rows and grids!";
+    }
+
+    // TODO List
+    {
+        todo_load();
+        struct nk_console* todo_list = nk_console_button(console, "TODO List");
+        for (int i = 0; i < todo_item_count; i++) {
+            struct nk_console* cb = nk_console_checkbox(todo_list, todo_items[i].label, &todo_items[i].checked);
+            nk_console_add_event(cb, NK_CONSOLE_EVENT_CHANGED, &todo_checkbox_changed);
+        }
+        nk_console_button_onclick(todo_list, "Back", &nk_console_button_back);
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
