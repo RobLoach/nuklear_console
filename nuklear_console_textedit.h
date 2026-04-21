@@ -2,10 +2,10 @@
 #define NK_CONSOLE_TEXTEDIT_H__
 
 #ifndef NK_CONSOLE_TEXTEDIT_MASKED_LENGTH
-    /**
-     * How long masked text should be when displayed.
-     */
-    #define NK_CONSOLE_TEXTEDIT_MASKED_LENGTH 8
+/**
+ * How long masked text should be when displayed.
+ */
+#define NK_CONSOLE_TEXTEDIT_MASKED_LENGTH 8
 #endif
 
 typedef struct nk_console_textedit_data {
@@ -219,7 +219,9 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
             int len = nk_strlen(data->buffer);
             if (len > 0) {
                 // Walk back past UTF-8 continuation bytes (0x80-0xBF) to erase the full codepoint.
-                do { len--; } while (len > 0 && ((unsigned char)data->buffer[len] & 0xC0) == 0x80);
+                do {
+                    len--;
+                } while (len > 0 && ((unsigned char)data->buffer[len] & 0xC0) == 0x80);
                 data->buffer[len] = '\0';
                 nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
             }

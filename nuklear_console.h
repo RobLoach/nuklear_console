@@ -151,13 +151,13 @@ typedef struct nk_console_top_data {
 
     /** State for one analog axis navigation channel (up/down or left/right). */
     struct nk_console_axis_channel {
-        float timer;      /** Repeat accumulator. -1 when inactive. */
+        float timer; /** Repeat accumulator. -1 when inactive. */
         float hold_timer; /** Total active hold time, drives acceleration. */
     } axis_ud, axis_lr;
 
-    nk_bool axis_up_fired;    /** True this frame if an axis fired an up event. */
-    nk_bool axis_down_fired;  /** True this frame if an axis fired a down event. */
-    nk_bool axis_left_fired;  /** True this frame if an axis fired a left event. */
+    nk_bool axis_up_fired; /** True this frame if an axis fired an up event. */
+    nk_bool axis_down_fired; /** True this frame if an axis fired a down event. */
+    nk_bool axis_left_fired; /** True this frame if an axis fired a left event. */
     nk_bool axis_right_fired; /** True this frame if an axis fired a right event. */
 } nk_console_top_data;
 
@@ -252,17 +252,17 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #include "nuklear_console_input.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
+#include "nuklear_console_list_view.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_radio.h"
 #include "nuklear_console_row.h"
+#include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
-#include "nuklear_console_list_view.h"
 #undef NK_CONSOLE_HEADER_ONLY
 
 #if defined(__cplusplus)
@@ -322,7 +322,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent);
 #endif
 #ifndef cvector_clib_memmove
 // TODO: Implement our own memmove() using Nuklear's allocators
-//#define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+// #define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
 #endif
 #ifndef CVECTOR_H
 #define CVECTOR_H "vendor/c-vector/cvector.h"
@@ -343,17 +343,17 @@ extern "C" {
 #include "nuklear_console_input.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
+#include "nuklear_console_list_view.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
 #include "nuklear_console_radio.h"
 #include "nuklear_console_row.h"
+#include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_spacing.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
-#include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_tree.h"
-#include "nuklear_console_list_view.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
     if (widget == NULL) {
@@ -580,7 +580,8 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
                 data->up_down_repeat_timer -= interval;
             }
         }
-    } else {
+    }
+    else {
         data->up_down_hold_timer = 0;
         data->up_down_repeat_timer = 0;
     }
@@ -630,8 +631,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             data->input_processed = nk_true;
         }
         // Up
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) ||
-                 (up_held && up_down_repeat_fire)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) || (up_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             while (--widgetIndex >= 0) {
                 nk_console* target = widget->parent->children[widgetIndex];
@@ -644,8 +644,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             data->input_processed = nk_true;
         }
         // Down
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
-                 (down_held && up_down_repeat_fire)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) || (down_held && up_down_repeat_fire)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             if (widget->parent != NULL) {
                 while (++widgetIndex < (int)cvector_size(widget->parent->children)) {
@@ -797,26 +796,26 @@ static void nk_console_axis_update(nk_console* console) {
     }
 
     // Grab the axis data.
-    float left_y  = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_Y);
-    float left_x  = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_X);
+    float left_y = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_Y);
+    float left_x = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_X);
     float right_y = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_Y);
     float right_x = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_X);
-    float ltrig   = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_TRIGGER);
-    float rtrig   = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_TRIGGER);
+    float ltrig = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_LEFT_TRIGGER);
+    float rtrig = nk_gamepad_get_axis(data->gamepads, data->gamepad_num, NK_GAMEPAD_AXIS_RIGHT_TRIGGER);
 
     // Per-direction strengths.
-    float up_strength    = 0.0f, down_strength  = 0.0f;
-    float left_strength  = 0.0f, right_strength = 0.0f;
-    if (left_x  < -NK_CONSOLE_AXIS_DEADZONE) left_strength  = NK_MAX(left_strength, -left_x  * 2.0f);
-    if (left_x  >  NK_CONSOLE_AXIS_DEADZONE) right_strength = NK_MAX(right_strength, left_x  * 2.0f);
-    if (left_y  < -NK_CONSOLE_AXIS_DEADZONE) up_strength    = NK_MAX(up_strength,   -left_y * 2.0f);
-    if (left_y  >  NK_CONSOLE_AXIS_DEADZONE) down_strength  = NK_MAX(down_strength,  left_y * 2.0f);
-    if (right_x < -NK_CONSOLE_AXIS_DEADZONE) left_strength  = NK_MAX(left_strength, -right_x * 5.0f);
-    if (right_x >  NK_CONSOLE_AXIS_DEADZONE) right_strength = NK_MAX(right_strength, right_x * 5.0f);
-    if (right_y < -NK_CONSOLE_AXIS_DEADZONE) up_strength    = NK_MAX(up_strength,   -right_y * 5.0f);
-    if (right_y >  NK_CONSOLE_AXIS_DEADZONE) down_strength  = NK_MAX(down_strength,  right_y * 5.0f);
-    if (ltrig   >  NK_CONSOLE_AXIS_DEADZONE) up_strength    = NK_MAX(up_strength,    ltrig   * 10.0f);
-    if (rtrig   >  NK_CONSOLE_AXIS_DEADZONE) down_strength  = NK_MAX(down_strength,  rtrig   * 10.0f);
+    float up_strength = 0.0f, down_strength = 0.0f;
+    float left_strength = 0.0f, right_strength = 0.0f;
+    if (left_x < -NK_CONSOLE_AXIS_DEADZONE) left_strength = NK_MAX(left_strength, -left_x * 2.0f);
+    if (left_x > NK_CONSOLE_AXIS_DEADZONE) right_strength = NK_MAX(right_strength, left_x * 2.0f);
+    if (left_y < -NK_CONSOLE_AXIS_DEADZONE) up_strength = NK_MAX(up_strength, -left_y * 2.0f);
+    if (left_y > NK_CONSOLE_AXIS_DEADZONE) down_strength = NK_MAX(down_strength, left_y * 2.0f);
+    if (right_x < -NK_CONSOLE_AXIS_DEADZONE) left_strength = NK_MAX(left_strength, -right_x * 5.0f);
+    if (right_x > NK_CONSOLE_AXIS_DEADZONE) right_strength = NK_MAX(right_strength, right_x * 5.0f);
+    if (right_y < -NK_CONSOLE_AXIS_DEADZONE) up_strength = NK_MAX(up_strength, -right_y * 5.0f);
+    if (right_y > NK_CONSOLE_AXIS_DEADZONE) down_strength = NK_MAX(down_strength, right_y * 5.0f);
+    if (ltrig > NK_CONSOLE_AXIS_DEADZONE) up_strength = NK_MAX(up_strength, ltrig * 10.0f);
+    if (rtrig > NK_CONSOLE_AXIS_DEADZONE) down_strength = NK_MAX(down_strength, rtrig * 10.0f);
 
     // Up/Down
     if (nk_console_axis_tick(&data->axis_ud, NK_MAX(up_strength, down_strength), console->ctx->delta_time_seconds)) {
@@ -1011,7 +1010,8 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
         if (top_data->scrollbar_required) {
             flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
-        } else {
+        }
+        else {
             flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
         }
     }
@@ -1026,7 +1026,8 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
         top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
         if (top_data->scrollbar_required) {
             console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
-        } else {
+        }
+        else {
             console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
         }
     }
@@ -1243,9 +1244,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Keyboard/Mouse/Axis
     switch (button) {
-        case NK_GAMEPAD_BUTTON_UP:    return data->axis_up_fired    || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
-        case NK_GAMEPAD_BUTTON_DOWN:  return data->axis_down_fired  || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN);
-        case NK_GAMEPAD_BUTTON_LEFT:  return data->axis_left_fired  || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_UP: return data->axis_up_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return data->axis_down_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return data->axis_left_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
         case NK_GAMEPAD_BUTTON_RIGHT: return data->axis_right_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_RIGHT);
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER);
         case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
@@ -1253,8 +1254,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
         case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
-        case NK_GAMEPAD_BUTTON_BACK: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
-        // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_BACK:
+            return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
+            // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
     }
 
     return nk_false;

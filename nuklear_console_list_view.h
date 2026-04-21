@@ -177,22 +177,22 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     // Handle keyboard/gamepad navigation.
     if (is_active && !top_data->input_processed) {
         // Hold-to-accelerate timers — mirrors nk_console_check_up_down.
-        nk_bool up_held   = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
+        nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
         nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
         nk_bool repeat_fire = nk_false;
         if (up_held || down_held) {
             if (top->ctx->delta_time_seconds > 0) {
-                top_data->up_down_hold_timer  += top->ctx->delta_time_seconds;
+                top_data->up_down_hold_timer += top->ctx->delta_time_seconds;
                 top_data->up_down_repeat_timer += top->ctx->delta_time_seconds;
-                float interval = NK_MAX(0.045f,
-                    0.5f - top_data->up_down_hold_timer * 0.125f);
+                float interval = NK_MAX(0.045f, 0.5f - top_data->up_down_hold_timer * 0.125f);
                 if (top_data->up_down_repeat_timer >= interval) {
                     repeat_fire = nk_true;
                     top_data->up_down_repeat_timer -= interval;
                 }
             }
-        } else {
-            top_data->up_down_hold_timer  = 0;
+        }
+        else {
+            top_data->up_down_hold_timer = 0;
             top_data->up_down_repeat_timer = 0;
         }
 
@@ -226,8 +226,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
             top_data->input_processed = nk_true;
         }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) ||
-                (up_held && repeat_fire)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) || (up_held && repeat_fire)) {
             if (data->selected > 0) {
                 data->selected--;
                 if (data->view.scroll_pointer && (int)data->selected < data->view.begin) {
@@ -250,8 +249,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
             top_data->input_processed = nk_true;
         }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) ||
-                (down_held && repeat_fire)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) || (down_held && repeat_fire)) {
             if (data->row_count > 0 && data->selected < data->row_count - 1) {
                 data->selected++;
                 if (data->view.scroll_pointer && data->view.count > 0) {
@@ -357,7 +355,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
             // Restore the original button style.
             if (is_selected && is_active) {
-                top->ctx->style.button.normal      = saved_normal;
+                top->ctx->style.button.normal = saved_normal;
                 top->ctx->style.button.text_normal = saved_text;
             }
 

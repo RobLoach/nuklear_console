@@ -13,7 +13,7 @@
  * A single file or directory entry stored for the file widget's list view.
  */
 typedef struct nk_console_file_entry {
-    char* label;         /** The basename of the file or directory. */
+    char* label; /** The basename of the file or directory. */
     nk_bool is_directory; /** True if this entry is a directory. */
 } nk_console_file_entry;
 
