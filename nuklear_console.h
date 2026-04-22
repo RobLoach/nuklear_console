@@ -1244,18 +1244,18 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Keyboard/Mouse/Axis
     switch (button) {
-        case NK_GAMEPAD_BUTTON_UP: return data->axis_up_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
-        case NK_GAMEPAD_BUTTON_DOWN: return data->axis_down_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN);
-        case NK_GAMEPAD_BUTTON_LEFT: return data->axis_left_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_LEFT);
-        case NK_GAMEPAD_BUTTON_RIGHT: return data->axis_right_fired || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_RIGHT);
-        case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER);
-        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
+        case NK_GAMEPAD_BUTTON_UP: return data->axis_up_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return data->axis_down_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return data->axis_left_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return data->axis_right_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_RIGHT);
+        case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER);
+        case NK_GAMEPAD_BUTTON_B: return nk_input_is_key_released(&console->ctx->input, NK_KEY_BACKSPACE) || (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
-        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
-        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
+        case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_released(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
+        case NK_GAMEPAD_BUTTON_RB: return nk_input_is_key_released(&console->ctx->input, NK_KEY_DOWN) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
         case NK_GAMEPAD_BUTTON_BACK:
-            return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_SHIFT);
+            return nk_input_is_key_released(&console->ctx->input, NK_KEY_SHIFT);
             // case NK_GAMEPAD_BUTTON_START: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_UP);
     }
 
