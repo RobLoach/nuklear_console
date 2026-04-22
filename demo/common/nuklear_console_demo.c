@@ -143,6 +143,11 @@ void nk_console_demo_list_view_item_clicked(struct nk_console* widget, void* use
     nk_console_show_message(widget, message);
 }
 
+void nk_console_demo_navigate_to_path(struct nk_console* button, void* user_data) {
+    NK_UNUSED(button);
+    nk_console_navigate_to_path(button, (const char*)user_data);
+}
+
 struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_data, struct nk_image image) {
     console = nk_console_init(ctx);
 
@@ -448,6 +453,22 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         NK_SYMBOL_TRIANGLE_LEFT);
 
       calc->tooltip = "Demo rows and grids!";
+    }
+
+    // Open Path
+    struct nk_console* open_path = nk_console_button(console, "Open Path");
+    {
+        nk_console_label(open_path, "Navigate anywhere with nk_console_navigate_to_path():");
+        struct nk_console* b;
+        b = nk_console_button(open_path, "Widgets");
+        nk_console_add_event_handler(b, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_navigate_to_path, "Widgets", NULL);
+        b = nk_console_button(open_path, "Widgets/Labels");
+        nk_console_add_event_handler(b, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_navigate_to_path, "Widgets/Labels", NULL);
+        b = nk_console_button(open_path, "Widgets/Sliders");
+        nk_console_add_event_handler(b, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_navigate_to_path, "Widgets/Sliders", NULL);
+        b = nk_console_button(open_path, "Calculator");
+        nk_console_add_event_handler(b, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_navigate_to_path, "Calculator", NULL);
+        nk_console_button_onclick(open_path, "Back", &nk_console_button_back);
     }
 
     nk_console_button(console, "Save Game")->disabled = nk_true;
