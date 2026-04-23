@@ -29,7 +29,7 @@ int main() {
     ctx = InitNuklearEx(font, fontSize);
     Texture texture = LoadTexture("resources/image.png");
 
-    console = nuklear_console_demo_init(ctx, NULL, TextureToNuklear(texture));
+    console = nuklear_console_demo_init(ctx, NULL, TextureToNuklearImage(texture));
     lastWindowSize = nk_rect(0, 0, (float)GetScreenWidth() * 0.80f, (float)GetScreenHeight());
 
     #if defined(PLATFORM_WEB)
