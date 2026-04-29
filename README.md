@@ -100,6 +100,15 @@ Use [clang-format](https://clang.llvm.org/docs/ClangFormat.html) to apply coding
 clang-format -i *.h
 ```
 
+To build the web demo...
+```bash
+cd demo/raylib
+mkdir build
+cd build
+emcmake cmake .. -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXECUTABLE_SUFFIX=".html"
+emmake make
+```
+
 ## License
 
 [MIT](LICENSE)

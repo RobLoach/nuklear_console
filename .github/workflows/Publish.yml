@@ -1,0 +1,50 @@
+name: Publish Web Demo
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+
+      - name: Configure
+        run: emcmake cmake -B build -S demo/raylib -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release
+
+      - name: Build
+        run: emmake make -C build -j$(nproc)
+
+      - name: Stage web files
+        run: |
+          mkdir -p web
+          cp build/index.html build/index.js build/index.wasm web/
+          [ -f build/index.data ] && cp build/index.data web/ || true
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
