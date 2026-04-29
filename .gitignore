@@ -4,3 +4,5 @@ build
 nuklear_console_demo_*
 *.gif
 screenshot*
+package-lock.json
+node_modules
