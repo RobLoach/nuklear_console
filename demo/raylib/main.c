@@ -7,6 +7,7 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_BUTTON_TRIGGER_ON_RELEASE // Fixes some usage of touch and drag
 #include "raylib-nuklear.h"
 
 #include "../common/nuklear_console_demo.c"

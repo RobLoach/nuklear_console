@@ -1371,7 +1371,7 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Gamepad
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    if (nk_gamepad_is_button_pressed(data->gamepads, data->gamepad_num, (enum nk_gamepad_button)button)) {
+    if (nk_gamepad_is_button_released(data->gamepads, data->gamepad_num, (enum nk_gamepad_button)button)) {
         return nk_true;
     }
 
