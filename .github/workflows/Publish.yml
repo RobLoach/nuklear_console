@@ -17,6 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        submodules: true
 
       - name: Setup Emscripten
         uses: mymindstorm/setup-emsdk@v14
