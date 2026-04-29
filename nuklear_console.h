@@ -164,6 +164,8 @@ typedef struct nk_console_top_data {
     struct nk_vec2 drag_scroll_origin; /** Mouse position when the drag started. */
     nk_uint drag_scroll_start_x; /** Window scroll X at drag start. */
     nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
+    nk_uint drag_scroll_max_x; /** Maximum scroll X, updated each frame after render. */
+    nk_uint drag_scroll_max_y; /** Maximum scroll Y, updated each frame after render. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
@@ -870,6 +872,32 @@ static void nk_console_axis_update(nk_console* console) {
     }
 }
 
+    // Touch/drag-to-scroll: press and drag to scroll the window.
+static void nk_console_window_touch_drag(nk_console* console, nk_console_top_data* top_data) {
+    struct nk_input* in = &console->ctx->input;
+    if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
+        top_data->drag_scroll_origin = in->mouse.pos;
+        nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
+        top_data->drag_scroll_active = nk_false;
+    }
+    if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
+        float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
+        float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
+        if (!top_data->drag_scroll_active &&
+                (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
+            top_data->drag_scroll_active = nk_true;
+        }
+        if (top_data->drag_scroll_active) {
+            nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
+            nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
+            nk_window_set_scroll(console->ctx, sx, sy);
+            top_data->input_processed = nk_true;
+        }
+    } else {
+        top_data->drag_scroll_active = nk_false;
+    }
+}
+
 NK_API void nk_console_render(nk_console* console) {
     if (console == NULL || console->visible == nk_false) {
         return;
@@ -882,6 +910,7 @@ NK_API void nk_console_render(nk_console* console) {
         // Reset the input state and calculate new axis data.
         data->input_processed = nk_false;
         nk_console_axis_update(console);
+        nk_console_window_touch_drag(console, data);
 
         nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
 
@@ -1053,31 +1082,6 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
 
     // Process the Nuklear window.
     if (nk_begin(console->ctx, title, bounds, flags)) {
-        // Touch/drag-to-scroll: press and drag to scroll the window.
-        {
-            struct nk_input* in = &console->ctx->input;
-            if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
-                top_data->drag_scroll_origin = in->mouse.pos;
-                nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
-                top_data->drag_scroll_active = nk_false;
-            }
-            if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
-                float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
-                float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
-                if (!top_data->drag_scroll_active &&
-                        (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
-                    top_data->drag_scroll_active = nk_true;
-                }
-                if (top_data->drag_scroll_active) {
-                    nk_uint sx = (nk_uint)NK_MAX(0.0f, (float)top_data->drag_scroll_start_x + dx);
-                    nk_uint sy = (nk_uint)NK_MAX(0.0f, (float)top_data->drag_scroll_start_y + dy);
-                    nk_window_set_scroll(console->ctx, sx, sy);
-                    top_data->input_processed = nk_true;
-                }
-            } else {
-                top_data->drag_scroll_active = nk_false;
-            }
-        }
         nk_console_render(console);
     }
 
@@ -1092,14 +1096,17 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
         }
     }
 
-    // Calculate the content size.
+    // Calculate the content size and scroll bounds.
     {
         struct nk_rect outer = nk_window_get_bounds(console->ctx);
         struct nk_rect content = nk_window_get_content_region(console->ctx);
         float chrome_h = outer.h - content.h;
         float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
+        float rendered_w = console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x;
         window_bounds = outer;
         window_bounds.h = chrome_h + rendered_h;
+        top_data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
+        top_data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, rendered_w - content.w);
     }
 
     // Finish the window processing.
