@@ -2,7 +2,7 @@
 #define NK_CONSOLE_KEY_H__
 
 /**
- * Data specifically used for the key widget.
+ * Data specifically used for the Key widget.
  *
  * Stored value convention for out_key:
  *   0               = NK_KEY_NONE (nothing captured)
