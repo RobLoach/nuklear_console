@@ -159,6 +159,11 @@ typedef struct nk_console_top_data {
     nk_bool axis_down_fired; /** True this frame if an axis fired a down event. */
     nk_bool axis_left_fired; /** True this frame if an axis fired a left event. */
     nk_bool axis_right_fired; /** True this frame if an axis fired a right event. */
+
+    nk_bool drag_scroll_active; /** True when a drag-scroll gesture is in progress. */
+    struct nk_vec2 drag_scroll_origin; /** Mouse position when the drag started. */
+    nk_uint drag_scroll_start_x; /** Window scroll X at drag start. */
+    nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
@@ -307,6 +312,9 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #endif
 #ifndef NK_CONSOLE_AXIS_REPEAT_INTERVAL
 #define NK_CONSOLE_AXIS_REPEAT_INTERVAL 0.5f
+#endif
+#ifndef NK_CONSOLE_DRAG_THRESHOLD
+#define NK_CONSOLE_DRAG_THRESHOLD 8.0f
 #endif
 
 // NK_CONSOLE_MALLOC
@@ -1045,6 +1053,31 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
 
     // Process the Nuklear window.
     if (nk_begin(console->ctx, title, bounds, flags)) {
+        // Touch/drag-to-scroll: press and drag to scroll the window.
+        {
+            struct nk_input* in = &console->ctx->input;
+            if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
+                top_data->drag_scroll_origin = in->mouse.pos;
+                nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
+                top_data->drag_scroll_active = nk_false;
+            }
+            if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
+                float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
+                float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
+                if (!top_data->drag_scroll_active &&
+                        (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
+                    top_data->drag_scroll_active = nk_true;
+                }
+                if (top_data->drag_scroll_active) {
+                    nk_uint sx = (nk_uint)NK_MAX(0.0f, (float)top_data->drag_scroll_start_x + dx);
+                    nk_uint sy = (nk_uint)NK_MAX(0.0f, (float)top_data->drag_scroll_start_y + dy);
+                    nk_window_set_scroll(console->ctx, sx, sy);
+                    top_data->input_processed = nk_true;
+                }
+            } else {
+                top_data->drag_scroll_active = nk_false;
+            }
+        }
         nk_console_render(console);
     }
 
