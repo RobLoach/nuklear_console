@@ -27,6 +27,7 @@
 #define WINDOW_HEIGHT 600
 
 #include "../common/nuklear_console_demo.c"
+#include "../../nuklear_console_sdl.h"
 
 int main(int argc, char *argv[]) {
     NK_UNUSED(argc);
@@ -136,6 +137,7 @@ int main(int argc, char *argv[]) {
         SDL_RenderClear(renderer);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON);
+        nk_console_sdl_update_text_input(console, win);
 
         SDL_RenderPresent(renderer);
     }

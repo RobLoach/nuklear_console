@@ -32,6 +32,7 @@
 
 // Set up the Nuklear Console Demo
 #include "../common/nuklear_console_demo.c"
+#include "../../nuklear_console_sdl.h"
 
 struct nk_sdl3_app {
     SDL_Window *window;
@@ -175,7 +176,7 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderClear(app->renderer);
 
     nk_sdl_render(ctx, NK_ANTI_ALIASING_ON);
-    nk_sdl_update_TextInput(ctx);
+    nk_console_sdl_update_text_input(app->console, app->window);
 
     SDL_RenderPresent(app->renderer);
 
