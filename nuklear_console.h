@@ -872,8 +872,14 @@ static void nk_console_axis_update(nk_console* console) {
     }
 }
 
-    // Touch/drag-to-scroll: press and drag to scroll the window.
+/**
+ * Handles the Touch and Drag Scrolling.
+ */
 static void nk_console_window_touch_drag(nk_console* console, nk_console_top_data* top_data) {
+#ifndef NK_BUTTON_TRIGGER_ON_RELEASE
+    NK_UNUSED(console);
+    NK_UNUSED(top_data);
+#else
     struct nk_input* in = &console->ctx->input;
     if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
         top_data->drag_scroll_origin = in->mouse.pos;
@@ -896,6 +902,7 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
     } else {
         top_data->drag_scroll_active = nk_false;
     }
+#endif
 }
 
 NK_API void nk_console_render(nk_console* console) {
@@ -1098,15 +1105,14 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
 
     // Calculate the content size and scroll bounds.
     {
-        struct nk_rect outer = nk_window_get_bounds(console->ctx);
         struct nk_rect content = nk_window_get_content_region(console->ctx);
-        float chrome_h = outer.h - content.h;
         float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
-        float rendered_w = console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x;
-        window_bounds = outer;
-        window_bounds.h = chrome_h + rendered_h;
+        window_bounds = nk_window_get_bounds(console->ctx);
+        window_bounds.h = window_bounds.h - content.h + rendered_h;
+#ifdef NK_BUTTON_TRIGGER_ON_RELEASE
         top_data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
-        top_data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, rendered_w - content.w);
+        top_data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
+#endif
     }
 
     // Finish the window processing.
