@@ -84,6 +84,9 @@ static char textedit_password_buffer[256] = "12345";
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
 
+// Key
+static nk_rune key_binding = NK_KEY_ENTER;
+
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
@@ -355,6 +358,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
 
         // Input: From any gamepad (-1)
         nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
+
+        // Key: Capture a keyboard key binding
+        nk_console_key(widgets, "Key Binding", &key_binding);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)

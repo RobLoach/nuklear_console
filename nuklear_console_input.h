@@ -208,14 +208,14 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     // Check for input.
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     if (top_data->input_processed == nk_false) {
-        // Gamepad button pressed.
-        if (nk_gamepad_any_button_pressed((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
+        // Gamepad button released.
+        if (nk_gamepad_any_button_released((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
             // Trigger the onchange event and exit.
             nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
             finished = nk_true;
         }
         // Any other input.
-        else if (nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER) || nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_LEFT) || nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT)) {
+        else if (nk_input_is_key_released(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER) || nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_LEFT) || nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_RIGHT)) {
             finished = nk_true;
         }
     }
