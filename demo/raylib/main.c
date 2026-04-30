@@ -21,6 +21,7 @@ struct nk_rect lastWindowSize;
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
     InitWindow(800, 450, "nuklear_console_demo");
+    SetExitKey(KEY_NULL);
     SetWindowMinSize(200, 200);
 
     // Create the Nuklear Context
