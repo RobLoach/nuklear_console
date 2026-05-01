@@ -93,11 +93,30 @@ void nk_console_set_active_widget(nk_console* widget);
 - [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad)
 - [c-vector](https://github.com/eteran/c-vector/)
 
+## Configuration
+
+| Define | Description |
+| ------ | ----------- |
+| `NK_BUTTON_TRIGGER_ON_RELEASE` | When enabled, will allow for touch and drag to scroll the window |
+| `NK_CONSOLE_DRAG_THRESHOLD` | When using touch and drag to scroll, the amount of threshold movement needed to consider it a scroll |
+| `NK_CONSOLE_AXIS_DEADZONE` | The amount of movement the axis needs prior to moving the cursor |
+| `NK_CONSOLE_AXIS_REPEAT_INTERVAL` | When using the gamepad axis to move, how frequently the cursor will move |
+| `NK_CONSOLE_FILE_ADD_FILES` | The function callback used to enumerate files, see `nk_console_file_add_files_tinydir()` |
+
 ## Development
 
 Use [clang-format](https://clang.llvm.org/docs/ClangFormat.html) to apply coding standards.
 ``` sh
 clang-format -i *.h
+```
+
+To build the web demo...
+```bash
+cd demo/raylib
+mkdir build
+cd build
+emcmake cmake .. -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXECUTABLE_SUFFIX=".html"
+emmake make
 ```
 
 ## License
