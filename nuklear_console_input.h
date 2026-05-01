@@ -55,32 +55,6 @@ NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 extern "C" {
 #endif
 
-/**
- * Get the name of a gamepad button.
- *
- * @param button The button to get the name of.
- *
- * @return The name of the button.
- */
-static const char* nk_console_input_button_name(enum nk_gamepad_button button) {
-    switch (button) {
-        case NK_GAMEPAD_BUTTON_INVALID: return "<None>";
-        case NK_GAMEPAD_BUTTON_A: return "A";
-        case NK_GAMEPAD_BUTTON_B: return "B";
-        case NK_GAMEPAD_BUTTON_X: return "X";
-        case NK_GAMEPAD_BUTTON_Y: return "Y";
-        case NK_GAMEPAD_BUTTON_LB: return "Left Bumper";
-        case NK_GAMEPAD_BUTTON_RB: return "Right Bumper";
-        case NK_GAMEPAD_BUTTON_BACK: return "Back";
-        case NK_GAMEPAD_BUTTON_START: return "Start";
-        case NK_GAMEPAD_BUTTON_UP: return "Up";
-        case NK_GAMEPAD_BUTTON_DOWN: return "Down";
-        case NK_GAMEPAD_BUTTON_LEFT: return "Left";
-        case NK_GAMEPAD_BUTTON_RIGHT: return "Right";
-        default: return "Unknown";
-    }
-}
-
 NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return nk_rect(0, 0, 0, 0);
@@ -139,7 +113,10 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
     console->columns = 0;
-    console->label = nk_console_input_button_name(*data->out_gamepad_button);
+    console->label = (*data->out_gamepad_button < 0) ? "<None>" : nk_gamepad_button_name(nk_console_get_gamepads(console), *data->out_gamepad_button);
+    if (console->label == NULL) {
+        console->label = "Unknown";
+    }
     console->label_length = 0;
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;

@@ -21,6 +21,7 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_INCLUDE_COMMAND_USERDATA
 #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_BUTTON_TRIGGER_ON_RELEASE
 #define NK_IMPLEMENTATION
 #include "../../vendor/Nuklear/nuklear.h"
 
