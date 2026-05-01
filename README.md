@@ -95,13 +95,14 @@ void nk_console_set_active_widget(nk_console* widget);
 
 ## Configuration
 
-| Define | Description |
-| ------ | ----------- |
-| `NK_BUTTON_TRIGGER_ON_RELEASE` | When enabled, will allow touch drag scrolling controls
-| `NK_CONSOLE_DRAG_THRESHOLD` | When using touch and drag to scroll, the amount of threshold movement needed to consider it a scroll |
-| `NK_CONSOLE_AXIS_DEADZONE` | The amount of movement the axis needs prior to moving the cursor |
-| `NK_CONSOLE_AXIS_REPEAT_INTERVAL` | When using the gamepad axis to move, how frequently the cursor will move |
-| `NK_CONSOLE_FILE_ADD_FILES` | The function callback used to enumerate files, see `nk_console_file_add_files_tinydir()` |
+Define | Description
+------ | -----------
+`NK_BUTTON_TRIGGER_ON_RELEASE` | Required in order to ensure events are triggered in the correct order
+`NK_CONSOLE_KEY_BACK` | The `nk_keys` enumeration that will be used to go back in the menu heirarchy. Defaults to ESC.
+`NK_CONSOLE_DRAG_THRESHOLD` | The amount of threshold mouse movement needed to consider it a scroll
+`NK_CONSOLE_AXIS_DEADZONE` | The amount of movement the gamepad axis needs prior to moving the cursor
+`NK_CONSOLE_AXIS_REPEAT_INTERVAL` | When using the gamepad axis to move, how frequently the cursor will move
+`NK_CONSOLE_FILE_ADD_FILES` | The function callback used to enumerate files, see `nk_console_file_add_files_tinydir()`
 
 ## Development
 

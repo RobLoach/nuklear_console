@@ -344,6 +344,15 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #define NK_CONSOLE_DRAG_THRESHOLD 8.0f
 #endif
 
+#ifndef NK_CONSOLE_KEY_BACK
+/**
+ * The Nuklear `enum nk_keys` used to go back in the menu heirarchy.
+ *
+ * @see nk_console_button_pushed()
+ */
+#define NK_CONSOLE_KEY_BACK NK_KEY_TEXT_RESET_MODE
+#endif // NK_CONSOLE_KEY_BACK
+
 // NK_CONSOLE_MALLOC
 #ifndef NK_CONSOLE_MALLOC
 #ifdef NK_INCLUDE_DEFAULT_ALLOCATOR
@@ -912,7 +921,7 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
         float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
         float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
         if (!top_data->drag_scroll_active &&
-                (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
+            (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
             top_data->drag_scroll_active = nk_true;
         }
         if (top_data->drag_scroll_active) {
@@ -921,7 +930,8 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
             nk_window_set_scroll(console->ctx, sx, sy);
             top_data->input_processed = nk_true;
         }
-    } else {
+    }
+    else {
         top_data->drag_scroll_active = nk_false;
     }
 }
@@ -1361,8 +1371,8 @@ NK_API nk_console* nk_console_find_by_path(nk_console* console, const char* path
                     continue;
                 }
                 int label_len = child->label_length > 0
-                    ? child->label_length
-                    : (int)nk_strlen(child->label);
+                                    ? child->label_length
+                                    : (int)nk_strlen(child->label);
                 if (label_len == copy_len &&
                     strncmp(child->label, segment, (size_t)copy_len) == 0) {
                     found = child;
@@ -1425,9 +1435,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER);
         case NK_GAMEPAD_BUTTON_B:
             // Escape Key
-            return nk_input_is_key_released(&console->ctx->input, NK_KEY_TEXT_RESET_MODE) ||
-            // Mouse Back Button
-            (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
+            return nk_input_is_key_released(&console->ctx->input, NK_CONSOLE_KEY_BACK) ||
+                   // Mouse Back Button
+                   (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_released(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);
