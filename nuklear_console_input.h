@@ -127,6 +127,14 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
 }
 
 /**
+ * Go back as a post-render hook so that it handles the events safely afterwards.
+ */
+static void nk_console_input_back_post_render(nk_console* console, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_button_back(console, NULL);
+}
+
+/**
  * Render the "Press a Button" prompt.
  *
  * @param console The console to render the prompt for.
@@ -200,7 +208,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     if (finished == nk_true) {
         top_data->input_processed = nk_true;
         data->timer = 0.0f;
-        nk_console_button_back(console, NULL);
+        nk_console_add_event(console, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_input_back_post_render);
     }
 
     return nk_rect(0, 0, 0, 0);

@@ -177,6 +177,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderClear(app->renderer);
 
     nk_sdl_render(ctx, NK_ANTI_ALIASING_ON);
+
+    // The SDL Renderer allows handling SDL_StartTextInput()
     nk_console_sdl_update_text_input(app->console, app->window);
 
     SDL_RenderPresent(app->renderer);

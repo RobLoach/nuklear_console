@@ -97,6 +97,7 @@ void nk_console_set_active_widget(nk_console* widget);
 
 | Define | Description |
 | ------ | ----------- |
+| `NK_BUTTON_TRIGGER_ON_RELEASE` | When enabled, will allow touch drag scrolling controls
 | `NK_CONSOLE_DRAG_THRESHOLD` | When using touch and drag to scroll, the amount of threshold movement needed to consider it a scroll |
 | `NK_CONSOLE_AXIS_DEADZONE` | The amount of movement the axis needs prior to moving the cursor |
 | `NK_CONSOLE_AXIS_REPEAT_INTERVAL` | When using the gamepad axis to move, how frequently the cursor will move |

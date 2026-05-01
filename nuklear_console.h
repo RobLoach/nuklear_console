@@ -316,11 +316,11 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 /**
  * Define NK_BUTTON_TRIGGER_ON_RELEASE prior to nuklear.h.
  *
- * This is required because the input events are triggered incorrectly otherwise.
+ * This is required because the input events are triggered incorrectly otherwise, resulting in undesirable behavior.
  *
  * @code
- * #define NK_IMPLEMENTATION
  * #define NK_BUTTON_TRIGGER_ON_RELEASE
+ * #define NK_IMPLEMENTATION
  * #include "nuklear.h"
  *
  * #define NK_CONSOLE_IMPLEMENTATION
@@ -330,7 +330,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
  * You are able to ignore this warning by using #define NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE
  */
 #ifndef NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE
-#warning nuklear_console requires NK_BUTTON_TRIGGER_ON_RELEASE. Define it directly prior to #include "nuklear.h" .
+#warning "nuklear_console requires NK_BUTTON_TRIGGER_ON_RELEASE. Add #define NK_BUTTON_TRIGGER_ON_RELEASE prior to #define NK_IMPLEMENTATION ."
 #endif
 #endif
 
@@ -994,6 +994,15 @@ NK_API void nk_console_render(nk_console* console) {
                 cvector_clear(console->events);
             }
         }
+
+        // Update drag scroll bounds so they're valid when nk_console_render is called directly (e.g. SDL/GLFW demos) rather than via nk_console_render_window.
+        if (console->ctx->current != NULL) {
+            struct nk_rect content = nk_window_get_content_region(console->ctx);
+            float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
+            data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
+            data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
+        }
+
         return;
     }
 

@@ -38,6 +38,10 @@ extern "C" {
  */
 NK_API nk_console* nk_console_key(nk_console* parent, const char* label, nk_rune* out_key);
 NK_API struct nk_rect nk_console_key_render(nk_console* widget);
+
+/**
+ * Retrieves the name of the of the given Nuklear rune.
+ */
 NK_API const char* nk_console_key_name(nk_rune key);
 
 #if defined(__cplusplus)
@@ -86,7 +90,7 @@ NK_API const char* nk_console_key_name(nk_rune key) {
             case NK_KEY_RIGHT: return "Right";
             case NK_KEY_TEXT_INSERT_MODE: return "Insert";
             case NK_KEY_TEXT_REPLACE_MODE: return "Replace";
-            case NK_KEY_TEXT_RESET_MODE: return "Reset Mode";
+            case NK_KEY_TEXT_RESET_MODE: return "Escape"; // Nuklear uses ESCAPE as Reset Mode
             case NK_KEY_TEXT_LINE_START: return "Home";
             case NK_KEY_TEXT_LINE_END: return "End";
             case NK_KEY_TEXT_START: return "Ctrl+Home";
@@ -153,6 +157,14 @@ NK_API struct nk_rect nk_console_key_render(nk_console* console) {
     console->label_length = swap_label_length;
 
     return widget_bounds;
+}
+
+/**
+ * Go back as a post-render hook so that it handles the events safely afterwards.
+ */
+static void nk_console_key_back_post_render(nk_console* console, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_button_back(console, NULL);
 }
 
 /**
@@ -248,7 +260,7 @@ static struct nk_rect nk_console_key_active_render(nk_console* console) {
     if (finished == nk_true) {
         top_data->input_processed = nk_true;
         data->timer = 0.0f;
-        nk_console_button_back(console, NULL);
+        nk_console_add_event(console, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_key_back_post_render);
     }
 
     return nk_rect(0, 0, 0, 0);
