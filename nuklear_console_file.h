@@ -433,6 +433,7 @@ static void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
 }
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
 /**
  * Click handler for file entry buttons (non-directory) in button view mode.
  *
@@ -463,6 +464,7 @@ static void nk_console_file_button_file_onclick(nk_console* button, void* user_d
     }
     nk_console_navigate_back(file);
 }
+#endif
 
 NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
     if (parent == NULL || path == NULL || path[0] == '\0') {
@@ -608,21 +610,20 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
         }
 
         if (cvector_empty(data->entries)) {
-            nk_console* empty_label = nk_console_label(widget, "[Empty]");
+            nk_console* empty_label = nk_console_label(widget, "[Empty Directory]");
+            empty_label->alignment = NK_TEXT_CENTERED;
             empty_label->disabled = nk_true;
         }
         else {
             for (size_t i = 0; i < cvector_size(data->entries); i++) {
                 nk_console_file_entry* entry = &data->entries[i];
-                nk_console* btn;
                 if (entry->is_directory) {
-                    btn = nk_console_button_onclick(widget, entry->label, &nk_console_file_entry_onclick);
+                    nk_console* btn = nk_console_button_onclick(widget, entry->label, &nk_console_file_entry_onclick);
                     nk_console_button_set_symbol(btn, NK_SYMBOL_TRIANGLE_RIGHT);
                 }
                 else {
-                    btn = nk_console_button_onclick(widget, entry->label, &nk_console_file_button_file_onclick);
+                    nk_console_button_onclick(widget, entry->label, &nk_console_file_button_file_onclick);
                 }
-                NK_UNUSED(btn);
             }
         }
 
