@@ -55,32 +55,6 @@ NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 extern "C" {
 #endif
 
-/**
- * Get the name of a gamepad button.
- *
- * @param button The button to get the name of.
- *
- * @return The name of the button.
- */
-static const char* nk_console_input_button_name(enum nk_gamepad_button button) {
-    switch (button) {
-        case NK_GAMEPAD_BUTTON_INVALID: return "<None>";
-        case NK_GAMEPAD_BUTTON_A: return "A";
-        case NK_GAMEPAD_BUTTON_B: return "B";
-        case NK_GAMEPAD_BUTTON_X: return "X";
-        case NK_GAMEPAD_BUTTON_Y: return "Y";
-        case NK_GAMEPAD_BUTTON_LB: return "Left Bumper";
-        case NK_GAMEPAD_BUTTON_RB: return "Right Bumper";
-        case NK_GAMEPAD_BUTTON_BACK: return "Back";
-        case NK_GAMEPAD_BUTTON_START: return "Start";
-        case NK_GAMEPAD_BUTTON_UP: return "Up";
-        case NK_GAMEPAD_BUTTON_DOWN: return "Down";
-        case NK_GAMEPAD_BUTTON_LEFT: return "Left";
-        case NK_GAMEPAD_BUTTON_RIGHT: return "Right";
-        default: return "Unknown";
-    }
-}
-
 NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return nk_rect(0, 0, 0, 0);
@@ -139,7 +113,10 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
     console->columns = 0;
-    console->label = nk_console_input_button_name(*data->out_gamepad_button);
+    console->label = (*data->out_gamepad_button < 0) ? "<None>" : nk_gamepad_button_name(nk_console_get_gamepads(console), *data->out_gamepad_button);
+    if (console->label == NULL) {
+        console->label = "Unknown";
+    }
     console->label_length = 0;
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;
@@ -147,6 +124,14 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     console->label_length = swap_label_length;
 
     return widget_bounds;
+}
+
+/**
+ * Go back as a post-render hook so that it handles the events safely afterwards.
+ */
+static void nk_console_input_back_post_render(nk_console* console, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_button_back(console, NULL);
 }
 
 /**
@@ -208,14 +193,14 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     // Check for input.
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     if (top_data->input_processed == nk_false) {
-        // Gamepad button pressed.
-        if (nk_gamepad_any_button_pressed((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
+        // Gamepad button released.
+        if (nk_gamepad_any_button_released((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
             // Trigger the onchange event and exit.
             nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
             finished = nk_true;
         }
         // Any other input.
-        else if (nk_input_is_key_pressed(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_pressed(&console->ctx->input, NK_KEY_ENTER) || nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_LEFT) || nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_RIGHT)) {
+        else if (nk_input_is_key_released(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER) || nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_LEFT) || nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_RIGHT)) {
             finished = nk_true;
         }
     }
@@ -223,7 +208,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     if (finished == nk_true) {
         top_data->input_processed = nk_true;
         data->timer = 0.0f;
-        nk_console_button_back(console, NULL);
+        nk_console_add_event(console, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_input_back_post_render);
     }
 
     return nk_rect(0, 0, 0, 0);

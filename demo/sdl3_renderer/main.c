@@ -21,6 +21,7 @@
 #define NK_INCLUDE_DEFAULT_FONT
 #define NK_INCLUDE_COMMAND_USERDATA
 #define NK_INCLUDE_VERTEX_BUFFER_OUTPUT
+#define NK_BUTTON_TRIGGER_ON_RELEASE
 #define NK_IMPLEMENTATION
 #include "../../vendor/Nuklear/nuklear.h"
 
@@ -176,6 +177,8 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     SDL_RenderClear(app->renderer);
 
     nk_sdl_render(ctx, NK_ANTI_ALIASING_ON);
+
+    // The SDL Renderer allows handling SDL_StartTextInput()
     nk_console_sdl_update_text_input(app->console, app->window);
 
     SDL_RenderPresent(app->renderer);

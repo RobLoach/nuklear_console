@@ -84,6 +84,9 @@ static char textedit_password_buffer[256] = "12345";
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
 
+// Key
+static nk_rune key_binding = NK_KEY_ENTER;
+
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
@@ -350,11 +353,16 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         struct nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
+            nk_console_progress(progressbar, "Progress (Disabled)", &progressValue, 100)
+                ->disabled = nk_true;
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
         // Input: From any gamepad (-1)
         nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
+
+        // Key: Capture a keyboard key binding
+        nk_console_key(widgets, "Key Binding", &key_binding);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
@@ -375,6 +383,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         {
             nk_console_slider_float(sliders, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
             nk_console_slider_int(sliders, "Slider Int", 0, &slider_int_test, 20, 1);
+            nk_console_slider_int(sliders, "Slider Disabled", 0, &slider_int_test, 20, 1)
+                ->disabled = nk_true;
             nk_console_button_onclick(sliders, "Back", &nk_console_button_back);
         }
 

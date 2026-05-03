@@ -69,6 +69,8 @@ typedef enum {
     NK_CONSOLE_COLOR,
     NK_CONSOLE_INPUT,
     NK_CONSOLE_INPUT_ACTIVE,
+    NK_CONSOLE_KEY,
+    NK_CONSOLE_KEY_ACTIVE,
     NK_CONSOLE_RADIO,
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
@@ -284,6 +286,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
+#include "nuklear_console_key.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
@@ -309,6 +312,28 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #ifndef NK_CONSOLE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_IMPLEMENTATION_ONCE
 
+#ifndef NK_BUTTON_TRIGGER_ON_RELEASE
+/**
+ * Define NK_BUTTON_TRIGGER_ON_RELEASE prior to nuklear.h.
+ *
+ * This is required because the input events are triggered incorrectly otherwise, resulting in undesirable behavior.
+ *
+ * @code
+ * #define NK_BUTTON_TRIGGER_ON_RELEASE
+ * #define NK_IMPLEMENTATION
+ * #include "nuklear.h"
+ *
+ * #define NK_CONSOLE_IMPLEMENTATION
+ * #include "nuklear_console.h"
+ * @endcode
+ *
+ * You are able to ignore this warning by using #define NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE
+ */
+#ifndef NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE
+#warning "nuklear_console requires NK_BUTTON_TRIGGER_ON_RELEASE. Add #define NK_BUTTON_TRIGGER_ON_RELEASE prior to #define NK_IMPLEMENTATION ."
+#endif
+#endif
+
 #ifndef NK_CONSOLE_AXIS_DEADZONE
 #define NK_CONSOLE_AXIS_DEADZONE 0.22f
 #endif
@@ -318,6 +343,15 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #ifndef NK_CONSOLE_DRAG_THRESHOLD
 #define NK_CONSOLE_DRAG_THRESHOLD 8.0f
 #endif
+
+#ifndef NK_CONSOLE_KEY_BACK
+/**
+ * The Nuklear `enum nk_keys` used to go back in the menu heirarchy.
+ *
+ * @see nk_console_button_pushed()
+ */
+#define NK_CONSOLE_KEY_BACK NK_KEY_TEXT_RESET_MODE
+#endif // NK_CONSOLE_KEY_BACK
 
 // NK_CONSOLE_MALLOC
 #ifndef NK_CONSOLE_MALLOC
@@ -378,6 +412,7 @@ extern "C" {
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
+#include "nuklear_console_key.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
@@ -876,10 +911,6 @@ static void nk_console_axis_update(nk_console* console) {
  * Handles the Touch and Drag Scrolling.
  */
 static void nk_console_window_touch_drag(nk_console* console, nk_console_top_data* top_data) {
-#ifndef NK_BUTTON_TRIGGER_ON_RELEASE
-    NK_UNUSED(console);
-    NK_UNUSED(top_data);
-#else
     struct nk_input* in = &console->ctx->input;
     if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
         top_data->drag_scroll_origin = in->mouse.pos;
@@ -890,7 +921,7 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
         float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
         float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
         if (!top_data->drag_scroll_active &&
-                (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
+            (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
             top_data->drag_scroll_active = nk_true;
         }
         if (top_data->drag_scroll_active) {
@@ -899,10 +930,10 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
             nk_window_set_scroll(console->ctx, sx, sy);
             top_data->input_processed = nk_true;
         }
-    } else {
+    }
+    else {
         top_data->drag_scroll_active = nk_false;
     }
-#endif
 }
 
 NK_API void nk_console_render(nk_console* console) {
@@ -973,6 +1004,15 @@ NK_API void nk_console_render(nk_console* console) {
                 cvector_clear(console->events);
             }
         }
+
+        // Update drag scroll bounds so they're valid when nk_console_render is called directly (e.g. SDL/GLFW demos) rather than via nk_console_render_window.
+        if (console->ctx->current != NULL) {
+            struct nk_rect content = nk_window_get_content_region(console->ctx);
+            float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
+            data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
+            data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
+        }
+
         return;
     }
 
@@ -1109,10 +1149,8 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
         float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
         window_bounds = nk_window_get_bounds(console->ctx);
         window_bounds.h = window_bounds.h - content.h + rendered_h;
-#ifdef NK_BUTTON_TRIGGER_ON_RELEASE
         top_data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
         top_data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
-#endif
     }
 
     // Finish the window processing.
@@ -1333,8 +1371,8 @@ NK_API nk_console* nk_console_find_by_path(nk_console* console, const char* path
                     continue;
                 }
                 int label_len = child->label_length > 0
-                    ? child->label_length
-                    : (int)nk_strlen(child->label);
+                                    ? child->label_length
+                                    : (int)nk_strlen(child->label);
                 if (label_len == copy_len &&
                     strncmp(child->label, segment, (size_t)copy_len) == 0) {
                     found = child;
@@ -1397,9 +1435,9 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER);
         case NK_GAMEPAD_BUTTON_B:
             // Escape Key
-            return nk_input_is_key_released(&console->ctx->input, NK_KEY_TEXT_RESET_MODE) ||
-            // Mouse Back Button
-            (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
+            return nk_input_is_key_released(&console->ctx->input, NK_CONSOLE_KEY_BACK) ||
+                   // Mouse Back Button
+                   (nk_input_is_mouse_pressed(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx));
         // case NK_GAMEPAD_BUTTON_X: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_A);
         // case NK_GAMEPAD_BUTTON_Y: return nk_input_is_key_pressed(&console->ctx->input, NK_KEY_S);
         case NK_GAMEPAD_BUTTON_LB: return nk_input_is_key_released(&console->ctx->input, NK_KEY_UP) && nk_input_is_key_down(&console->ctx->input, NK_KEY_SHIFT);

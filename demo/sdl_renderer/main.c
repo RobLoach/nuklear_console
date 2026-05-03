@@ -20,6 +20,7 @@
 #define NK_INCLUDE_COMMAND_USERDATA
 #define NK_IMPLEMENTATION
 #define NK_SDL_RENDERER_IMPLEMENTATION
+#define NK_BUTTON_TRIGGER_ON_RELEASE
 #include "../../vendor/Nuklear/nuklear.h"
 #include "../../vendor/Nuklear/demo/sdl_renderer/nuklear_sdl_renderer.h"
 
@@ -112,7 +113,7 @@ int main(int argc, char *argv[]) {
         nk_input_begin(ctx);
 
         nk_gamepad_update(nk_console_get_gamepads(console));
-        
+
         while (SDL_PollEvent(&evt)) {
             if (evt.type == SDL_QUIT) goto cleanup;
             if (evt.type == SDL_KEYUP && evt.key.keysym.scancode == SDL_SCANCODE_ESCAPE) running = 0;
@@ -137,6 +138,8 @@ int main(int argc, char *argv[]) {
         SDL_RenderClear(renderer);
 
         nk_sdl_render(NK_ANTI_ALIASING_ON);
+
+        // The SDL Renderer allows handling SDL_StartTextInput()
         nk_console_sdl_update_text_input(console, win);
 
         SDL_RenderPresent(renderer);
