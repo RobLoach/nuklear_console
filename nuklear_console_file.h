@@ -27,6 +27,7 @@ typedef struct nk_console_file_data {
     char directory[NK_CONSOLE_FILE_PATH_MAX]; /** When selecting a file, this is the current directory. */
     void* file_user_data; /** Custom user data for the file system. */
     nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
+    nk_bool use_list_view; /** When true, uses a list view for file selection. Defaults to buttons. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
 } nk_console_file_data;
@@ -98,6 +99,23 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
  * @see nk_console_file_add_files_raylib()
  */
 NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
+
+/**
+ * Sets whether the file/directory widget uses a list view or buttons for file selection.
+ *
+ * @param file The file widget.
+ * @param use_list_view True to use a list view, false to use buttons (the default).
+ */
+NK_API void nk_console_file_set_list_view(nk_console* file, nk_bool use_list_view);
+
+/**
+ * Gets whether the file/directory widget is using a list view for file selection.
+ *
+ * @param file The file widget.
+ *
+ * @return True if using a list view, false if using buttons (the default).
+ */
+NK_API nk_bool nk_console_file_get_list_view(nk_console* file);
 
 /**
  * Refreshes the file widget with the contents with its given directory.
@@ -415,6 +433,39 @@ static void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
 }
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
+/**
+ * Click handler for file entry buttons (non-directory) in button view mode.
+ *
+ * @internal
+ */
+static void nk_console_file_button_file_onclick(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
+    if (button == NULL || button->label == NULL) {
+        return;
+    }
+    nk_console* file = nk_console_file_button_get_file_widget(button);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (!nk_console_file_append_to_directory(data, file, button->label)) {
+        return;
+    }
+    int desired_length = nk_strlen(data->directory);
+    if (desired_length >= data->file_path_buffer_size) {
+        NK_ASSERT(0);
+        nk_console_show_message(file, "Error: File path is too long.");
+    }
+    else {
+        NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
+        data->file_path_buffer[desired_length] = '\0';
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+    }
+    nk_console_navigate_back(file);
+}
+#endif
+
 NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
     if (parent == NULL || path == NULL || path[0] == '\0') {
         return NULL;
@@ -530,16 +581,56 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     // Populate the entries array via the file system callback.
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
 
-    // Show at least 1 item so the get_label callback can display "(Empty directory)".
-    nk_uint display_count = cvector_empty(data->entries) ? 1 : (nk_uint)cvector_size(data->entries);
-    if (cvector_size(widget->children) >= 4 && widget->children[3]->type == NK_CONSOLE_LIST_VIEW) {
-        // Update the existing list view in place.
-        nk_console_list_view_set_item_count(widget->children[3], display_count);
+    if (data->use_list_view) {
+        // Show at least 1 item so the get_label callback can display "[Empty]".
+        nk_uint display_count = cvector_empty(data->entries) ? 1 : (nk_uint)cvector_size(data->entries);
+        if (cvector_size(widget->children) >= 4 && widget->children[3]->type == NK_CONSOLE_LIST_VIEW) {
+            // Update the existing list view in place.
+            nk_console_list_view_set_item_count(widget->children[3], display_count);
+        }
+        else {
+            // Remove any old button-mode children before creating the list view.
+            while (cvector_size(widget->children) > 3) {
+                size_t idx = cvector_size(widget->children) - 1;
+                nk_console* child = widget->children[idx];
+                cvector_erase(widget->children, idx);
+                nk_console_free(child);
+            }
+            nk_console* list_view = nk_console_list_view(widget, "file_entries", 10, display_count, &nk_console_file_list_view_get_label);
+            nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_list_view_onclick);
+        }
     }
     else {
-        // Create the list view.
-        nk_console* list_view = nk_console_list_view(widget, "file_entries", 10, display_count, &nk_console_file_list_view_get_label);
-        nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_list_view_onclick);
+        // Button mode: remove old entry children (list view or previous button entries).
+        while (cvector_size(widget->children) > 3) {
+            size_t idx = cvector_size(widget->children) - 1;
+            nk_console* child = widget->children[idx];
+            cvector_erase(widget->children, idx);
+            nk_console_free(child);
+        }
+
+        if (cvector_empty(data->entries)) {
+            nk_console* empty_label = nk_console_label(widget, "[Empty Directory]");
+            empty_label->alignment = NK_TEXT_CENTERED;
+            empty_label->disabled = nk_true;
+        }
+        else {
+            for (size_t i = 0; i < cvector_size(data->entries); i++) {
+                nk_console_file_entry* entry = &data->entries[i];
+                if (entry->is_directory) {
+                    nk_console* btn = nk_console_button_onclick(widget, entry->label, &nk_console_file_entry_onclick);
+                    nk_console_button_set_symbol(btn, NK_SYMBOL_TRIANGLE_RIGHT);
+                }
+                else {
+                    nk_console_button_onclick(widget, entry->label, &nk_console_file_button_file_onclick);
+                }
+            }
+        }
+
+        // Focus the first entry button if available.
+        if (cvector_size(widget->children) > 3) {
+            nk_console_set_active_widget(widget->children[3]);
+        }
     }
 #else
     // NK_CONSOLE_FILE_ADD_FILES is undefined, so back out.
@@ -610,6 +701,24 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     // Set the active parent to the file widget, and refresh it after rendering everything else.
     nk_console_set_active_parent(file);
     nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
+}
+
+NK_API void nk_console_file_set_list_view(nk_console* file, nk_bool use_list_view) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    data->use_list_view = use_list_view;
+}
+
+NK_API nk_bool nk_console_file_get_list_view(nk_console* file) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return nk_false;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    return data->use_list_view;
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
