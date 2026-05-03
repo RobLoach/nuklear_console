@@ -22,13 +22,7 @@ extern "C" {
 #endif
 
 /**
- * Create a new key widget to capture a keyboard key or typed character.
- *
- * When activated, the widget waits for the first keyboard input and stores it
- * in out_key using the following convention:
- *   0               = NK_KEY_NONE
- *   1 .. NK_KEY_MAX = nk_keys special key
- *   > NK_KEY_MAX    = Unicode codepoint of a typed character
+ * Create a new Key widget to capture a keyboard key or typed character.
  *
  * @param parent The parent console.
  * @param label The label to display.

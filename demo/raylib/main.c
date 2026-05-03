@@ -61,7 +61,7 @@ void UpdateDrawFrame(void) {
     nk_gamepad_update(nk_console_get_gamepads(console));
 
     // Nuklear GUI Code
-    nk_console_render_window(console, "nuklear_console", nk_rect(0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()), NK_WINDOW_SCROLL_AUTO_HIDE);
+    nk_console_render_window(console, "nuklear_console", nk_rect(0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()), NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE);
 
     // Render
     BeginDrawing();

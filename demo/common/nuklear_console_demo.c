@@ -353,6 +353,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         struct nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
+            nk_console_progress(progressbar, "Progress (Disabled)", &progressValue, 100)
+                ->disabled = nk_true;
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
@@ -381,6 +383,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         {
             nk_console_slider_float(sliders, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
             nk_console_slider_int(sliders, "Slider Int", 0, &slider_int_test, 20, 1);
+            nk_console_slider_int(sliders, "Slider Disabled", 0, &slider_int_test, 20, 1)
+                ->disabled = nk_true;
             nk_console_button_onclick(sliders, "Back", &nk_console_button_back);
         }
 
