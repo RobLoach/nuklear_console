@@ -93,7 +93,7 @@ static nk_bool nk_console_file_add_files_tinydir(nk_console* parent, const char*
 // Tell the file widget to use the tinydir file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
 
-// Raylib support
+// Raylib
 #elif defined(NK_CONSOLE_ENABLE_RAYLIB) || defined(RAYLIB_VERSION)
 
 /**
@@ -133,17 +133,10 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
-// SDL3 support
+// SDL3
 #elif defined(NK_CONSOLE_ENABLE_SDL3) || (defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION == 3)
 
-typedef struct {
-    nk_console* console;
-    nk_bool result;
-} nk_console_file_add_files_sdl3_userdata;
-
 static SDL_EnumerationResult SDLCALL nk_console_file_add_files_sdl3_callback(void* userdata, const char* dirname, const char* fname) {
-    nk_console_file_add_files_sdl3_userdata* data = (nk_console_file_add_files_sdl3_userdata*)userdata;
-
     // Build the full path.
     char fullpath[4096];
     size_t dirlen = SDL_strlen(dirname);
@@ -160,10 +153,7 @@ static SDL_EnumerationResult SDLCALL nk_console_file_add_files_sdl3_callback(voi
         is_dir = (info.type == SDL_PATHTYPE_DIRECTORY) ? nk_true : nk_false;
     }
 
-    if (nk_console_file_add_entry(data->console, fullpath, is_dir) != NULL) {
-        data->result = nk_true;
-    }
-
+    nk_console_file_add_entry((nk_console*)userdata, fullpath, is_dir);
     return SDL_ENUM_CONTINUE;
 }
 
@@ -182,9 +172,7 @@ static nk_bool nk_console_file_add_files_sdl3(nk_console* console, const char* p
         return nk_false;
     }
 
-    nk_console_file_add_files_sdl3_userdata data = {console, nk_false};
-    SDL_EnumerateDirectory(path, nk_console_file_add_files_sdl3_callback, &data);
-    return data.result;
+    return SDL_EnumerateDirectory(path, nk_console_file_add_files_sdl3_callback, console) ? nk_true : nk_false;
 }
 
 // Tell the file widget to use the SDL3 file system.
