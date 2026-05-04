@@ -5,6 +5,7 @@
  * - NK_CONSOLE_FILE_ADD_FILES: Callback which is used to add files to the file widget, matching the signature of nk_console_file_add_files_tinydir().
  * - NK_CONSOLE_ENABLE_TINYDIR: Use the tinydir library to list files in a directory. https://github.com/cxong/tinydir
  * - NK_CONSOLE_ENABLE_RAYLIB or RAYLIB_VERSION: When defined, will use raylib to enumerate the files. https://github.com/RobLoach/raylib-nuklear
+ * - NK_CONSOLE_ENABLE_SDL3 or SDL_MAJOR_VERSION == 3: When defined, will use SDL3 to enumerate the files. https://libsdl.org
  * - When no file system is enabled, clicking on the Select File button will show an error message.
  */
 
@@ -92,7 +93,7 @@ static nk_bool nk_console_file_add_files_tinydir(nk_console* parent, const char*
 // Tell the file widget to use the tinydir file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
 
-// Raylib support
+// Raylib
 #elif defined(NK_CONSOLE_ENABLE_RAYLIB) || defined(RAYLIB_VERSION)
 
 /**
@@ -131,6 +132,51 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
+
+// SDL3
+#elif defined(NK_CONSOLE_ENABLE_SDL3) || (defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION == 3)
+
+static SDL_EnumerationResult SDLCALL nk_console_file_add_files_sdl3_callback(void* userdata, const char* dirname, const char* fname) {
+    // Build the full path.
+    char fullpath[4096];
+    size_t dirlen = SDL_strlen(dirname);
+    if (dirlen > 0 && dirname[dirlen - 1] == '/') {
+        SDL_snprintf(fullpath, sizeof(fullpath), "%s%s", dirname, fname);
+    } else {
+        SDL_snprintf(fullpath, sizeof(fullpath), "%s/%s", dirname, fname);
+    }
+
+    // Determine if the entry is a directory.
+    SDL_PathInfo info;
+    nk_bool is_dir = nk_false;
+    if (SDL_GetPathInfo(fullpath, &info)) {
+        is_dir = (info.type == SDL_PATHTYPE_DIRECTORY) ? nk_true : nk_false;
+    }
+
+    nk_console_file_add_entry((nk_console*)userdata, fullpath, is_dir);
+    return SDL_ENUM_CONTINUE;
+}
+
+/**
+ * nuklear_console_file callback to iterate through a directory and add all entries from the given path using SDL3.
+ *
+ * @param console The parent files widget.
+ * @param path The path to enumerate.
+ *
+ * @return True if there were entries that were added.
+ *
+ * @see nk_console_file_add_entry()
+ */
+static nk_bool nk_console_file_add_files_sdl3(nk_console* console, const char* path) {
+    if (console == NULL || path == NULL) {
+        return nk_false;
+    }
+
+    return SDL_EnumerateDirectory(path, nk_console_file_add_files_sdl3_callback, console) ? nk_true : nk_false;
+}
+
+// Tell the file widget to use the SDL3 file system.
+#define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_sdl3
 
 #endif // NK_CONSOLE_ENABLE_TINYDIR
 #endif // NK_CONSOLE_FILE_ADD_FILES
