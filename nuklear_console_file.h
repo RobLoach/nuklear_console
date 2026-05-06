@@ -134,6 +134,26 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 #ifndef NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
 
+#ifndef NK_STRCMP
+/**
+ * Function used to compare two strings.
+ *
+ * @see strcmp()
+ * @see nk_console_file_entry_compare()
+ */
+#define NK_STRCMP(s1, s2) strcmp(s1, s2)
+#endif
+
+#ifndef NK_QSORT
+/**
+ * Function that will be used to sort file entries.
+ *
+ * @see qsort()
+ * @see nk_console_file_refresh()
+ */
+#define NK_QSORT(arr, n, size, comp) qsort(arr, n, size, comp)
+#endif
+
 #include "nuklear_console_file_system.h"
 
 #if defined(__cplusplus)
@@ -531,6 +551,22 @@ static int nk_console_file_get_directory_len(const char* file_path) {
     return 0;
 }
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
+/**
+ * Comparison function for sorting file entries: directories before files, then alphabetically.
+ *
+ * @internal
+ */
+static int nk_console_file_entry_compare(const void* a, const void* b) {
+    const nk_console_file_entry* ea = (const nk_console_file_entry*)a;
+    const nk_console_file_entry* eb = (const nk_console_file_entry*)b;
+    if (ea->is_directory != eb->is_directory) {
+        return ea->is_directory ? -1 : 1;
+    }
+    return NK_STRCMP(ea->label, eb->label);
+}
+#endif
+
 /**
  * Fills the list view with the files in the current directory.
  */
@@ -580,6 +616,11 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 #ifdef NK_CONSOLE_FILE_ADD_FILES
     // Populate the entries array via the file system callback.
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
+
+    // Sort entries: directories first, then files, both alphabetically.
+    if (!cvector_empty(data->entries)) {
+        NK_QSORT(data->entries, cvector_size(data->entries), sizeof(nk_console_file_entry), nk_console_file_entry_compare);
+    }
 
     if (data->use_list_view) {
         // Show at least 1 item so the get_label callback can display "[Empty]".
