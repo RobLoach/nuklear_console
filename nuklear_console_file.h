@@ -139,8 +139,19 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
  * Function used to compare two strings.
  *
  * @see strcmp()
+ * @see nk_console_file_entry_compare()
  */
-#define NK_STRCMP strcmp
+#define NK_STRCMP(s1, s2) strcmp(s1, s2)
+#endif
+
+#ifndef NK_QSORT
+/**
+ * Function that will be used to sort file entries.
+ *
+ * @see qsort()
+ * @see nk_console_file_refresh()
+ */
+#define NK_QSORT(arr, n, size, comp) qsort(arr, n, size, comp)
 #endif
 
 #include "nuklear_console_file_system.h"
@@ -608,7 +619,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 
     // Sort entries: directories first, then files, both alphabetically.
     if (!cvector_empty(data->entries)) {
-        qsort(data->entries, cvector_size(data->entries), sizeof(nk_console_file_entry), nk_console_file_entry_compare);
+        NK_QSORT(data->entries, cvector_size(data->entries), sizeof(nk_console_file_entry), nk_console_file_entry_compare);
     }
 
     if (data->use_list_view) {
