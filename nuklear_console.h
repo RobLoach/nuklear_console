@@ -163,6 +163,7 @@ typedef struct nk_console_top_data {
     nk_bool axis_right_fired; /** True this frame if an axis fired a right event. */
 
     nk_bool drag_scroll_active; /** True when a drag-scroll gesture is in progress. */
+    nk_bool drag_scroll_initiated; /** True when the drag started from the content area (not scrollbar). */
     struct nk_vec2 drag_scroll_origin; /** Mouse position when the drag started. */
     nk_uint drag_scroll_start_x; /** Window scroll X at drag start. */
     nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
@@ -913,26 +914,33 @@ static void nk_console_axis_update(nk_console* console) {
 static void nk_console_window_touch_drag(nk_console* console, nk_console_top_data* top_data) {
     struct nk_input* in = &console->ctx->input;
     if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
-        top_data->drag_scroll_origin = in->mouse.pos;
-        nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
-        top_data->drag_scroll_active = nk_false;
+        struct nk_rect content = nk_window_get_content_region(console->ctx);
+        top_data->drag_scroll_initiated = nk_input_is_mouse_hovering_rect(in, content);
+        if (top_data->drag_scroll_initiated) {
+            top_data->drag_scroll_origin = in->mouse.pos;
+            nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
+            top_data->drag_scroll_active = nk_false;
+        }
     }
     if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
-        float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
-        float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
-        if (!top_data->drag_scroll_active &&
-            (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
-            top_data->drag_scroll_active = nk_true;
-        }
-        if (top_data->drag_scroll_active) {
-            nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
-            nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
-            nk_window_set_scroll(console->ctx, sx, sy);
-            top_data->input_processed = nk_true;
+        if (top_data->drag_scroll_initiated) {
+            float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
+            float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
+            if (!top_data->drag_scroll_active &&
+                (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
+                top_data->drag_scroll_active = nk_true;
+            }
+            if (top_data->drag_scroll_active) {
+                nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
+                nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
+                nk_window_set_scroll(console->ctx, sx, sy);
+                top_data->input_processed = nk_true;
+            }
         }
     }
     else {
         top_data->drag_scroll_active = nk_false;
+        top_data->drag_scroll_initiated = nk_false;
     }
 }
 
