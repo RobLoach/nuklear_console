@@ -15,6 +15,7 @@ typedef struct nk_console_key_data {
     struct nk_console_button_data button_data; /** Inherited from button */
     nk_rune* out_key; /** A pointer to where to store the captured key/character. */
     float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_KEY_TIMER */
+    nk_rune default_key; /** Value assigned to out_key on timeout. @see nk_console_key_set_default */
 } nk_console_key_data;
 
 #if defined(__cplusplus)
@@ -37,6 +38,17 @@ NK_API struct nk_rect nk_console_key_render(nk_console* widget);
  * Retrieves the name of the of the given Nuklear rune.
  */
 NK_API const char* nk_console_key_name(nk_rune key);
+
+/**
+ * Set the default key value assigned to out_key when the capture prompt times out.
+ * Defaults to NK_KEY_NONE.
+ */
+NK_API void nk_console_key_set_default(nk_console* widget, nk_rune key);
+
+/**
+ * Get the default key value assigned to out_key when the capture prompt times out.
+ */
+NK_API nk_rune nk_console_key_get_default(nk_console* widget);
 
 #if defined(__cplusplus)
 }
@@ -209,6 +221,9 @@ static struct nk_rect nk_console_key_active_render(nk_console* console) {
     nk_bool finished = nk_false;
 
     if (data->timer >= NK_CONSOLE_KEY_TIMER) {
+        if (data->out_key != NULL) {
+            *data->out_key = data->default_key;
+        }
         finished = nk_true;
     }
 
@@ -271,6 +286,20 @@ static struct nk_rect nk_console_key_active_render(nk_console* console) {
     return nk_rect(0, 0, 0, 0);
 }
 
+NK_API void nk_console_key_set_default(nk_console* widget, nk_rune key) {
+    if (widget == NULL || widget->data == NULL) {
+        return;
+    }
+    ((nk_console_key_data*)widget->data)->default_key = key;
+}
+
+NK_API nk_rune nk_console_key_get_default(nk_console* widget) {
+    if (widget == NULL || widget->data == NULL) {
+        return NK_KEY_NONE;
+    }
+    return ((nk_console_key_data*)widget->data)->default_key;
+}
+
 NK_API nk_console* nk_console_key(nk_console* parent, const char* label, nk_rune* out_key) {
     if (parent == NULL) {
         return NULL;
@@ -279,6 +308,7 @@ NK_API nk_console* nk_console_key(nk_console* parent, const char* label, nk_rune
     nk_console_key_data* data = (nk_console_key_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_key_data));
     nk_zero(data, sizeof(nk_console_key_data));
     data->out_key = out_key;
+    data->default_key = NK_KEY_NONE;
 
     nk_console* widget = nk_console_label(parent, label);
     widget->type = NK_CONSOLE_KEY;
