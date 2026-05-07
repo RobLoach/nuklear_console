@@ -1332,6 +1332,9 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
     }
     nk_console* top = nk_console_get_top(leaving_parent);
     if (leaving_parent == top) {
+        // Still trigger the back event if we're trying to leave the top.
+        nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
+        data->input_processed = nk_true;
         return;
     }
     nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
