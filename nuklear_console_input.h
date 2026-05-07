@@ -12,6 +12,7 @@ typedef struct nk_console_input_data {
     int* out_gamepad_number; /** A pointer for where to store the gamepad number the button is associated with. */
     enum nk_gamepad_button* out_gamepad_button; /** A pointer to where to store the gamepad button. */
     float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
+    enum nk_gamepad_button default_gamepad_button; /** Value assigned to out_gamepad_button on timeout. @see nk_console_input_set_default */
 } nk_console_input_data;
 
 #if defined(__cplusplus)
@@ -33,6 +34,17 @@ extern "C" {
  */
 NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
+
+/**
+ * Set the default gamepad button assigned to out_gamepad_button when the capture prompt times out.
+ * Defaults to NK_GAMEPAD_BUTTON_INVALID.
+ */
+NK_API void nk_console_input_set_default(nk_console* widget, enum nk_gamepad_button gamepad_button);
+
+/**
+ * Get the default gamepad button assigned to out_gamepad_button when the capture prompt times out.
+ */
+NK_API enum nk_gamepad_button nk_console_input_get_default(nk_console* widget);
 
 #if defined(__cplusplus)
 }
@@ -173,6 +185,9 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
     // Handle the timeout
     if (data->timer >= NK_CONSOLE_INPUT_TIMER) {
+        if (data->out_gamepad_button != NULL) {
+            *data->out_gamepad_button = data->default_gamepad_button;
+        }
         finished = nk_true;
     }
 
@@ -214,6 +229,20 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     return nk_rect(0, 0, 0, 0);
 }
 
+NK_API void nk_console_input_set_default(nk_console* widget, enum nk_gamepad_button gamepad_button) {
+    if (widget == NULL || widget->data == NULL) {
+        return;
+    }
+    ((nk_console_input_data*)widget->data)->default_gamepad_button = gamepad_button;
+}
+
+NK_API enum nk_gamepad_button nk_console_input_get_default(nk_console* widget) {
+    if (widget == NULL || widget->data == NULL) {
+        return NK_GAMEPAD_BUTTON_INVALID;
+    }
+    return ((nk_console_input_data*)widget->data)->default_gamepad_button;
+}
+
 NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
     if (parent == NULL) {
         return NULL;
@@ -225,6 +254,7 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
     data->gamepad_number = gamepad_number;
     data->out_gamepad_number = out_gamepad_number;
     data->out_gamepad_button = out_gamepad_button;
+    data->default_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
 
     nk_console* widget = nk_console_label(parent, label);
     widget->type = NK_CONSOLE_INPUT;
