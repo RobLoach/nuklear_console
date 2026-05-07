@@ -71,6 +71,7 @@ NK_API const char* nk_console_key_name(nk_rune key) {
             case NK_KEY_NONE: return "<None>";
             case NK_KEY_SHIFT: return "Shift";
             case NK_KEY_CTRL: return "Ctrl";
+            case NK_KEY_ALT: return "Alt";
             case NK_KEY_DEL: return "Delete";
             case NK_KEY_ENTER: return "Enter";
             case NK_KEY_TAB: return "Tab";
@@ -98,8 +99,18 @@ NK_API const char* nk_console_key_name(nk_rune key) {
             case NK_KEY_SCROLL_END: return "Scroll End";
             case NK_KEY_SCROLL_DOWN: return "Scroll Down";
             case NK_KEY_SCROLL_UP: return "Scroll Up";
-            // TODO: Add NK_KEY_F1 to NK_KEY_F12
-            // TODO: Add ALT
+            case NK_KEY_F1: return "F1";
+            case NK_KEY_F2: return "F2";
+            case NK_KEY_F3: return "F3";
+            case NK_KEY_F4: return "F4";
+            case NK_KEY_F5: return "F5";
+            case NK_KEY_F6: return "F6";
+            case NK_KEY_F7: return "F7";
+            case NK_KEY_F8: return "F8";
+            case NK_KEY_F9: return "F9";
+            case NK_KEY_F10: return "F10";
+            case NK_KEY_F11: return "F11";
+            case NK_KEY_F12: return "F12";
             default: return "Unknown";
         }
     }
