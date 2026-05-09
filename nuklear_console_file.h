@@ -28,6 +28,7 @@ typedef struct nk_console_file_data {
     void* file_user_data; /** Custom user data for the file system. */
     nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
     nk_bool use_list_view; /** When true, uses a list view for file selection. Defaults to buttons. */
+    nk_bool file_action; /** When true, uses the label as the button text and skips the left-side label. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
 } nk_console_file_data;
@@ -59,6 +60,32 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
  * @return The new file widget.
  */
 NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
+
+/**
+ * Creates a file action widget that shows a single full-width button. The label is used as the
+ * button text before a file is selected; afterwards the button shows the chosen filename.
+ *
+ * @param parent The parent widget.
+ * @param label The button label. For example: "Select a file". Pass NULL for the default text.
+ * @param file_path_buffer The buffer to store the file path.
+ * @param file_path_buffer_size The size of the buffer.
+ *
+ * @return The new file action widget.
+ */
+NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+
+/**
+ * Creates a directory action widget that shows a single full-width button. The label is used as
+ * the button text before a directory is selected; afterwards the button shows the chosen directory.
+ *
+ * @param parent The parent widget.
+ * @param label The button label. For example: "Select a directory". Pass NULL for the default text.
+ * @param dir_buffer The buffer to store the directory path.
+ * @param dir_buffer_size The size of the buffer.
+ *
+ * @return The new directory action widget.
+ */
+NK_API nk_console* nk_console_dir_action(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
 
 /**
  * Render callback to display the file widget.
@@ -189,8 +216,8 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
 
     nk_console_layout_widget(console);
 
-    // Display the label
-    if (console->label != NULL && console->label[0] != '\0') {
+    // Display the label (skipped in file_action mode — it becomes the button text instead).
+    if (!data->file_action && console->label != NULL && console->label[0] != '\0') {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->ctx);
         }
@@ -211,6 +238,10 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
     console->columns = 0;
     if (data->file_path_buffer != NULL && data->file_path_buffer[0] != '\0') {
         console->label = nk_console_file_basename(data->file_path_buffer);
+    }
+    else if (data->file_action && swap_label != NULL && swap_label[0] != '\0') {
+        // In file_action mode, use the widget label as the button text.
+        console->label = swap_label;
     }
     else {
         console->label = data->select_directory ? "[Select Directory]" : "[Select a File]";
@@ -808,6 +839,31 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
 
 NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
     nk_console* widget = nk_console_file(parent, label, dir_buffer, dir_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->select_directory = nk_true;
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {
+    nk_console* widget = nk_console_file(parent, label, file_path_buffer, file_path_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->file_action = nk_true;
+    widget->columns = 1;
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_dir_action(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
+    nk_console* widget = nk_console_file_action(parent, label, dir_buffer, dir_buffer_size);
     if (widget == NULL) {
         return NULL;
     }
