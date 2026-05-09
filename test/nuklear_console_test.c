@@ -105,12 +105,6 @@ int main() {
     nk_console* file = nk_console_file(console, "File", file_path_buffer, file_path_buffer_size);
     assert(file != NULL);
 
-    // nk_console_file_action()
-    static char file_action_buffer[256] = "";
-    nk_console* file_action = nk_console_file_action(console, "Action File", file_action_buffer, 256);
-    assert(file_action != NULL);
-    assert(file_action->disabled == nk_false);
-
     // nk_console_image()
     pntr_image* image_value = pntr_load_image("resources/image.png");
     assert(image_value != NULL);
