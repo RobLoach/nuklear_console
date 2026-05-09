@@ -62,11 +62,11 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
 NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
 
 /**
- * Creates a file action widget that shows a single button; after the user selects a file, the
- * widget is immediately disabled and cannot be used again.
+ * Creates a file action widget that shows a single full-width button. The label is used as the
+ * button text before a file is selected; afterwards the button shows the chosen filename.
  *
  * @param parent The parent widget.
- * @param label The label for the file widget. For example: "Select a file". Pass NULL for no label.
+ * @param label The button label. For example: "Select a file". Pass NULL for the default text.
  * @param file_path_buffer The buffer to store the file path.
  * @param file_path_buffer_size The size of the buffer.
  *
@@ -201,12 +201,6 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
     }
     nk_console_file_data* data = (nk_console_file_data*)console->data;
 
-    // In file_action mode, collapse to a single-column layout (no left label).
-    int orig_columns = console->columns;
-    if (data->file_action) {
-        console->columns = 1;
-    }
-
     nk_console_layout_widget(console);
 
     // Display the label (skipped in file_action mode — it becomes the button text instead).
@@ -226,21 +220,22 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
     }
 
     // Display the mocked button
-    const char* orig_label = console->label;
+    int swap_columns = console->columns;
+    const char* swap_label = console->label;
     console->columns = 0;
     if (data->file_path_buffer != NULL && data->file_path_buffer[0] != '\0') {
         console->label = nk_console_file_basename(data->file_path_buffer);
     }
-    else if (data->file_action && orig_label != NULL && orig_label[0] != '\0') {
+    else if (data->file_action && swap_label != NULL && swap_label[0] != '\0') {
         // In file_action mode, use the widget label as the button text.
-        console->label = orig_label;
+        console->label = swap_label;
     }
     else {
         console->label = data->select_directory ? "[Select Directory]" : "[Select a File]";
     }
     struct nk_rect widget_bounds = nk_console_button_render(console);
-    console->columns = orig_columns;
-    console->label = orig_label;
+    console->columns = swap_columns;
+    console->label = swap_label;
 
     return widget_bounds;
 }
@@ -849,6 +844,7 @@ NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label,
 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
     data->file_action = nk_true;
+    widget->columns = 1;
 
     return widget;
 }
