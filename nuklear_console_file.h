@@ -28,7 +28,7 @@ typedef struct nk_console_file_data {
     void* file_user_data; /** Custom user data for the file system. */
     nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
     nk_bool use_list_view; /** When true, uses a list view for file selection. Defaults to buttons. */
-    nk_bool file_action; /** When true, disables the widget after a file is selected. */
+    nk_bool file_action; /** When true, uses the label as the button text and skips the left-side label. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
 } nk_console_file_data;
@@ -414,9 +414,6 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
             NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
             data->file_path_buffer[desired_length] = '\0';
             nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-            if (data->file_action) {
-                file->disabled = nk_true;
-            }
         }
 
         // Exit the file browser.
@@ -447,9 +444,6 @@ static void nk_console_file_select_dir_onclick(nk_console* button, void* user_da
         NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
         data->file_path_buffer[desired_length] = '\0';
         nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-        if (data->file_action) {
-            file->disabled = nk_true;
-        }
     }
 
     // Exit the file browser.
@@ -510,9 +504,6 @@ static void nk_console_file_button_file_onclick(nk_console* button, void* user_d
         NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
         data->file_path_buffer[desired_length] = '\0';
         nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-        if (data->file_action) {
-            file->disabled = nk_true;
-        }
     }
     nk_console_navigate_back(file);
 }
