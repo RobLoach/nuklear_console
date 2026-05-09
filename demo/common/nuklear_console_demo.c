@@ -403,6 +403,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         nk_console* file_select = nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
         nk_console_file_set_list_view(file_select, nk_true);
         nk_console_dir(widgets, "Directory", dir_buffer, dir_buffer_size);
+        nk_console_file_action(widgets, "Select a File", file_path_buffer, file_path_buffer_size);
 
         // Messages
         nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
