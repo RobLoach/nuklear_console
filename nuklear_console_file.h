@@ -75,6 +75,19 @@ NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* d
 NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
 
 /**
+ * Creates a directory action widget that shows a single full-width button. The label is used as
+ * the button text before a directory is selected; afterwards the button shows the chosen directory.
+ *
+ * @param parent The parent widget.
+ * @param label The button label. For example: "Select a directory". Pass NULL for the default text.
+ * @param dir_buffer The buffer to store the directory path.
+ * @param dir_buffer_size The size of the buffer.
+ *
+ * @return The new directory action widget.
+ */
+NK_API nk_console* nk_console_dir_action(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
+
+/**
  * Render callback to display the file widget.
  */
 NK_API struct nk_rect nk_console_file_render(nk_console* widget);
@@ -845,6 +858,18 @@ NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label,
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
     data->file_action = nk_true;
     widget->columns = 1;
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_dir_action(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
+    nk_console* widget = nk_console_file_action(parent, label, dir_buffer, dir_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->select_directory = nk_true;
 
     return widget;
 }
