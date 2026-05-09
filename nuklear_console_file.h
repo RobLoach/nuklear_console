@@ -28,6 +28,7 @@ typedef struct nk_console_file_data {
     void* file_user_data; /** Custom user data for the file system. */
     nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
     nk_bool use_list_view; /** When true, uses a list view for file selection. Defaults to buttons. */
+    nk_bool file_action; /** When true, disables the widget after a file is selected. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
 } nk_console_file_data;
@@ -59,6 +60,19 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
  * @return The new file widget.
  */
 NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
+
+/**
+ * Creates a file action widget that shows a single button; after the user selects a file, the
+ * widget is immediately disabled and cannot be used again.
+ *
+ * @param parent The parent widget.
+ * @param label The label for the file widget. For example: "Select a file". Pass NULL for no label.
+ * @param file_path_buffer The buffer to store the file path.
+ * @param file_path_buffer_size The size of the buffer.
+ *
+ * @return The new file action widget.
+ */
+NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
 
 /**
  * Render callback to display the file widget.
@@ -391,6 +405,9 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
             NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
             data->file_path_buffer[desired_length] = '\0';
             nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+            if (data->file_action) {
+                file->disabled = nk_true;
+            }
         }
 
         // Exit the file browser.
@@ -421,6 +438,9 @@ static void nk_console_file_select_dir_onclick(nk_console* button, void* user_da
         NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
         data->file_path_buffer[desired_length] = '\0';
         nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+        if (data->file_action) {
+            file->disabled = nk_true;
+        }
     }
 
     // Exit the file browser.
@@ -481,6 +501,9 @@ static void nk_console_file_button_file_onclick(nk_console* button, void* user_d
         NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
         data->file_path_buffer[desired_length] = '\0';
         nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+        if (data->file_action) {
+            file->disabled = nk_true;
+        }
     }
     nk_console_navigate_back(file);
 }
@@ -814,6 +837,18 @@ NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* d
 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
     data->select_directory = nk_true;
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {
+    nk_console* widget = nk_console_file(parent, label, file_path_buffer, file_path_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->file_action = nk_true;
 
     return widget;
 }
