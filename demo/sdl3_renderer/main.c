@@ -128,9 +128,9 @@ SDL_AppResult SDL_AppEvent(void *appstate, SDL_Event *event) {
     switch (event->type) {
         case SDL_EVENT_QUIT:
             return SDL_APP_SUCCESS;
-        case SDL_EVENT_KEY_UP:
-            // Quit when pressing the escape key
-            if (event->key.scancode == SDL_SCANCODE_ESCAPE)
+        case SDL_EVENT_KEY_DOWN:
+            // Quit on Ctrl+Q
+            if (event->key.scancode == SDL_SCANCODE_Q && (event->key.mod & SDL_KMOD_CTRL))
                 return SDL_APP_SUCCESS;
             break;
     }

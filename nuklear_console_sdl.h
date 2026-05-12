@@ -12,14 +12,31 @@ extern "C" {
  *
  * Compatible with both SDL2 and SDL3. For SDL2, window may be NULL.
  */
-NK_INTERN void nk_console_sdl_update_text_input(nk_console* console, SDL_Window* window) {
+NK_API void nk_console_sdl_update_text_input(nk_console* console, SDL_Window* window);
+
+#if defined(__cplusplus)
+}
+#endif
+
+#endif /* NK_CONSOLE_SDL_H__ */
+
+#ifdef NK_CONSOLE_IMPLEMENTATION
+#ifndef NK_CONSOLE_SDL_IMPLEMENTATION_ONCE
+#define NK_CONSOLE_SDL_IMPLEMENTATION_ONCE
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+NK_API void nk_console_sdl_update_text_input(nk_console* console, SDL_Window* window) {
     nk_console* top = nk_console_get_top(console);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    nk_console* active = (top_data->active_parent != NULL)
-                             ? top_data->active_parent->activeWidget
-                             : NULL;
-    nk_bool wants_text = (active != NULL && active->type == NK_CONSOLE_TEXTEDIT_TEXT);
-    if (wants_text) {
+    nk_console* active = (top_data->active_parent != NULL) ?
+            top_data->active_parent->activeWidget :
+            NULL;
+
+    // Check if we're actively using a Textedit Text widget.
+    if ((active != NULL && active->type == NK_CONSOLE_TEXTEDIT_TEXT)) {
 #if SDL_MAJOR_VERSION >= 3
         SDL_StartTextInput(window);
 #else
@@ -41,4 +58,5 @@ NK_INTERN void nk_console_sdl_update_text_input(nk_console* console, SDL_Window*
 }
 #endif
 
-#endif /* NK_CONSOLE_SDL_H__ */
+#endif /* NK_CONSOLE_SDL_IMPLEMENTATION_ONCE */
+#endif /* NK_CONSOLE_IMPLEMENTATION */
