@@ -29,6 +29,7 @@ typedef struct nk_console_file_data {
     nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
     nk_bool use_list_view; /** When true, uses a list view for file selection. Defaults to buttons. */
     nk_bool file_action; /** When true, uses the label as the button text and skips the left-side label. */
+    char starting_directory[NK_CONSOLE_FILE_PATH_MAX]; /** Optional user-specified starting directory. When set, overrides the buffer-derived directory. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
 } nk_console_file_data;
@@ -143,6 +144,26 @@ NK_API void nk_console_file_set_list_view(nk_console* file, nk_bool use_list_vie
  * @return True if using a list view, false if using buttons (the default).
  */
 NK_API nk_bool nk_console_file_get_list_view(nk_console* file);
+
+/**
+ * Sets the starting directory the file browser opens at when activated.
+ *
+ * When set, this overrides the directory derived from the buffer value.
+ * Pass NULL or an empty string to clear and revert to buffer-derived behavior.
+ *
+ * @param file The file widget.
+ * @param directory The starting directory path.
+ */
+NK_API void nk_console_file_set_directory(nk_console* file, const char* directory);
+
+/**
+ * Gets the starting directory set via nk_console_file_set_directory().
+ *
+ * @param file The file widget.
+ *
+ * @return The starting directory, or an empty string if not set.
+ */
+NK_API const char* nk_console_file_get_directory(nk_console* file);
 
 /**
  * Refreshes the file widget with the contents with its given directory.
@@ -760,14 +781,20 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
 
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
-    int directory_len = nk_console_file_get_directory_len(data->file_path_buffer);
-    NK_MEMCPY(data->directory, data->file_path_buffer, (nk_size)directory_len);
-    data->directory[directory_len] = '\0';
+    if (data->starting_directory[0] != '\0') {
+        int len = nk_strlen(data->starting_directory);
+        NK_MEMCPY(data->directory, data->starting_directory, (nk_size)(len + 1));
+    }
+    else {
+        int directory_len = nk_console_file_get_directory_len(data->file_path_buffer);
+        NK_MEMCPY(data->directory, data->file_path_buffer, (nk_size)directory_len);
+        data->directory[directory_len] = '\0';
 
-    if (nk_strlen(data->directory) == 0) {
-        // TODO: file: Make get current working directory function.
-        data->directory[0] = '.';
-        data->directory[1] = '\0';
+        if (nk_strlen(data->directory) == 0) {
+            // TODO: file: Make get current working directory function.
+            data->directory[0] = '.';
+            data->directory[1] = '\0';
+        }
     }
 
     // Set the active parent to the file widget, and refresh it after rendering everything else.
@@ -809,6 +836,33 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file) {
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     return data->file_user_data;
+}
+
+NK_API void nk_console_file_set_directory(nk_console* file, const char* directory) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (directory == NULL || directory[0] == '\0') {
+        data->starting_directory[0] = '\0';
+        return;
+    }
+    int len = nk_strlen(directory);
+    if (len >= NK_CONSOLE_FILE_PATH_MAX) {
+        NK_ASSERT(0); // Directory path too long
+        return;
+    }
+    NK_MEMCPY(data->starting_directory, directory, (nk_size)(len + 1));
+}
+
+NK_API const char* nk_console_file_get_directory(nk_console* file) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return "";
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    return data->starting_directory;
 }
 
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {

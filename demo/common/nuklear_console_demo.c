@@ -139,7 +139,6 @@ void nk_console_file_action_changed(struct nk_console* widget, void* user_data) 
     char message[NK_CONSOLE_FILE_PATH_MAX + 32];
     snprintf(message, sizeof(message), "Selected: %s", data->file_path_buffer);
     nk_console_show_message(widget, message);
-    widget->disabled = nk_true;
 }
 
 void nk_console_radio_changed(struct nk_console* radio, void* user_data) {
@@ -408,14 +407,24 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);
 
-        // File
-        nk_console* file_select = nk_console_file(widgets, "File", file_path_buffer, file_path_buffer_size);
-        nk_console_file_set_list_view(file_select, nk_true);
-        nk_console_dir(widgets, "Directory", dir_buffer, dir_buffer_size);
-        nk_console* file_action = nk_console_file_action(widgets, "Select a File", file_path_buffer, file_path_buffer_size);
-        nk_console_add_event(file_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_file_action_changed);
-        nk_console* dir_action = nk_console_dir_action(widgets, "Select a Directory", dir_buffer, dir_buffer_size);
-        nk_console_add_event(dir_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_file_action_changed);
+        // Files System
+        {
+            nk_console* file_system = nk_console_button(widgets, "File System");
+
+            nk_console* file_select = nk_console_file(file_system, "File List View", file_path_buffer, file_path_buffer_size);
+            nk_console_file_set_list_view(file_select, nk_true);
+
+            nk_console_dir(file_system, "Directory", dir_buffer, dir_buffer_size);
+
+            nk_console* file_action = nk_console_file_action(file_system, "Select a File", file_path_buffer, file_path_buffer_size);
+            nk_console_add_event(file_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_file_action_changed);
+
+            nk_console* dir_action = nk_console_dir_action(file_system, "Select a Directory", dir_buffer, dir_buffer_size);
+            nk_console_add_event(dir_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_file_action_changed);
+
+            nk_console* dir_default = nk_console_dir(file_system, "Defaults to tmp", dir_buffer, dir_buffer_size);
+            nk_console_file_set_directory(dir_default, "/tmp");
+        }
 
         // Messages
         nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
