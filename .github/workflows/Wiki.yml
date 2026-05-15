@@ -21,7 +21,7 @@ jobs:
         run: npm install -g moxygen
 
       - name: Generate Doxygen XML
-        run: doxygen Doxyfile
+        run: doxygen .Doxyfile
 
       - name: Convert XML to Markdown
         run: |
