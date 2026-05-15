@@ -1,0 +1,31 @@
+PROJECT_NAME           = "nuklear_console"
+PROJECT_BRIEF          = "Console-style widget system for Nuklear"
+OUTPUT_DIRECTORY       = build/doxygen
+INPUT                  = nuklear_console.h \
+                         nuklear_console_button.h \
+                         nuklear_console_checkbox.h \
+                         nuklear_console_color.h \
+                         nuklear_console_combobox.h \
+                         nuklear_console_file.h \
+                         nuklear_console_image.h \
+                         nuklear_console_input.h \
+                         nuklear_console_key.h \
+                         nuklear_console_knob.h \
+                         nuklear_console_label.h \
+                         nuklear_console_list_view.h \
+                         nuklear_console_message.h \
+                         nuklear_console_progress.h \
+                         nuklear_console_property.h \
+                         nuklear_console_radio.h \
+                         nuklear_console_row.h \
+                         nuklear_console_rule_horizontal.h \
+                         nuklear_console_spacing.h \
+                         nuklear_console_textedit.h \
+                         nuklear_console_tree.h
+RECURSIVE              = NO
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+XML_OUTPUT             = xml
+EXTRACT_ALL            = YES
+QUIET                  = YES
