@@ -25,6 +25,7 @@ extern "C" {
  * Adds a textedit on-screen keyboard widget to the console given parent.
  *
  * @param parent The parent widget to add the textedit to.
+ * @param label A string representing the identifier for the associated textedit widget.
  * @param buffer The buffer to store the textedit data.
  * @param buffer_size The size of the given buffer.
  * @return The created textedit widget.

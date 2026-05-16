@@ -1,0 +1,11 @@
+PROJECT_NAME           = "nuklear_console"
+PROJECT_BRIEF          = "Console-style widget system for Nuklear"
+OUTPUT_DIRECTORY       = build/doxygen
+INPUT                  = *.h
+RECURSIVE              = NO
+GENERATE_HTML          = NO
+GENERATE_LATEX         = NO
+GENERATE_XML           = YES
+XML_OUTPUT             = xml
+EXTRACT_ALL            = YES
+QUIET                  = YES
