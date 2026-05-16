@@ -18,13 +18,14 @@ jobs:
       - name: Install Moxygen
         run: npm install -g moxygen
 
+      - name: Make Directories
+        run: mkdir -p wiki build
+
       - name: Generate Doxygen XML
         run: doxygen .Doxyfile
 
       - name: Convert XML to Markdown
-        run: |
-          mkdir -p wiki
-          moxygen --output "wiki/API Reference.md" build/doxygen/xml
+        run: moxygen --output "wiki/API Reference.md" build/doxygen/xml
 
       - name: Publish to Wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v4
