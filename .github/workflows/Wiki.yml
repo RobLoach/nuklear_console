@@ -25,7 +25,7 @@ jobs:
         run: doxygen .Doxyfile
 
       - name: Convert XML to Markdown
-        run: moxygen --output "wiki/API Reference.md" build/doxygen/xml
+        run: moxygen --output "wiki/Home.md" build/doxygen/xml
 
       - name: Publish to Wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v4
