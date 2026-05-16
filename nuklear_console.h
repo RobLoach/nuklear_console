@@ -944,122 +944,116 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
     }
 }
 
+static void nk_console_ensure_active_widget(nk_console* parent) {
+    if (parent->activeWidget == NULL) {
+        nk_console_set_active_widget(nk_console_find_first_selectable(parent));
+        return;
+    }
+    for (size_t i = 0; i < cvector_size(parent->children); ++i) {
+        if (parent->children[i] == parent->activeWidget) {
+            if (nk_console_selectable(parent->activeWidget)) {
+                return;
+            }
+            break;
+        }
+    }
+    nk_console_set_active_widget(nk_console_find_first_selectable(parent));
+}
+
+static void nk_console_process_post_render_events(nk_console* console) {
+    size_t count = cvector_size(console->events);
+    if (count == 0) {
+        return;
+    }
+    nk_bool can_erase = nk_true;
+    for (size_t i = 0; i < count; i++) {
+        if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
+            if (console->events[i].callback != NULL) {
+                console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
+                console->events[i].callback = NULL;
+            }
+        }
+        else {
+            can_erase = nk_false;
+        }
+    }
+    if (can_erase) {
+        cvector_clear(console->events);
+    }
+}
+
+static void nk_console_update_drag_scroll(nk_console* console, nk_console_top_data* data) {
+    if (console->ctx->current == NULL) {
+        return;
+    }
+    struct nk_rect content = nk_window_get_content_region(console->ctx);
+    float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
+    data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
+    data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
+}
+
+static void nk_console_render_top(nk_console* console) {
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    data->input_processed = nk_false;
+    nk_console_axis_update(console);
+    nk_console_window_touch_drag(console, data);
+    nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
+    nk_console_render_message(console);
+
+    if (data->active_parent->children != NULL) {
+        nk_console_ensure_active_widget(data->active_parent);
+        for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
+            nk_console_render(data->active_parent->children[i]);
+        }
+    }
+
+    nk_console_process_post_render_events(console);
+    // Update drag scroll bounds so they're valid when called directly (e.g. SDL/GLFW) rather than via nk_console_render_window.
+    nk_console_update_drag_scroll(console, data);
+}
+
 NK_API void nk_console_render(nk_console* console) {
     if (console == NULL || console->visible == nk_false) {
         return;
     }
 
-    // First run on this game loop
     if (console->parent == NULL) {
-        nk_console_top_data* data = (nk_console_top_data*)console->data;
-
-        // Reset the input state and calculate new axis data.
-        data->input_processed = nk_false;
-        nk_console_axis_update(console);
-        nk_console_window_touch_drag(console, data);
-
-        nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
-
-        // Render the active message.
-        nk_console_render_message(console);
-
-        // Render all of the parent's children.
-        if (data->active_parent->children != NULL) {
-            // Make sure there's an active widget selected.
-            if (data->active_parent->activeWidget == NULL) {
-                nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
-            }
-            else {
-                // Make sure the widget actually exists and can be selected.
-                nk_bool widgetFound = nk_false;
-                for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
-                    if (data->active_parent->children[i] == data->active_parent->activeWidget) {
-                        // Ensure the widget is still selectable.
-                        if (nk_console_selectable(data->active_parent->activeWidget)) {
-                            widgetFound = nk_true;
-                        }
-                        break;
-                    }
-                }
-                if (widgetFound == nk_false) {
-                    nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
-                }
-            }
-
-            // Render all the children
-            for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
-                nk_console_render(data->active_parent->children[i]);
-            }
-        }
-
-        // Invoke the post-render events.
-        size_t count = cvector_size(console->events);
-        if (count > 0) {
-            nk_bool can_erase = nk_true;
-            for (size_t i = 0; i < count; i++) {
-                if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
-                    // Call the callback if it's set.
-                    if (console->events[i].callback != NULL) {
-                        console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
-                        console->events[i].callback = NULL;
-                    }
-                }
-                else {
-                    can_erase = nk_false;
-                }
-            }
-            if (can_erase) {
-                cvector_clear(console->events);
-            }
-        }
-
-        // Update drag scroll bounds so they're valid when nk_console_render is called directly (e.g. SDL/GLFW demos) rather than via nk_console_render_window.
-        if (console->ctx->current != NULL) {
-            struct nk_rect content = nk_window_get_content_region(console->ctx);
-            float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
-            data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
-            data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
-        }
-
+        nk_console_render_top(console);
         return;
     }
 
-    // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
+    if (widget_bounds.w <= 0 || widget_bounds.h <= 0) {
+        return;
+    }
+
+    nk_console* top = nk_console_get_top(console);
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
     // When nk_console_navigate_back targeted this widget, scroll the window to show it.
-    if (widget_bounds.w > 0 && widget_bounds.h > 0) {
-        nk_console* top = nk_console_get_top(console);
-        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (top_data->scroll_to_widget == console) {
-            struct nk_rect content_region = nk_window_get_content_region(console->ctx);
-            nk_uint offsetx, offsety;
-            nk_window_get_scroll(console->ctx, &offsetx, &offsety);
-            if (widget_bounds.y + widget_bounds.h > content_region.y + content_region.h + (float)offsety) {
-                nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y + widget_bounds.h - content_region.y - content_region.h));
-            }
-            else if (widget_bounds.y < content_region.y + (float)offsety) {
-                nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y - content_region.y));
-            }
-            top_data->scroll_to_widget = NULL;
+    if (top_data->scroll_to_widget == console) {
+        struct nk_rect content_region = nk_window_get_content_region(console->ctx);
+        nk_uint offsetx, offsety;
+        nk_window_get_scroll(console->ctx, &offsetx, &offsety);
+        if (widget_bounds.y + widget_bounds.h > content_region.y + content_region.h + (float)offsety) {
+            nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y + widget_bounds.h - content_region.y - content_region.h));
         }
+        else if (widget_bounds.y < content_region.y + (float)offsety) {
+            nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y - content_region.y));
+        }
+        top_data->scroll_to_widget = NULL;
     }
 
     // Allow the mouse to switch focus to the widget.
-    if (widget_bounds.w > 0 && widget_bounds.h > 0 && nk_input_is_mouse_moved(&console->ctx->input)) {
-        // Make sure we consider the active scroll position of the window.
+    if (nk_input_is_mouse_moved(&console->ctx->input)) {
         nk_uint window_scroll_x, window_scroll_y;
         nk_window_get_scroll(console->ctx, &window_scroll_x, &window_scroll_y);
         widget_bounds.x -= (float)window_scroll_x;
         widget_bounds.y -= (float)window_scroll_y;
-
-        nk_console* top = nk_console_get_top(console);
-        nk_console_top_data* data = (nk_console_top_data*)top->data;
-        if (data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
-            // Select the widget, if possible.
+        if (top_data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             if (nk_console_selectable(console)) {
                 nk_console_set_active_widget(console);
-                data->input_processed = nk_true;
+                top_data->input_processed = nk_true;
             }
         }
     }
