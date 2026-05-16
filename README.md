@@ -48,6 +48,8 @@ Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Gamepad Input
 
 ## API
 
+See the [API Reference](https://github.com/RobLoach/nuklear_console/wiki) for how to use nuklear_console in your application.
+
 ``` c
 // Console
 nk_console* nk_console_init(struct nk_context* context);

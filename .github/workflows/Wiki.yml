@@ -1,8 +1,6 @@
 name: Wiki Docs
 
 on:
-  push:
-    branches: [master]
   workflow_dispatch:
 
 permissions:
@@ -26,7 +24,7 @@ jobs:
       - name: Convert XML to Markdown
         run: |
           mkdir -p wiki
-          moxygen --output wiki/%s.md build/doxygen/xml
+          moxygen --output "wiki/API Reference.md" build/doxygen/xml
 
       - name: Publish to Wiki
         uses: Andrew-Chen-Wang/github-wiki-action@v4
