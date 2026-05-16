@@ -944,6 +944,11 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
     }
 }
 
+/**
+ * Ensures a selectable active widget exists in parent, picking the first selectable if needed.
+ *
+ * @param parent The parent console widget whose active widget should be validated.
+ */
 static void nk_console_ensure_active_widget(nk_console* parent) {
     if (parent->activeWidget == NULL) {
         nk_console_set_active_widget(nk_console_find_first_selectable(parent));
@@ -960,28 +965,32 @@ static void nk_console_ensure_active_widget(nk_console* parent) {
     nk_console_set_active_widget(nk_console_find_first_selectable(parent));
 }
 
+/**
+ * Invokes and erases all one-shot post-render events on the given console.
+ *
+ * @param console The top-level console whose post-render event queue should be processed.
+ */
 static void nk_console_process_post_render_events(nk_console* console) {
     size_t count = cvector_size(console->events);
     if (count == 0) {
         return;
     }
-    nk_bool can_erase = nk_true;
-    for (size_t i = 0; i < count; i++) {
+    for (size_t i = count; i-- > 0; ) {
         if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
             if (console->events[i].callback != NULL) {
                 console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
-                console->events[i].callback = NULL;
             }
+            cvector_erase(console->events, i);
         }
-        else {
-            can_erase = nk_false;
-        }
-    }
-    if (can_erase) {
-        cvector_clear(console->events);
     }
 }
 
+/**
+ * Recomputes drag-scroll bounds from the current window layout.
+ *
+ * @param console The top-level console widget.
+ * @param data The top-level data associated with the console.
+ */
 static void nk_console_update_drag_scroll(nk_console* console, nk_console_top_data* data) {
     if (console->ctx->current == NULL) {
         return;
@@ -992,6 +1001,11 @@ static void nk_console_update_drag_scroll(nk_console* console, nk_console_top_da
     data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
 }
 
+/**
+ * Renders the top-level console: processes input, renders children, and handles post-render events.
+ *
+ * @param console The top-level console widget to render.
+ */
 static void nk_console_render_top(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
     data->input_processed = nk_false;
@@ -1151,9 +1165,8 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
         float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
         window_bounds = nk_window_get_bounds(console->ctx);
         window_bounds.h = window_bounds.h - content.h + rendered_h;
-        top_data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
-        top_data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
     }
+    nk_console_update_drag_scroll(console, top_data);
 
     // Finish the window processing.
     nk_end(console->ctx);
