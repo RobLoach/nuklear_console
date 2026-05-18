@@ -22,6 +22,13 @@
 #define NK_CONSOLE_IMPLEMENTATION
 #include "nuklear_console.h"
 
+static void test_event_counter(nk_console* widget, void* user_data) {
+    (void)widget;
+    if (user_data != NULL) {
+        (*(int*)user_data)++;
+    }
+}
+
 static const char* list_view_get_label(struct nk_console* list_view, nk_uint index) {
     (void)list_view;
     static const char* items[] = {"Apple", "Banana", "Cherry", "Date", "Elderberry"};
@@ -139,6 +146,66 @@ int main() {
         nk_console* file = nk_console_file(console, "File", file_path_buffer, file_path_buffer_size);
         assert(file != NULL);
     }
+
+    // Navigation, focus, blur, and back-event tests.
+    // nk_console_set_active_parent calls nk_window_set_scroll, which requires an
+    // open Nuklear window. We open a temporary window just for these tests.
+    if (nk_begin(ctx, "nav_test", nk_rect(0, 0, 300, 600), 0)) {
+        nk_console* nav = nk_console_init(ctx);
+        assert(nav != NULL);
+
+        // Build tree: nav → submenu → leaf_a, leaf_b
+        nk_console* submenu = nk_console_button(nav, "Submenu");
+        nk_console* leaf_a = nk_console_button(submenu, "Leaf A");
+        nk_console* leaf_b = nk_console_button(submenu, "Leaf B");
+        assert(submenu != NULL);
+        assert(leaf_a != NULL);
+        assert(leaf_b != NULL);
+
+        // nk_console_find_by_path()
+        assert(nk_console_find_by_path(nav, "Submenu") == submenu);
+        assert(nk_console_find_by_path(nav, "Submenu/Leaf A") == leaf_a);
+        assert(nk_console_find_by_path(nav, "Submenu/Leaf B") == leaf_b);
+        assert(nk_console_find_by_path(nav, "Missing") == NULL);
+
+        // Active parent starts at root
+        assert(nk_console_active_parent(nav) == nav);
+
+        // Navigate into submenu: target has children → active parent = submenu
+        assert(nk_console_navigate_to_path(nav, "Submenu") == nk_true);
+        assert(nk_console_active_parent(nav) == submenu);
+
+        // Navigate to leaf: no children → active parent = submenu, active widget = leaf_a
+        assert(nk_console_navigate_to_path(nav, "Submenu/Leaf A") == nk_true);
+        assert(nk_console_active_parent(nav) == submenu);
+        assert(nk_console_get_active_widget(leaf_a) == leaf_a);
+
+        // FOCUS / BLUR fire when the active widget changes
+        int focus_a = 0, blur_a = 0, focus_b = 0;
+        nk_console_add_event_handler(leaf_a, NK_CONSOLE_EVENT_FOCUS, test_event_counter, &focus_a, NULL);
+        nk_console_add_event_handler(leaf_a, NK_CONSOLE_EVENT_BLUR,  test_event_counter, &blur_a,  NULL);
+        nk_console_add_event_handler(leaf_b, NK_CONSOLE_EVENT_FOCUS, test_event_counter, &focus_b, NULL);
+
+        nk_console_set_active_widget(leaf_b);
+        assert(blur_a  == 1);
+        assert(focus_b == 1);
+        assert(nk_console_get_active_widget(leaf_b) == leaf_b);
+
+        nk_console_set_active_widget(leaf_a);
+        assert(focus_a == 1);
+        assert(nk_console_get_active_widget(leaf_a) == leaf_a);
+
+        // BACK event fires on the leaving parent when navigating back
+        int back_count = 0;
+        nk_console_add_event_handler(submenu, NK_CONSOLE_EVENT_BACK, test_event_counter, &back_count, NULL);
+
+        nk_console_button_back(leaf_a, NULL);
+        assert(back_count == 1);
+        assert(nk_console_active_parent(nav) == nav);
+
+        nk_console_free(nav);
+    }
+    nk_end(ctx);
 
     // nk_console_image()
     {
