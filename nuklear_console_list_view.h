@@ -12,6 +12,10 @@
  */
 typedef const char* (*nk_console_list_view_get_label)(struct nk_console* list_view, nk_uint index);
 
+#ifndef NK_CONSOLE_LIST_VIEW_SEARCH_BUFFER_SIZE
+#define NK_CONSOLE_LIST_VIEW_SEARCH_BUFFER_SIZE 64
+#endif
+
 /**
  * Data associated with a List View Widget.
  */
@@ -24,6 +28,8 @@ typedef struct nk_console_list_view_data {
     nk_uint selected; /** Which item has been selected. */
     nk_uint _scroll_y; /** Helps calculate the list view scroll. */
     nk_console_list_view_get_label get_label_callback; /** The callback used to retrieve the labels for each item. */
+    nk_bool searchable; /** When true, a sibling search field filters visible items. */
+    char search_buffer[NK_CONSOLE_LIST_VIEW_SEARCH_BUFFER_SIZE]; /** Search filter text. */
 } nk_console_list_view_data;
 
 #if defined(__cplusplus)
@@ -82,6 +88,19 @@ NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags
 NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint item_count);
 NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view);
 
+/**
+ * Enable or disable an optional search/filter textedit above the list view.
+ *
+ * When enabled, a textedit widget is inserted as a sibling directly before this
+ * list view. Typing in that field case-insensitively filters the displayed rows.
+ * The value returned by nk_console_list_view_selected() is always a real (unfiltered)
+ * item index.
+ *
+ * @param list_view The List View widget.
+ * @param searchable nk_true to add the search field, nk_false to leave it off.
+ */
+NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool searchable);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -91,6 +110,46 @@ NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view);
 #if defined(NK_CONSOLE_IMPLEMENTATION) && !defined(NK_CONSOLE_HEADER_ONLY)
 #ifndef NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE
+
+/* Case-insensitive ASCII contains check. Returns nk_true if label contains filter. */
+static nk_bool nk_console_list_view_item_matches(const char* label, const char* filter) {
+    if (filter == NULL || filter[0] == '\0') return nk_true;
+    if (label == NULL) return nk_false;
+    for (int i = 0; label[i] != '\0'; i++) {
+        int j = 0;
+        while (filter[j] != '\0' && label[i + j] != '\0' &&
+               (label[i + j] | 32) == (filter[j] | 32)) {
+            j++;
+        }
+        if (filter[j] == '\0') return nk_true;
+    }
+    return nk_false;
+}
+
+/* Returns the display (filtered) index of real_idx. O(real_idx). */
+static nk_uint nk_console_list_view_display_index(nk_console* widget, nk_console_list_view_data* data, nk_uint real_idx, const char* filter) {
+    if (filter == NULL || filter[0] == '\0') return real_idx;
+    nk_uint disp = 0;
+    for (nk_uint k = 0; k < real_idx && k < data->row_count; k++) {
+        const char* lbl = data->get_label_callback(widget, k);
+        if (nk_console_list_view_item_matches(lbl, filter)) disp++;
+    }
+    return disp;
+}
+
+/* Returns the real index of the disp_idx-th matching item. */
+static nk_uint nk_console_list_view_nth_match(nk_console* widget, nk_console_list_view_data* data, nk_uint disp_idx, const char* filter) {
+    if (filter == NULL || filter[0] == '\0') return disp_idx;
+    nk_uint count = 0;
+    for (nk_uint k = 0; k < data->row_count; k++) {
+        const char* lbl = data->get_label_callback(widget, k);
+        if (nk_console_list_view_item_matches(lbl, filter)) {
+            if (count == disp_idx) return k;
+            count++;
+        }
+    }
+    return data->row_count > 0 ? data->row_count - 1 : 0;
+}
 
 NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view) {
     if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
@@ -166,6 +225,31 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     float row_height = nk_console_list_view_row_height(top);
     float scroll_row_height = row_height + top->ctx->style.window.spacing.y;
 
+    // Resolve active filter string.
+    const char* filter = (data->searchable && data->search_buffer[0] != '\0') ? data->search_buffer : NULL;
+
+    // Count how many items pass the current filter.
+    nk_uint display_count = data->row_count;
+    if (filter != NULL) {
+        display_count = 0;
+        for (nk_uint k = 0; k < data->row_count; k++) {
+            const char* lbl = data->get_label_callback(widget, k);
+            if (nk_console_list_view_item_matches(lbl, filter)) display_count++;
+        }
+        // If the currently selected item is no longer visible, move to first match.
+        const char* sel_label = data->get_label_callback(widget, data->selected);
+        if (!nk_console_list_view_item_matches(sel_label, filter)) {
+            data->selected = nk_console_list_view_nth_match(widget, data, 0, filter);
+            if (data->view.scroll_pointer) {
+                *data->view.scroll_pointer = 0;
+                data->_scroll_y = 0;
+            }
+        }
+    }
+
+    // Display index of the currently selected item (used for scroll math).
+    nk_uint sel_disp = nk_console_list_view_display_index(widget, data, data->selected, filter);
+
     // Layout the widget with the correct visible height so widget_bounds is accurate.
     struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
     widget_bounds.h = row_height * (float)data->rows_visible;
@@ -197,11 +281,13 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
 
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_UP)) {
-            // Page up: jump selection up by rows_visible items.
-            if (data->selected > 0) {
-                data->selected = (nk_uint)NK_MAX(0, (int)data->selected - (int)data->rows_visible);
+            // Page up: jump selection up by rows_visible items (in display space).
+            if (sel_disp > 0) {
+                nk_uint new_disp = (nk_uint)NK_MAX(0, (int)sel_disp - (int)data->rows_visible);
+                data->selected = nk_console_list_view_nth_match(widget, data, new_disp, filter);
+                sel_disp = new_disp;
                 if (data->view.scroll_pointer) {
-                    nk_uint new_scroll = data->selected * (nk_uint)scroll_row_height;
+                    nk_uint new_scroll = sel_disp * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
                     data->_scroll_y = new_scroll;
                 }
@@ -209,14 +295,16 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_DOWN)) {
-            // Page down: jump selection down by rows_visible items.
-            if (data->row_count > 0 && data->selected < data->row_count - 1) {
-                data->selected = NK_MIN(data->row_count - 1, data->selected + data->rows_visible);
+            // Page down: jump selection down by rows_visible items (in display space).
+            if (display_count > 0 && sel_disp < display_count - 1) {
+                nk_uint new_disp = NK_MIN(display_count - 1, sel_disp + data->rows_visible);
+                data->selected = nk_console_list_view_nth_match(widget, data, new_disp, filter);
+                sel_disp = new_disp;
                 if (data->view.scroll_pointer && data->view.count > 0) {
                     int last_full = data->view.begin + data->view.count - 2;
-                    if ((int)data->selected > last_full) {
-                        int new_begin = (int)data->selected - (data->view.count - 2);
-                        nk_uint max_scroll = (nk_uint)((float)(NK_MAX(0, data->row_count - (nk_uint)data->view.count)) * scroll_row_height);
+                    if ((int)sel_disp > last_full) {
+                        int new_begin = (int)sel_disp - (data->view.count - 2);
+                        nk_uint max_scroll = (nk_uint)((float)(NK_MAX(0, display_count - (nk_uint)data->view.count)) * scroll_row_height);
                         nk_uint new_scroll = (nk_uint)((float)NK_MAX(0, new_begin) * scroll_row_height);
                         if (new_scroll > max_scroll) new_scroll = max_scroll;
                         *data->view.scroll_pointer = new_scroll;
@@ -227,10 +315,13 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) || (up_held && repeat_fire)) {
-            if (data->selected > 0) {
-                data->selected--;
-                if (data->view.scroll_pointer && (int)data->selected < data->view.begin) {
-                    nk_uint new_scroll = (nk_uint)data->selected * (nk_uint)scroll_row_height;
+            if (sel_disp > 0) {
+                // Find the previous matching item.
+                nk_uint new_disp = sel_disp - 1;
+                data->selected = nk_console_list_view_nth_match(widget, data, new_disp, filter);
+                sel_disp = new_disp;
+                if (data->view.scroll_pointer && (int)sel_disp < data->view.begin) {
+                    nk_uint new_scroll = sel_disp * (nk_uint)scroll_row_height;
                     *data->view.scroll_pointer = new_scroll;
                     data->_scroll_y = new_scroll;
                 }
@@ -250,14 +341,16 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             top_data->input_processed = nk_true;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) || (down_held && repeat_fire)) {
-            if (data->row_count > 0 && data->selected < data->row_count - 1) {
-                data->selected++;
+            if (display_count > 0 && sel_disp < display_count - 1) {
+                nk_uint new_disp = sel_disp + 1;
+                data->selected = nk_console_list_view_nth_match(widget, data, new_disp, filter);
+                sel_disp = new_disp;
                 if (data->view.scroll_pointer && data->view.count > 0) {
                     // Scroll if selected is at or past the last fully-visible row.
                     int last_full = data->view.begin + data->view.count - 2;
-                    if ((int)data->selected > last_full) {
-                        int new_begin = (int)data->selected - (data->view.count - 2);
-                        nk_uint max_scroll = (nk_uint)NK_MAX(0, data->row_count - (nk_uint)data->view.count) * (nk_uint)scroll_row_height;
+                    if ((int)sel_disp > last_full) {
+                        int new_begin = (int)sel_disp - (data->view.count - 2);
+                        nk_uint max_scroll = (nk_uint)NK_MAX(0, display_count - (nk_uint)data->view.count) * (nk_uint)scroll_row_height;
                         nk_uint new_scroll = (nk_uint)((float)NK_MAX(0, new_begin) * scroll_row_height);
                         if (new_scroll > max_scroll) new_scroll = max_scroll;
                         if (new_scroll != data->_scroll_y) {
@@ -323,14 +416,20 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     // Display the visible rows.
     nk_layout_row_dynamic(top->ctx, widget_bounds.h, 1);
-    if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, (int)row_height, (int)data->row_count)) {
+    if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, (int)row_height, (int)display_count)) {
         // Cache the normal button style to restore it later on.
         struct nk_style_item saved_normal = top->ctx->style.button.normal;
         struct nk_color saved_text = top->ctx->style.button.text_normal;
 
         nk_layout_row_dynamic(top->ctx, row_height, 1);
         for (int i = 0; i < data->view.count; ++i) {
-            const char* label = data->get_label_callback(widget, (nk_uint)(data->view.begin + i));
+            // Map display index to real item index.
+            int disp_idx = data->view.begin + i;
+            int real_i = (filter != NULL)
+                ? (int)nk_console_list_view_nth_match(widget, data, (nk_uint)disp_idx, filter)
+                : disp_idx;
+
+            const char* label = data->get_label_callback(widget, (nk_uint)real_i);
             if (label == NULL) {
                 // TODO: When the list view item doesn't have a label, figure out a way to continue without misaligning selected.
                 break;
@@ -338,12 +437,12 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
             // Mouse Selection
             if (nk_input_is_mouse_moved(&top->ctx->input) && nk_widget_is_hovered(top->ctx) && !widget->disabled) {
-                data->selected = (nk_uint)(data->view.begin + i);
+                data->selected = (nk_uint)real_i;
                 nk_console_set_active_widget(widget);
             }
 
             // Render each row as a selectable button, highlighting if selected.
-            nk_bool is_selected = (nk_uint)(data->view.begin + i) == data->selected;
+            nk_bool is_selected = (nk_uint)real_i == data->selected;
 
             // Active items should get the active button style.
             if (is_selected && is_active) {
@@ -360,7 +459,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
 
             if (mouse_clicked && top_data->input_processed == nk_false) {
-                data->selected = (nk_uint)(data->view.begin + i);
+                data->selected = (nk_uint)real_i;
                 top_data->input_processed = nk_true;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
             }
@@ -412,6 +511,30 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
     widget->data = data;
 
     return widget;
+}
+
+NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool searchable) {
+    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
+        return;
+    }
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    if (data->searchable == searchable) {
+        return;
+    }
+    data->searchable = searchable;
+
+    if (searchable && list_view->parent != NULL) {
+        // Add a textedit sibling immediately before this list view.
+        nk_console* search = nk_console_textedit(list_view->parent, "Search", data->search_buffer, NK_CONSOLE_LIST_VIEW_SEARCH_BUFFER_SIZE);
+        if (search != NULL) {
+            int lv_idx = nk_console_get_widget_index(list_view);
+            int last = (int)cvector_size(list_view->parent->children) - 1;
+            if (lv_idx >= 0 && last > lv_idx) {
+                cvector_erase(list_view->parent->children, last);
+                cvector_insert(list_view->parent->children, lv_idx, search);
+            }
+        }
+    }
 }
 
 #endif /* NK_CONSOLE_LIST_VIEW_IMPLEMENTATION_ONCE */
