@@ -82,6 +82,7 @@ typedef enum {
 typedef struct nk_console_message {
     char text[256];
     float duration;
+    float scroll_x;  /* horizontal marquee offset in pixels; negative = initial pause */
 } nk_console_message;
 
 typedef struct nk_console {

@@ -107,11 +107,48 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
         }
     }
 
+    // Determine the available display width and the full text width.
+    float tooltip_width = bounds.w - ctx->style.window.border;
+    float avail_width = tooltip_width - padding.x * 2.0f;
+    int text_len = nk_strlen(message->text);
+    float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, message->text, text_len);
+
+    // Advance marquee scroll when the text is wider than the display area.
+#ifndef NK_CONSOLE_MESSAGE_SCROLL_SPEED
+#define NK_CONSOLE_MESSAGE_SCROLL_SPEED 60.0f
+#endif
+#ifndef NK_CONSOLE_MESSAGE_SCROLL_PAUSE
+#define NK_CONSOLE_MESSAGE_SCROLL_PAUSE 1.5f  /* seconds of pause at start/end */
+#endif
+    const char* display_text = message->text;
+    char display_buf[256];
+    if (full_text_width > avail_width && ctx->delta_time_seconds > 0) {
+        float pause_pixels = NK_CONSOLE_MESSAGE_SCROLL_PAUSE * NK_CONSOLE_MESSAGE_SCROLL_SPEED;
+        float total_cycle = full_text_width + pause_pixels;
+        message->scroll_x += ctx->delta_time_seconds * NK_CONSOLE_MESSAGE_SCROLL_SPEED;
+        if (message->scroll_x > total_cycle) {
+            message->scroll_x -= total_cycle;
+        }
+        float offset = message->scroll_x - pause_pixels;
+        if (offset > 0.0f) {
+            /* Find the first character that falls at or past the pixel offset. */
+            int start = 0;
+            for (int i = 1; i <= text_len; i++) {
+                float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, message->text, i);
+                if (w >= offset) { start = i - 1; break; }
+                if (i == text_len) { start = text_len; }
+            }
+            NK_MEMCPY(display_buf, message->text + start, (nk_size)(text_len - start + 1));
+            display_buf[text_len - start] = '\0';
+            display_text = display_buf;
+        }
+    }
+
     // Display the tooltip where the mocked mouse is.
     struct nk_vec2 zero = {0, 0};
-    if (nk_tooltip_begin_offset(ctx, bounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
+    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_label(ctx, message->text, NK_TEXT_LEFT);
+        nk_label(ctx, display_text, NK_TEXT_LEFT);
         nk_tooltip_end(ctx);
     }
 
