@@ -147,14 +147,12 @@ int main() {
         assert(file != NULL);
     }
 
-    // Navigation, focus, blur, and back-event tests.
-    // nk_console_set_active_parent calls nk_window_set_scroll, which requires an
-    // open Nuklear window. We open a temporary window just for these tests.
+    // Navigation, with Events
     if (nk_begin(ctx, "nav_test", nk_rect(0, 0, 300, 600), 0)) {
         nk_console* nav = nk_console_init(ctx);
         assert(nav != NULL);
 
-        // Build tree: nav → submenu → leaf_a, leaf_b
+        // Build tree
         nk_console* submenu = nk_console_button(nav, "Submenu");
         nk_console* leaf_a = nk_console_button(submenu, "Leaf A");
         nk_console* leaf_b = nk_console_button(submenu, "Leaf B");
