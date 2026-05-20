@@ -32,6 +32,41 @@ static const char* list_view_get_label(struct nk_console* list_view, nk_uint ind
 }
 
 int main() {
+    // nk_console_file_normalize_path()
+    {
+        char path[256];
+
+        // "." segments are removed.
+        snprintf(path, sizeof(path), "./a");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "a") == 0);
+
+        // ".." collapses the preceding segment.
+        snprintf(path, sizeof(path), "a/b/../c");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "a/c") == 0);
+
+        // Leading ".." in a relative path is preserved.
+        snprintf(path, sizeof(path), "../a");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "../a") == 0);
+
+        // Multiple ".." that cancel normal segments.
+        snprintf(path, sizeof(path), "a/b/../../c");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "c") == 0);
+
+        // Consecutive separators are collapsed.
+        snprintf(path, sizeof(path), "a//b");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "a/b") == 0);
+
+        // Backslash treated as separator.
+        snprintf(path, sizeof(path), "a\\b\\..\\c");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "a/c") == 0);
+    }
+
     // Load Nuklear
     pntr_font* font = pntr_load_font_default();
     assert(font != NULL);

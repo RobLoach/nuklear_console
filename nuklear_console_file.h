@@ -172,6 +172,18 @@ NK_API const char* nk_console_file_get_directory(nk_console* file);
  */
 NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 
+/**
+ * Normalizes ".", "..", and consecutive separators in a path string in place.
+ *
+ * Both '/' and '\\' are treated as separators; output uses '/'. Leading ".."
+ * segments in relative paths are preserved. Absolute paths cannot navigate
+ * above the root.
+ *
+ * @param buf The path buffer to normalize in place.
+ * @param size The size of buf in bytes.
+ */
+NK_API void nk_console_file_normalize_path(char* buf, int size);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -365,6 +377,68 @@ static const char* nk_console_file_list_view_get_label(struct nk_console* list_v
 }
 #endif
 
+NK_API void nk_console_file_normalize_path(char* buf, int size) {
+    if (buf == NULL || size <= 0 || buf[0] == '\0') return;
+
+    char tmp[NK_CONSOLE_FILE_PATH_MAX];
+    int tmp_len = 0;
+    int seg_ends[NK_CONSOLE_FILE_PATH_MAX / 2 + 1];
+    int seg_count = 0;
+
+    const char* p = buf;
+    nk_bool absolute = (*p == '/' || *p == '\\');
+    if (absolute) {
+        tmp[tmp_len++] = '/';
+        p++;
+        while (*p == '/' || *p == '\\') p++;
+    }
+
+    while (*p != '\0') {
+        while (*p == '/' || *p == '\\') p++;
+        if (*p == '\0') break;
+
+        const char* seg = p;
+        while (*p != '\0' && *p != '/' && *p != '\\') p++;
+        int seg_len = (int)(p - seg);
+
+        if (seg_len == 1 && seg[0] == '.') continue;
+
+        if (seg_len == 2 && seg[0] == '.' && seg[1] == '.') {
+            if (seg_count > 0) {
+                seg_count--;
+                tmp_len = seg_ends[seg_count];
+            } else if (!absolute) {
+                int restore_len = tmp_len;
+                if (restore_len > 0 && tmp[restore_len - 1] != '/') {
+                    if (tmp_len < size - 1) tmp[tmp_len++] = '/';
+                }
+                if (tmp_len + 2 < size) {
+                    tmp[tmp_len++] = '.';
+                    tmp[tmp_len++] = '.';
+                }
+            }
+            continue;
+        }
+
+        int restore_len = tmp_len;
+        if (tmp_len > 0 && tmp[tmp_len - 1] != '/') {
+            if (tmp_len < size - 1) tmp[tmp_len++] = '/';
+        }
+        if (tmp_len + seg_len < size) {
+            NK_MEMCPY(tmp + tmp_len, seg, (nk_size)seg_len);
+            tmp_len += seg_len;
+        }
+        if (seg_count < NK_CONSOLE_FILE_PATH_MAX / 2) {
+            seg_ends[seg_count++] = restore_len;
+        }
+    }
+
+    tmp[tmp_len] = '\0';
+    if (tmp_len < size) {
+        NK_MEMCPY(buf, tmp, (nk_size)(tmp_len + 1));
+    }
+}
+
 /**
  * Appends a path component to data->directory, inserting the platform separator.
  * Returns nk_false and shows an error if the result would overflow the buffer.
@@ -397,8 +471,8 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
         len++;
     }
 
-    // TODO: file: Resolve the path properly, so the paths don't recurse. For example: folder/../folder
     NK_MEMCPY(data->directory + len, label, (nk_size)(label_len + 1));
+    nk_console_file_normalize_path(data->directory, NK_CONSOLE_FILE_PATH_MAX);
     return nk_true;
 }
 
