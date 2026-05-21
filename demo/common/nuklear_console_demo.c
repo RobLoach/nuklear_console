@@ -128,6 +128,11 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     nk_console_show_message(button, message);
 }
 
+void nk_console_demo_show_marquee_message(struct nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_show_message(button, "This is a very long marquee message that scrolls across the screen because it is too wide to fit!");
+}
+
 void nk_console_quit_button_focused(struct nk_console* widget, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(widget, "Are you sure you want to quit?");
@@ -428,6 +433,11 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
 
         // Messages
         nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
+        nk_console_button_onclick(widgets, "Show Marquee Message", &nk_console_demo_show_marquee_message);
+
+        // Long tooltip
+        nk_console_button_onclick(widgets, "Long Tooltip Button", NULL)
+            ->tooltip = "This is a very long tooltip that will marquee scroll across the bottom of the screen because it is too wide to fit!";
 
         // Back Button
         nk_console_button_set_symbol(

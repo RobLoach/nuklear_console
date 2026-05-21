@@ -82,6 +82,7 @@ typedef enum {
 typedef struct nk_console_message {
     char text[256];
     float duration;
+    float scroll_x;
 } nk_console_message;
 
 typedef struct nk_console {
@@ -169,6 +170,9 @@ typedef struct nk_console_top_data {
     nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
     nk_uint drag_scroll_max_x; /** Maximum scroll X, updated each frame after render. */
     nk_uint drag_scroll_max_y; /** Maximum scroll Y, updated each frame after render. */
+
+    float tooltip_scroll_x; /** Horizontal marquee offset for the active tooltip. */
+    const char* tooltip_last; /** Pointer to the last tooltip shown; used to detect tooltip changes and reset scroll. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
@@ -400,6 +404,78 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #define CVECTOR_H "vendor/c-vector/cvector.h"
 #endif
 #include CVECTOR_H
+
+#ifndef NK_CONSOLE_MARQUEE_SCROLL_SPEED
+#define NK_CONSOLE_MARQUEE_SCROLL_SPEED 60.0f
+#endif
+#ifndef NK_CONSOLE_MARQUEE_SCROLL_PAUSE
+#define NK_CONSOLE_MARQUEE_SCROLL_PAUSE 1.5f
+#endif
+
+/**
+ * Advance a marquee scroll offset and return a pointer to the visible slice of text.
+ * Returns `text` unchanged when the text fits or delta time is unavailable.
+ * The caller owns `buf` (minimum `buf_size` bytes).
+ */
+static const char* nk_console_marquee_slice(
+    struct nk_context* ctx,
+    const char* text, int text_len,
+    float full_text_width, float avail_width,
+    float speed, float pause,
+    float* scroll_x,
+    char* buf, int buf_size)
+{
+    if (full_text_width <= avail_width || ctx->delta_time_seconds <= 0) {
+        return text;
+    }
+    float pause_pixels = pause * speed;
+    float total_cycle = full_text_width + pause_pixels;
+    *scroll_x += ctx->delta_time_seconds * speed;
+    if (*scroll_x > total_cycle) {
+        *scroll_x -= total_cycle;
+    }
+    float offset = *scroll_x - pause_pixels;
+    if (offset <= 0.0f) {
+        return text;
+    }
+    int start = 0;
+    for (int i = 1; i <= text_len; i++) {
+        float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, i);
+        if (w >= offset) { start = i - 1; break; }
+        if (i == text_len) { start = text_len; }
+    }
+    int copy_len = text_len - start;
+    if (copy_len >= buf_size) {
+        copy_len = buf_size - 1;
+    }
+    NK_MEMCPY(buf, text + start, (nk_size)copy_len);
+    buf[copy_len] = '\0';
+    return buf;
+}
+
+/**
+ * Render a single-line marquee tooltip of `tooltip_width` at the current mock mouse position.
+ */
+static void nk_console_tooltip_render_marquee(
+    struct nk_context* ctx,
+    const char* text, int text_len,
+    float full_text_width,
+    float tooltip_width, float text_height,
+    float speed, float pause,
+    float* scroll_x)
+{
+    float avail_width = tooltip_width - ctx->style.window.padding.x * 2.0f;
+    char display_buf[256];
+    const char* display_text = nk_console_marquee_slice(ctx, text, text_len,
+        full_text_width, avail_width, speed, pause, scroll_x, display_buf, (int)sizeof(display_buf));
+    struct nk_vec2 zero;
+    nk_zero_struct(zero);
+    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
+        nk_layout_row_dynamic(ctx, text_height, 1);
+        nk_label(ctx, display_text, NK_TEXT_LEFT);
+        nk_tooltip_end(ctx);
+    }
+}
 
 #ifdef __cplusplus
 extern "C" {
@@ -780,37 +856,45 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
     return widget->selectable && widget->visible && !widget->disabled;
 }
 
+#ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
+#define NK_CONSOLE_TOOLTIP_SCROLL_SPEED NK_CONSOLE_MARQUEE_SCROLL_SPEED
+#endif
+#ifndef NK_CONSOLE_TOOLTIP_SCROLL_PAUSE
+#define NK_CONSOLE_TOOLTIP_SCROLL_PAUSE NK_CONSOLE_MARQUEE_SCROLL_PAUSE
+#endif
+
 /**
  * Display a tooltip with the given text.
  *
  * @see nk_tooltip()
- * @todo Support multiline tooltips with nk_text_calculate_text_bounds()
  */
-static void nk_console_tooltip_display(struct nk_context* ctx, const char* text) {
-    const struct nk_style* style;
-    struct nk_vec2 padding;
-    struct nk_vec2 zero;
-    nk_zero_struct(zero);
-
-    style = &ctx->style;
-    padding = style->window.padding;
-
-    float text_height = (style->font->height + padding.y);
+static void nk_console_tooltip_display(nk_console* console, const char* text) {
+    struct nk_context* ctx = console->ctx;
+    const struct nk_style* style = &ctx->style;
+    float text_height = style->font->height + style->window.padding.y;
     float x = ctx->input.mouse.pos.x;
     float y = ctx->input.mouse.pos.y;
 
-    // Display the tooltip at the bottom of the window, manipulating the mouse position
     struct nk_rect windowbounds = nk_window_get_bounds(ctx);
     ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f - ctx->style.window.border;
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - style->window.padding.y * 2.0f - style->window.border;
 
-    if (nk_tooltip_begin_offset(ctx, windowbounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
-        nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_text_wrap(ctx, text, nk_strlen(text));
-        nk_tooltip_end(ctx);
+    nk_console_top_data* data = (nk_console_top_data*)nk_console_get_top(console)->data;
+
+    // Reset scroll on tooltip change. Relies on pointer identity — works for string
+    // literals and persistent pointers; resets every frame for stack-allocated strings.
+    if (data->tooltip_last != text) {
+        data->tooltip_last = text;
+        data->tooltip_scroll_x = 0.0f;
     }
 
-    // Restore the mouse x/y positions.
+    int text_len = nk_strlen(text);
+    float full_text_width = style->font->width(style->font->userdata, style->font->height, text, text_len);
+    nk_console_tooltip_render_marquee(ctx, text, text_len, full_text_width,
+        windowbounds.w - style->window.border, text_height,
+        NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE,
+        &data->tooltip_scroll_x);
+
     ctx->input.mouse.pos.x = x;
     ctx->input.mouse.pos.y = y;
 }
@@ -824,7 +908,7 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
     }
 
     if (console->tooltip != NULL) {
-        nk_console_tooltip_display(console->ctx, console->tooltip);
+        nk_console_tooltip_display(console, console->tooltip);
     }
 }
 

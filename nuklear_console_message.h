@@ -75,6 +75,13 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     cvector_push_back(data->messages, message);
 }
 
+#ifndef NK_CONSOLE_MESSAGE_SCROLL_SPEED
+#define NK_CONSOLE_MESSAGE_SCROLL_SPEED NK_CONSOLE_MARQUEE_SCROLL_SPEED
+#endif
+#ifndef NK_CONSOLE_MESSAGE_SCROLL_PAUSE
+#define NK_CONSOLE_MESSAGE_SCROLL_PAUSE NK_CONSOLE_MARQUEE_SCROLL_PAUSE
+#endif
+
 NK_API void nk_console_message_render(nk_console* console, nk_console_message* message) {
     if (message == NULL || console->data == NULL) {
         return;
@@ -107,13 +114,13 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
         }
     }
 
-    // Display the tooltip where the mocked mouse is.
-    struct nk_vec2 zero = {0, 0};
-    if (nk_tooltip_begin_offset(ctx, bounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
-        nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_label(ctx, message->text, NK_TEXT_LEFT);
-        nk_tooltip_end(ctx);
-    }
+    float tooltip_width = bounds.w - ctx->style.window.border;
+    int text_len = nk_strlen(message->text);
+    float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, message->text, text_len);
+    nk_console_tooltip_render_marquee(ctx, message->text, text_len, full_text_width,
+        tooltip_width, text_height,
+        NK_CONSOLE_MESSAGE_SCROLL_SPEED, NK_CONSOLE_MESSAGE_SCROLL_PAUSE,
+        &message->scroll_x);
 
     // Restore the mouse x/y positions.
     ctx->input.mouse.pos = mouse_pos;
