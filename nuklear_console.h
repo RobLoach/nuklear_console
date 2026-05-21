@@ -405,6 +405,54 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #endif
 #include CVECTOR_H
 
+#ifndef NK_CONSOLE_MARQUEE_SCROLL_SPEED
+#define NK_CONSOLE_MARQUEE_SCROLL_SPEED 60.0f
+#endif
+#ifndef NK_CONSOLE_MARQUEE_SCROLL_PAUSE
+#define NK_CONSOLE_MARQUEE_SCROLL_PAUSE 1.5f
+#endif
+
+/**
+ * Advance a marquee scroll offset and return a pointer to the visible slice of text.
+ * Returns `text` unchanged when the text fits or delta time is unavailable.
+ * The caller owns `buf` (minimum `buf_size` bytes).
+ */
+static const char* nk_console_marquee_slice(
+    struct nk_context* ctx,
+    const char* text, int text_len,
+    float full_text_width, float avail_width,
+    float speed, float pause,
+    float* scroll_x,
+    char* buf, int buf_size)
+{
+    if (full_text_width <= avail_width || ctx->delta_time_seconds <= 0) {
+        return text;
+    }
+    float pause_pixels = pause * speed;
+    float total_cycle = full_text_width + pause_pixels;
+    *scroll_x += ctx->delta_time_seconds * speed;
+    if (*scroll_x > total_cycle) {
+        *scroll_x -= total_cycle;
+    }
+    float offset = *scroll_x - pause_pixels;
+    if (offset <= 0.0f) {
+        return text;
+    }
+    int start = 0;
+    for (int i = 1; i <= text_len; i++) {
+        float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, i);
+        if (w >= offset) { start = i - 1; break; }
+        if (i == text_len) { start = text_len; }
+    }
+    int copy_len = text_len - start;
+    if (copy_len >= buf_size) {
+        copy_len = buf_size - 1;
+    }
+    NK_MEMCPY(buf, text + start, (nk_size)copy_len);
+    buf[copy_len] = '\0';
+    return buf;
+}
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -785,10 +833,10 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
 }
 
 #ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
-#define NK_CONSOLE_TOOLTIP_SCROLL_SPEED 60.0f
+#define NK_CONSOLE_TOOLTIP_SCROLL_SPEED NK_CONSOLE_MARQUEE_SCROLL_SPEED
 #endif
 #ifndef NK_CONSOLE_TOOLTIP_SCROLL_PAUSE
-#define NK_CONSOLE_TOOLTIP_SCROLL_PAUSE 1.5f
+#define NK_CONSOLE_TOOLTIP_SCROLL_PAUSE NK_CONSOLE_MARQUEE_SCROLL_PAUSE
 #endif
 
 /**
@@ -819,39 +867,18 @@ static void nk_console_tooltip_display(nk_console* console, const char* text) {
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_get_top(console)->data;
 
-    // Reset scroll on tooltip change. Relies on pointer identity — works for string
+    // Reset scroll on tooltip change. Relies on pointer identity - works for string
     // literals and persistent pointers; resets every frame for stack-allocated strings.
     if (data->tooltip_last != text) {
         data->tooltip_last = text;
         data->tooltip_scroll_x = 0.0f;
     }
 
-    const char* display_text = text;
     char display_buf[256];
-    if (full_text_width > avail_width && ctx->delta_time_seconds > 0) {
-        float pause_pixels = NK_CONSOLE_TOOLTIP_SCROLL_PAUSE * NK_CONSOLE_TOOLTIP_SCROLL_SPEED;
-        float total_cycle = full_text_width + pause_pixels;
-        data->tooltip_scroll_x += ctx->delta_time_seconds * NK_CONSOLE_TOOLTIP_SCROLL_SPEED;
-        if (data->tooltip_scroll_x > total_cycle) {
-            data->tooltip_scroll_x -= total_cycle;
-        }
-        float offset = data->tooltip_scroll_x - pause_pixels;
-        if (offset > 0.0f) {
-            int start = 0;
-            for (int i = 1; i <= text_len; i++) {
-                float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, i);
-                if (w >= offset) { start = i - 1; break; }
-                if (i == text_len) { start = text_len; }
-            }
-            int copy_len = text_len - start;
-            if (copy_len >= (int)sizeof(display_buf)) {
-                copy_len = (int)sizeof(display_buf) - 1;
-            }
-            NK_MEMCPY(display_buf, text + start, (nk_size)copy_len);
-            display_buf[copy_len] = '\0';
-            display_text = display_buf;
-        }
-    }
+    const char* display_text = nk_console_marquee_slice(ctx, text, text_len,
+        full_text_width, avail_width,
+        NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE,
+        &data->tooltip_scroll_x, display_buf, (int)sizeof(display_buf));
 
     if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);

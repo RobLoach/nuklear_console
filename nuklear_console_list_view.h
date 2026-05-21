@@ -176,7 +176,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     // Handle keyboard/gamepad navigation.
     if (is_active && !top_data->input_processed) {
-        // Hold-to-accelerate timers — mirrors nk_console_check_up_down.
+        // Hold-to-accelerate timers - mirrors nk_console_check_up_down.
         nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
         nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
         nk_bool repeat_fire = nk_false;

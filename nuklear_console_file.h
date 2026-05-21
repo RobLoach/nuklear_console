@@ -249,7 +249,7 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
 
     nk_console_layout_widget(console);
 
-    // Display the label (skipped in file_action mode — it becomes the button text instead).
+    // Display the label (skipped in file_action mode - it becomes the button text instead).
     if (!data->file_action && console->label != NULL && console->label[0] != '\0') {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->ctx);

@@ -127,7 +127,7 @@ NK_API const char* nk_console_key_name(nk_rune key) {
         }
     }
 
-    /* Unicode character — encode into a static buffer and return it. */
+    /* Unicode character - encode into a static buffer and return it. */
     if (key == 32) return "Space";
     static char nk_console_key_char_buf[NK_UTF_SIZE + 1];
     int len = nk_utf_encode(key, nk_console_key_char_buf, NK_UTF_SIZE);
@@ -241,7 +241,7 @@ static struct nk_rect nk_console_key_active_render(nk_console* console) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     if (top_data->input_processed == nk_false) {
         /* Typed character input takes priority over special keys. Control
-         * characters (< 32) are excluded — they overlap with nk_keys values
+         * characters (< 32) are excluded - they overlap with nk_keys values
          * and are handled by the special-key loop below. */
         if (console->ctx->input.keyboard.text_len > 0) {
             nk_rune ch = 0;
