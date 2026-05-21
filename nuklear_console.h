@@ -170,6 +170,9 @@ typedef struct nk_console_top_data {
     nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
     nk_uint drag_scroll_max_x; /** Maximum scroll X, updated each frame after render. */
     nk_uint drag_scroll_max_y; /** Maximum scroll Y, updated each frame after render. */
+
+    float tooltip_scroll_x; /** Horizontal marquee offset for the active tooltip. */
+    const char* tooltip_last; /** Pointer to the last tooltip shown; used to detect tooltip changes and reset scroll. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
@@ -781,20 +784,24 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
     return widget->selectable && widget->visible && !widget->disabled;
 }
 
+#ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
+#define NK_CONSOLE_TOOLTIP_SCROLL_SPEED 60.0f
+#endif
+#ifndef NK_CONSOLE_TOOLTIP_SCROLL_PAUSE
+#define NK_CONSOLE_TOOLTIP_SCROLL_PAUSE 1.5f
+#endif
+
 /**
  * Display a tooltip with the given text.
  *
  * @see nk_tooltip()
- * @todo Support multiline tooltips with nk_text_calculate_text_bounds()
  */
-static void nk_console_tooltip_display(struct nk_context* ctx, const char* text) {
-    const struct nk_style* style;
-    struct nk_vec2 padding;
+static void nk_console_tooltip_display(nk_console* console, const char* text) {
+    struct nk_context* ctx = console->ctx;
+    const struct nk_style* style = &ctx->style;
+    struct nk_vec2 padding = style->window.padding;
     struct nk_vec2 zero;
     nk_zero_struct(zero);
-
-    style = &ctx->style;
-    padding = style->window.padding;
 
     float text_height = (style->font->height + padding.y);
     float x = ctx->input.mouse.pos.x;
@@ -805,9 +812,50 @@ static void nk_console_tooltip_display(struct nk_context* ctx, const char* text)
     ctx->input.mouse.pos.x = windowbounds.x;
     ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f - ctx->style.window.border;
 
-    if (nk_tooltip_begin_offset(ctx, windowbounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
+    float tooltip_width = windowbounds.w - ctx->style.window.border;
+    float avail_width = tooltip_width - padding.x * 2.0f;
+    int text_len = nk_strlen(text);
+    float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, text_len);
+
+    nk_console_top_data* data = (nk_console_top_data*)nk_console_get_top(console)->data;
+
+    // Reset scroll on tooltip change. Relies on pointer identity — works for string
+    // literals and persistent pointers; resets every frame for stack-allocated strings.
+    if (data->tooltip_last != text) {
+        data->tooltip_last = text;
+        data->tooltip_scroll_x = 0.0f;
+    }
+
+    const char* display_text = text;
+    char display_buf[256];
+    if (full_text_width > avail_width && ctx->delta_time_seconds > 0) {
+        float pause_pixels = NK_CONSOLE_TOOLTIP_SCROLL_PAUSE * NK_CONSOLE_TOOLTIP_SCROLL_SPEED;
+        float total_cycle = full_text_width + pause_pixels;
+        data->tooltip_scroll_x += ctx->delta_time_seconds * NK_CONSOLE_TOOLTIP_SCROLL_SPEED;
+        if (data->tooltip_scroll_x > total_cycle) {
+            data->tooltip_scroll_x -= total_cycle;
+        }
+        float offset = data->tooltip_scroll_x - pause_pixels;
+        if (offset > 0.0f) {
+            int start = 0;
+            for (int i = 1; i <= text_len; i++) {
+                float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, i);
+                if (w >= offset) { start = i - 1; break; }
+                if (i == text_len) { start = text_len; }
+            }
+            int copy_len = text_len - start;
+            if (copy_len >= (int)sizeof(display_buf)) {
+                copy_len = (int)sizeof(display_buf) - 1;
+            }
+            NK_MEMCPY(display_buf, text + start, (nk_size)copy_len);
+            display_buf[copy_len] = '\0';
+            display_text = display_buf;
+        }
+    }
+
+    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
         nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_text_wrap(ctx, text, nk_strlen(text));
+        nk_label(ctx, display_text, NK_TEXT_LEFT);
         nk_tooltip_end(ctx);
     }
 
@@ -825,7 +873,7 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
     }
 
     if (console->tooltip != NULL) {
-        nk_console_tooltip_display(console->ctx, console->tooltip);
+        nk_console_tooltip_display(console, console->tooltip);
     }
 }
 
