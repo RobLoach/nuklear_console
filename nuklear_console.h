@@ -82,7 +82,7 @@ typedef enum {
 typedef struct nk_console_message {
     char text[256];
     float duration;
-    float scroll_x;  /* horizontal marquee offset in pixels; negative = initial pause */
+    float scroll_x;
 } nk_console_message;
 
 typedef struct nk_console {
@@ -451,6 +451,30 @@ static const char* nk_console_marquee_slice(
     NK_MEMCPY(buf, text + start, (nk_size)copy_len);
     buf[copy_len] = '\0';
     return buf;
+}
+
+/**
+ * Render a single-line marquee tooltip of `tooltip_width` at the current mock mouse position.
+ */
+static void nk_console_tooltip_render_marquee(
+    struct nk_context* ctx,
+    const char* text, int text_len,
+    float full_text_width,
+    float tooltip_width, float text_height,
+    float speed, float pause,
+    float* scroll_x)
+{
+    float avail_width = tooltip_width - ctx->style.window.padding.x * 2.0f;
+    char display_buf[256];
+    const char* display_text = nk_console_marquee_slice(ctx, text, text_len,
+        full_text_width, avail_width, speed, pause, scroll_x, display_buf, (int)sizeof(display_buf));
+    struct nk_vec2 zero;
+    nk_zero_struct(zero);
+    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
+        nk_layout_row_dynamic(ctx, text_height, 1);
+        nk_label(ctx, display_text, NK_TEXT_LEFT);
+        nk_tooltip_end(ctx);
+    }
 }
 
 #ifdef __cplusplus
@@ -847,46 +871,30 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
 static void nk_console_tooltip_display(nk_console* console, const char* text) {
     struct nk_context* ctx = console->ctx;
     const struct nk_style* style = &ctx->style;
-    struct nk_vec2 padding = style->window.padding;
-    struct nk_vec2 zero;
-    nk_zero_struct(zero);
-
-    float text_height = (style->font->height + padding.y);
+    float text_height = style->font->height + style->window.padding.y;
     float x = ctx->input.mouse.pos.x;
     float y = ctx->input.mouse.pos.y;
 
-    // Display the tooltip at the bottom of the window, manipulating the mouse position
     struct nk_rect windowbounds = nk_window_get_bounds(ctx);
     ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f - ctx->style.window.border;
-
-    float tooltip_width = windowbounds.w - ctx->style.window.border;
-    float avail_width = tooltip_width - padding.x * 2.0f;
-    int text_len = nk_strlen(text);
-    float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, text_len);
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - style->window.padding.y * 2.0f - style->window.border;
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_get_top(console)->data;
 
-    // Reset scroll on tooltip change. Relies on pointer identity - works for string
+    // Reset scroll on tooltip change. Relies on pointer identity — works for string
     // literals and persistent pointers; resets every frame for stack-allocated strings.
     if (data->tooltip_last != text) {
         data->tooltip_last = text;
         data->tooltip_scroll_x = 0.0f;
     }
 
-    char display_buf[256];
-    const char* display_text = nk_console_marquee_slice(ctx, text, text_len,
-        full_text_width, avail_width,
+    int text_len = nk_strlen(text);
+    float full_text_width = style->font->width(style->font->userdata, style->font->height, text, text_len);
+    nk_console_tooltip_render_marquee(ctx, text, text_len, full_text_width,
+        windowbounds.w - style->window.border, text_height,
         NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE,
-        &data->tooltip_scroll_x, display_buf, (int)sizeof(display_buf));
+        &data->tooltip_scroll_x);
 
-    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
-        nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_label(ctx, display_text, NK_TEXT_LEFT);
-        nk_tooltip_end(ctx);
-    }
-
-    // Restore the mouse x/y positions.
     ctx->input.mouse.pos.x = x;
     ctx->input.mouse.pos.y = y;
 }

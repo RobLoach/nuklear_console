@@ -114,25 +114,13 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
         }
     }
 
-    // Determine the available display width and the full text width.
     float tooltip_width = bounds.w - ctx->style.window.border;
-    float avail_width = tooltip_width - padding.x * 2.0f;
     int text_len = nk_strlen(message->text);
     float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, message->text, text_len);
-
-    char display_buf[256];
-    const char* display_text = nk_console_marquee_slice(ctx, message->text, text_len,
-        full_text_width, avail_width,
+    nk_console_tooltip_render_marquee(ctx, message->text, text_len, full_text_width,
+        tooltip_width, text_height,
         NK_CONSOLE_MESSAGE_SCROLL_SPEED, NK_CONSOLE_MESSAGE_SCROLL_PAUSE,
-        &message->scroll_x, display_buf, (int)sizeof(display_buf));
-
-    // Display the tooltip where the mocked mouse is.
-    struct nk_vec2 zero = {0, 0};
-    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
-        nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_label(ctx, display_text, NK_TEXT_LEFT);
-        nk_tooltip_end(ctx);
-    }
+        &message->scroll_x);
 
     // Restore the mouse x/y positions.
     ctx->input.mouse.pos = mouse_pos;
