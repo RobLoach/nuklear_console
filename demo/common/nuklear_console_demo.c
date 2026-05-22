@@ -3,6 +3,7 @@
 
 #include "../../vendor/Nuklear/demo/common/style.c"
 
+// To build without nuklear_gamepad, remove the following two lines:
 #define NK_GAMEPAD_IMPLEMENTATION
 #include "../../vendor/nuklear_gamepad/nuklear_gamepad.h"
 

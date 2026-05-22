@@ -1,6 +1,8 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
+#include "nuklear_console_gamepad_stub.h"
+
 struct nk_console;
 struct nk_console_event_handler;
 
@@ -486,6 +488,7 @@ extern "C" {
 #include "nuklear_console_color.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_file.h"
+#include "nuklear_console_gamepad_stub.h"
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"

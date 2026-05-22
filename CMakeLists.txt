@@ -6,28 +6,31 @@ project(nuklear_console
     LANGUAGES C
 )
 
-# nuklear_gamepad
-# TODO: Move the nuklear_gamepad definition elsewhere?
-find_package(nuklear_gamepad QUIET)
-if (NOT nuklear_gamepad_FOUND)
-    include(FetchContent)
-    FetchContent_Declare(
-        nuklear_gamepad
-        GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-        GIT_TAG 82056c3
-    )
-    FetchContent_GetProperties(nuklear_gamepad)
-    if (NOT nuklear_gamepad_POPULATED)
-        set(FETCHCONTENT_QUIET NO)
-        FetchContent_Populate(nuklear_gamepad)
-        add_subdirectory(${nuklear_gamepad_SOURCE_DIR} ${nuklear_gamepad_BINARY_DIR})
-    endif()
-endif()
+option(NUKLEAR_CONSOLE_GAMEPAD "Enable nuklear_gamepad gamepad input support" ON)
 
 # nuklear_console
 add_library(nuklear_console INTERFACE)
 target_include_directories(nuklear_console INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(nuklear_console INTERFACE nuklear_gamepad)
+
+if (NUKLEAR_CONSOLE_GAMEPAD)
+    find_package(nuklear_gamepad QUIET)
+    if (NOT nuklear_gamepad_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            nuklear_gamepad
+            GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
+            GIT_TAG 82056c3
+        )
+        FetchContent_GetProperties(nuklear_gamepad)
+        if (NOT nuklear_gamepad_POPULATED)
+            set(FETCHCONTENT_QUIET NO)
+            FetchContent_Populate(nuklear_gamepad)
+            add_subdirectory(${nuklear_gamepad_SOURCE_DIR} ${nuklear_gamepad_BINARY_DIR})
+        endif()
+    endif()
+    target_link_libraries(nuklear_console INTERFACE nuklear_gamepad)
+    target_compile_definitions(nuklear_console INTERFACE NK_CONSOLE_GAMEPAD)
+endif()
 
 # Options
 if ("${CMAKE_SOURCE_DIR}" STREQUAL "${CMAKE_CURRENT_SOURCE_DIR}")

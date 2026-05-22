@@ -15,9 +15,11 @@
 #define NK_BUTTON_TRIGGER_ON_RELEASE
 #include "pntr_nuklear.h"
 
+#ifndef NK_CONSOLE_NO_GAMEPAD
 #define NK_GAMEPAD_NONE
 #define NK_GAMEPAD_IMPLEMENTATION
 #include "nuklear_gamepad.h"
+#endif
 
 #define NK_CONSOLE_IMPLEMENTATION
 #include "nuklear_console.h"
@@ -85,11 +87,13 @@ int main() {
     assert(console != NULL);
 
     // Gamepad
+    #ifndef NK_CONSOLE_NO_GAMEPAD
     {
         struct nk_gamepads gamepads;
         assert(nk_gamepad_init(&gamepads, ctx, NULL) == nk_true);
         nk_console_set_gamepads(console, &gamepads);
     }
+    #endif
 
     // nk_console_label()
     {
