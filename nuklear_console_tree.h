@@ -109,6 +109,34 @@ static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
     nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
 }
 
+static struct nk_rect nk_console_tree_render(nk_console* tree) {
+    if (tree == NULL || tree->data == NULL) {
+        return nk_rect(0, 0, 0, 0);
+    }
+
+    // Delegate rendering to the button renderer.
+    struct nk_rect bounds = nk_console_button_render(tree);
+
+    // Handle LEFT/RIGHT key presses to collapse/expand when this tree is active.
+    if (nk_console_is_active_widget(tree)) {
+        nk_console* top = nk_console_get_top(tree);
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (!top_data->input_processed) {
+            if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT) && !nk_console_tree_expanded(tree)) {
+                nk_console_tree_apply_expanded(tree, nk_true);
+                nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
+                top_data->input_processed = nk_true;
+            } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && nk_console_tree_expanded(tree)) {
+                nk_console_tree_apply_expanded(tree, nk_false);
+                nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
+                top_data->input_processed = nk_true;
+            }
+        }
+    }
+
+    return bounds;
+}
+
 static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
     if (tree == NULL || tree->data == NULL) {
         return;
@@ -161,7 +189,7 @@ NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_boo
     widget->data = (void*)data;
     widget->selectable = nk_true;
     widget->columns = 1;
-    widget->render = nk_console_button_render;
+    widget->render = nk_console_tree_render;
     data->button.symbol = expanded ? NK_SYMBOL_TRIANGLE_DOWN : NK_SYMBOL_TRIANGLE_RIGHT;
     nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tree_event_destroyed);
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_tree_event_clicked);
