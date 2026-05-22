@@ -67,6 +67,20 @@ NK_API enum nk_gamepad_button nk_console_input_get_default(nk_console* widget);
 extern "C" {
 #endif
 
+#ifndef NK_CONSOLE_GAMEPAD
+static const char* nk_gamepad_button_name(struct nk_gamepads* g, enum nk_gamepad_button b) {
+    (void)g;
+    static const char* names[] = {
+        "Up","Down","Left","Right","A","B","X","Y","LB","RB","Back","Start","Guide"
+    };
+    if (b >= 0 && b < NK_GAMEPAD_BUTTON_LAST) return names[(int)b];
+    return NULL;
+}
+static nk_bool nk_gamepad_any_button_released(struct nk_gamepads* g, int n, int* on, enum nk_gamepad_button* ob) {
+    (void)g; (void)n; (void)on; (void)ob; return nk_false;
+}
+#endif /* !NK_CONSOLE_GAMEPAD */
+
 NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return nk_rect(0, 0, 0, 0);
