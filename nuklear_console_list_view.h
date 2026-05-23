@@ -332,8 +332,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         for (int i = 0; i < data->view.count; ++i) {
             const char* label = data->get_label_callback(widget, (nk_uint)(data->view.begin + i));
             if (label == NULL) {
-                // TODO: When the list view item doesn't have a label, figure out a way to continue without misaligning selected.
-                break;
+                label = "";
             }
 
             // Mouse Selection
