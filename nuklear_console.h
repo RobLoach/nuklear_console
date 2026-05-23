@@ -378,19 +378,67 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #endif
 #endif
 
-#ifndef cvector_clib_free
-#define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
-#endif
-#ifndef cvector_clib_malloc
-#define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
+// When none of malloc/free/realloc are user-overridden, use a fat-pointer
+// scheme so all three route through Nuklear's allocator without stdlib.
+// Each allocation is prefixed by an nk_size storing the requested size so
+// that realloc can know how many bytes to copy when growing the block.
+#if !defined(cvector_clib_malloc) && !defined(cvector_clib_free) && !defined(cvector_clib_realloc)
+/**
+ * Allocate @p size bytes via NK_CONSOLE_MALLOC, prefixing the block with an
+ * nk_size header that records the requested size for use by
+ * nk_console_cvector_realloc().
+ * @param size Number of bytes to allocate.
+ * @return Pointer to the usable region, or NULL on failure.
+ */
+static void* nk_console_cvector_malloc(nk_size size) {
+    nk_size* block = (nk_size*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, size + sizeof(nk_size));
+    if (!block) return NULL;
+    *block = size;
+    return (void*)(block + 1);
+}
+/**
+ * Free a pointer previously returned by nk_console_cvector_malloc() or
+ * nk_console_cvector_realloc() via NK_CONSOLE_FREE.
+ * @param ptr Pointer to free, or NULL (no-op).
+ */
+static void nk_console_cvector_free(void* ptr) {
+    if (!ptr) return;
+    NK_CONSOLE_FREE(nk_handle_id(0), (nk_size*)ptr - 1);
+}
+/**
+ * Resize a block previously returned by nk_console_cvector_malloc().
+ * Copies the lesser of the old and new sizes, then frees the old block.
+ * @param old_ptr Existing allocation, or NULL to perform a fresh allocation.
+ * @param new_size Desired size in bytes.
+ * @return Pointer to the resized region, or NULL on allocation failure.
+ */
+static void* nk_console_cvector_realloc(void* old_ptr, nk_size new_size) {
+    void* new_ptr = nk_console_cvector_malloc(new_size);
+    if (!new_ptr) return NULL;
+    if (old_ptr) {
+        nk_size old_size = *((nk_size*)old_ptr - 1);
+        NK_MEMCPY(new_ptr, old_ptr, old_size < new_size ? old_size : new_size);
+        nk_console_cvector_free(old_ptr);
+    }
+    return new_ptr;
+}
+#define cvector_clib_malloc(size)       nk_console_cvector_malloc(size)
+#define cvector_clib_free(ptr)          nk_console_cvector_free(ptr)
+#define cvector_clib_realloc(ptr, size) nk_console_cvector_realloc(ptr, size)
+#else
+    #ifndef cvector_clib_free
+    #define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
+    #endif
+    #ifndef cvector_clib_malloc
+    #define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
+    #endif
+    #ifndef cvector_clib_realloc
+    #include <stdlib.h>
+    #define cvector_clib_realloc(ptr, size) realloc(ptr, size)
+    #endif
 #endif
 #ifndef cvector_clib_calloc
 #define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
-#endif
-#ifndef cvector_clib_realloc
-// TODO: Implement our own realloc() using Nuklear's allocator.
-#include <stdlib.h>
-#define cvector_clib_realloc(ptr, size) realloc(ptr, size)
 #endif
 #ifndef cvector_clib_assert
 #define cvector_clib_assert(expression) NK_ASSERT(expression)
@@ -399,8 +447,28 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
 #endif
 #ifndef cvector_clib_memmove
-// TODO: Implement our own memmove() using Nuklear's allocators
-// #define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+/**
+ * Move @p count bytes from @p src to @p dest, correctly handling overlapping
+ * regions by using a forward copy when dest <= src and a backward copy
+ * otherwise (Nuklear does not provide memmove).
+ * @param dest Destination buffer.
+ * @param src  Source buffer.
+ * @param count Number of bytes to move.
+ * @return @p dest.
+ */
+static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size count) {
+    unsigned char* d = (unsigned char*)dest;
+    const unsigned char* s = (const unsigned char*)src;
+    if (d == s || count == 0) return dest;
+    if (d < s) {
+        NK_MEMCPY(dest, src, count);
+    } else {
+        d += count; s += count;
+        while (count--) *--d = *--s;
+    }
+    return dest;
+}
+#define cvector_clib_memmove(dest, src, count) nk_console_cvector_memmove(dest, src, count)
 #endif
 #ifndef CVECTOR_H
 #define CVECTOR_H "vendor/c-vector/cvector.h"
