@@ -383,16 +383,35 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 // Each allocation is prefixed by an nk_size storing the requested size so
 // that realloc can know how many bytes to copy when growing the block.
 #if !defined(cvector_clib_malloc) && !defined(cvector_clib_free) && !defined(cvector_clib_realloc)
+/**
+ * Allocate @p size bytes via NK_CONSOLE_MALLOC, prefixing the block with an
+ * nk_size header that records the requested size for use by
+ * nk_console_cvector_realloc().
+ * @param size Number of bytes to allocate.
+ * @return Pointer to the usable region, or NULL on failure.
+ */
 static void* nk_console_cvector_malloc(nk_size size) {
     nk_size* block = (nk_size*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, size + sizeof(nk_size));
     if (!block) return NULL;
     *block = size;
     return (void*)(block + 1);
 }
+/**
+ * Free a pointer previously returned by nk_console_cvector_malloc() or
+ * nk_console_cvector_realloc() via NK_CONSOLE_FREE.
+ * @param ptr Pointer to free, or NULL (no-op).
+ */
 static void nk_console_cvector_free(void* ptr) {
     if (!ptr) return;
     NK_CONSOLE_FREE(nk_handle_id(0), (nk_size*)ptr - 1);
 }
+/**
+ * Resize a block previously returned by nk_console_cvector_malloc().
+ * Copies the lesser of the old and new sizes, then frees the old block.
+ * @param old_ptr Existing allocation, or NULL to perform a fresh allocation.
+ * @param new_size Desired size in bytes.
+ * @return Pointer to the resized region, or NULL on allocation failure.
+ */
 static void* nk_console_cvector_realloc(void* old_ptr, nk_size new_size) {
     void* new_ptr = nk_console_cvector_malloc(new_size);
     if (!new_ptr) return NULL;
@@ -428,8 +447,15 @@ static void* nk_console_cvector_realloc(void* old_ptr, nk_size new_size) {
 #define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
 #endif
 #ifndef cvector_clib_memmove
-// Nuklear doesn't provide memmove, so implement one that handles overlapping
-// regions: forward copy when dest <= src (safe), backward copy otherwise.
+/**
+ * Move @p count bytes from @p src to @p dest, correctly handling overlapping
+ * regions by using a forward copy when dest <= src and a backward copy
+ * otherwise (Nuklear does not provide memmove).
+ * @param dest Destination buffer.
+ * @param src  Source buffer.
+ * @param count Number of bytes to move.
+ * @return @p dest.
+ */
 static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size count) {
     unsigned char* d = (unsigned char*)dest;
     const unsigned char* s = (const unsigned char*)src;
