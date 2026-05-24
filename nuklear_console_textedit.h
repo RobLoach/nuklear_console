@@ -8,6 +8,22 @@
 #define NK_CONSOLE_TEXTEDIT_MASKED_LENGTH 8
 #endif
 
+#ifndef NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH
+/**
+ * Maximum number of characters shown in the textedit button preview.
+ */
+#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 10
+#endif
+
+/**
+ * A key entry in a keyboard layout row.
+ * A row is a NULL-terminated array of these; the last entry has normal == NULL.
+ */
+typedef struct nk_console_textedit_key {
+    const char* normal;   /**< Label when shift is off; NULL terminates a row. */
+    const char* shifted;  /**< Label when shift is on; NULL means same as normal. */
+} nk_console_textedit_key;
+
 typedef struct nk_console_textedit_data {
     nk_console_button_data button; // Inherited from button.
     char* buffer;
@@ -15,6 +31,7 @@ typedef struct nk_console_textedit_data {
     nk_bool shift;
     nk_bool masked; // When true, displays '*' instead of the actual buffer content.
     char masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH + 4]; // Space for null-terminator and some protection.
+    const nk_console_textedit_key** keyboard_layout; /**< NULL-terminated array of key rows; last row gets shift/backspace added. */
 } nk_console_textedit_data;
 
 #if defined(__cplusplus)
@@ -32,6 +49,7 @@ extern "C" {
  */
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* label, char* buffer, int buffer_size);
+NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const nk_console_textedit_key** layout);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
 NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data);
 NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data);
@@ -50,6 +68,35 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 #if defined(__cplusplus)
 extern "C" {
 #endif
+
+/* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
+static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
+    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","\%"},
+    {"6","^"}, {"7","&"}, {"8","*"}, {"9","("}, {"0",")"},
+    {NULL, NULL}
+};
+static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
+    {"q","Q"}, {"w","W"}, {"e","E"}, {"r","R"}, {"t","T"},
+    {"y","Y"}, {"u","U"}, {"i","I"}, {"o","O"}, {"p","P"},
+    {NULL, NULL}
+};
+static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
+    {"a","A"}, {"s","S"}, {"d","D"}, {"f","F"}, {"g","G"},
+    {"h","H"}, {"j","J"}, {"k","K"}, {"l","L"}, {".",">"},
+    {NULL, NULL}
+};
+static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
+    {"z","Z"}, {"x","X"}, {"c","C"}, {"v","V"}, {"b","B"},
+    {"n","N"}, {"m","M"}, {",","<"},
+    {NULL, NULL}
+};
+static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
+    nk_console_textedit_ascii_row0,
+    nk_console_textedit_ascii_row1,
+    nk_console_textedit_ascii_row2,
+    nk_console_textedit_ascii_row3,
+    NULL
+};
 
 /**
  * Frees all the children for the given textedit as an event.
@@ -112,8 +159,8 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
             data->shift = !data->shift;
             nk_console_button_set_symbol(key, symbol == NK_SYMBOL_TRIANGLE_UP ? NK_SYMBOL_TRIANGLE_UP_OUTLINE : NK_SYMBOL_TRIANGLE_UP);
 
-            // Replace all labels of the parent buttons with shifted characters.
-            // TODO: Clean up shifting the key labels so that it's more dynamic.
+            // Update all key button labels using the stored layout table.
+            const nk_console_textedit_key** layout = data->keyboard_layout;
             int textedit_children_size = (int)cvector_size(textedit->children);
             for (int x = 0; x < textedit_children_size; ++x) {
                 nk_console* child = textedit->children[x];
@@ -121,93 +168,19 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                     int child_children_size = (int)cvector_size(child->children);
                     for (int i = 0; i < child_children_size; ++i) {
                         nk_console* activeButton = child->children[i];
-                        if (activeButton->type == NK_CONSOLE_BUTTON) {
-                            const char* label = activeButton->label;
-                            if (label != NULL && nk_strlen(label) == 1) {
-                                char old_char = label[0];
-                                switch (old_char) {
-                                    case 'a': label = "A"; break;
-                                    case 'b': label = "B"; break;
-                                    case 'c': label = "C"; break;
-                                    case 'd': label = "D"; break;
-                                    case 'e': label = "E"; break;
-                                    case 'f': label = "F"; break;
-                                    case 'g': label = "G"; break;
-                                    case 'h': label = "H"; break;
-                                    case 'i': label = "I"; break;
-                                    case 'j': label = "J"; break;
-                                    case 'k': label = "K"; break;
-                                    case 'l': label = "L"; break;
-                                    case 'm': label = "M"; break;
-                                    case 'n': label = "N"; break;
-                                    case 'o': label = "O"; break;
-                                    case 'p': label = "P"; break;
-                                    case 'q': label = "Q"; break;
-                                    case 'r': label = "R"; break;
-                                    case 's': label = "S"; break;
-                                    case 't': label = "T"; break;
-                                    case 'u': label = "U"; break;
-                                    case 'v': label = "V"; break;
-                                    case 'w': label = "W"; break;
-                                    case 'x': label = "X"; break;
-                                    case 'y': label = "Y"; break;
-                                    case 'z': label = "Z"; break;
-                                    case 'A': label = "a"; break;
-                                    case 'B': label = "b"; break;
-                                    case 'C': label = "c"; break;
-                                    case 'D': label = "d"; break;
-                                    case 'E': label = "e"; break;
-                                    case 'F': label = "f"; break;
-                                    case 'G': label = "g"; break;
-                                    case 'H': label = "h"; break;
-                                    case 'I': label = "i"; break;
-                                    case 'J': label = "j"; break;
-                                    case 'K': label = "k"; break;
-                                    case 'L': label = "l"; break;
-                                    case 'M': label = "m"; break;
-                                    case 'N': label = "n"; break;
-                                    case 'O': label = "o"; break;
-                                    case 'P': label = "p"; break;
-                                    case 'Q': label = "q"; break;
-                                    case 'R': label = "r"; break;
-                                    case 'S': label = "s"; break;
-                                    case 'T': label = "t"; break;
-                                    case 'U': label = "u"; break;
-                                    case 'V': label = "v"; break;
-                                    case 'W': label = "w"; break;
-                                    case 'X': label = "x"; break;
-                                    case 'Y': label = "y"; break;
-                                    case 'Z': label = "z"; break;
-
-                                    // Symbols
-                                    case '>': label = "."; break;
-                                    case '.': label = ">"; break;
-                                    case '<': label = ","; break;
-                                    case ',': label = "<"; break;
-
-                                    // Numbers
-                                    case '1': label = "!"; break;
-                                    case '2': label = "@"; break;
-                                    case '3': label = "#"; break;
-                                    case '4': label = "$"; break;
-                                    case '5': label = "%"; break;
-                                    case '6': label = "^"; break;
-                                    case '7': label = "&"; break;
-                                    case '8': label = "*"; break;
-                                    case '9': label = "("; break;
-                                    case '0': label = ")"; break;
-                                    case '!': label = "1"; break;
-                                    case '@': label = "2"; break;
-                                    case '#': label = "3"; break;
-                                    case '$': label = "4"; break;
-                                    case '%': label = "5"; break;
-                                    case '^': label = "6"; break;
-                                    case '&': label = "7"; break;
-                                    case '*': label = "8"; break;
-                                    case '(': label = "9"; break;
-                                    case ')': label = "0"; break;
+                        if (activeButton->type == NK_CONSOLE_BUTTON && activeButton->label != NULL) {
+                            const char* lbl = activeButton->label;
+                            nk_bool found = nk_false;
+                            for (int r = 0; !found && layout[r] != NULL; r++) {
+                                for (int k = 0; !found && layout[r][k].normal != NULL; k++) {
+                                    const char* normal = layout[r][k].normal;
+                                    const char* shifted = layout[r][k].shifted != NULL ? layout[r][k].shifted : normal;
+                                    if (strcmp(lbl, normal) == 0 || strcmp(lbl, shifted) == 0) {
+                                        const char* new_lbl = data->shift ? shifted : normal;
+                                        nk_console_set_label(activeButton, new_lbl, nk_strlen(new_lbl));
+                                        found = nk_true;
+                                    }
                                 }
-                                nk_console_set_label(activeButton, label, 1);
                             }
                         }
                     }
@@ -275,89 +248,43 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
     // Create the textedit_text widget, which is the input box.
     nk_console_textedit_text(button);
 
-    // TODO: Add non-ASCII keyboard layouts (e.g. accented characters, CJK) using nk_glyph key labels.
+    // Build the keyboard from the layout table. Rows [0..N-2] are plain key rows;
+    // the last row gets a Shift key prepended and a Backspace key appended.
+    const nk_console_textedit_key** layout = data->keyboard_layout;
+    int row_count = 0;
+    while (layout[row_count] != NULL) row_count++;
 
-    // First row: 1 - 0
+    for (int r = 0; r < row_count; r++) {
+        const nk_console_textedit_key* row_keys = layout[r];
+        nk_bool is_last_row = (r == row_count - 1);
+
+        nk_console* row = nk_console_row_begin(button);
+        {
+            if (is_last_row) {
+                key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click);
+                nk_console_button_set_symbol(key, data->shift ? NK_SYMBOL_TRIANGLE_UP : NK_SYMBOL_TRIANGLE_UP_OUTLINE);
+            }
+
+            for (int k = 0; row_keys[k].normal != NULL; k++) {
+                const char* shifted = row_keys[k].shifted != NULL ? row_keys[k].shifted : row_keys[k].normal;
+                nk_console_button_onclick(row, data->shift ? shifted : row_keys[k].normal, &nk_console_textedit_key_click);
+            }
+
+            if (is_last_row) {
+                key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click);
+                nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
+            }
+        }
+        nk_console_row_end(row);
+    }
+
+    // Always append a Space + Back row.
     nk_console* row = nk_console_row_begin(button);
     {
-        nk_console_button_onclick(row, data->shift ? "!" : "1", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "@" : "2", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "#" : "3", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "$" : "4", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "%" : "5", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "^" : "6", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "&" : "7", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "*" : "8", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "(" : "9", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? ")" : "0", &nk_console_textedit_key_click);
-    }
-    nk_console_row_end(row);
-
-    // Second row: Q - P
-    row = nk_console_row_begin(button);
-    {
-        nk_console_button_onclick(row, data->shift ? "Q" : "q", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "W" : "w", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "E" : "e", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "R" : "r", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "T" : "t", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "Y" : "y", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "U" : "u", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "I" : "i", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "O" : "o", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "P" : "p", &nk_console_textedit_key_click);
-    }
-    nk_console_row_end(row);
-
-    // Third row: A - L
-    row = nk_console_row_begin(button);
-    {
-        nk_console_button_onclick(row, data->shift ? "A" : "a", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "S" : "s", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "D" : "d", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "F" : "f", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "G" : "g", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "H" : "h", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "J" : "j", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "K" : "k", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "L" : "l", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? ">" : ".", &nk_console_textedit_key_click);
-    }
-    nk_console_row_end(row);
-
-    // Fourth row: Z - M
-    row = nk_console_row_begin(button);
-    {
         key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click);
-        if (data->shift) {
-            nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP);
-        }
-        else {
-            nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_UP_OUTLINE);
-        }
-        nk_console_button_onclick(row, data->shift ? "Z" : "z", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "X" : "x", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "C" : "c", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "V" : "v", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "B" : "b", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "N" : "n", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "M" : "m", &nk_console_textedit_key_click);
-        nk_console_button_onclick(row, data->shift ? "<" : ",", &nk_console_textedit_key_click);
-        key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click); // Backspace
-        nk_console_button_set_symbol(key, NK_SYMBOL_TRIANGLE_LEFT);
-    }
-    nk_console_row_end(row);
-
-    // Fifth row: Space and Back
-    row = nk_console_row_begin(button);
-    {
-        // Space
-        key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click); // Space
         key->columns = 3;
         nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
 
-        // Back
-        // TODO: textedit: Replace "Back" with a RETURN symbol?
         key = nk_console_button_onclick(row, "Back", &nk_console_textedit_button_back_click);
         key->columns = 1;
     }
@@ -388,8 +315,10 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
         data->masked_display[i] = '*';
     }
     data->masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH] = '\0';
+    data->keyboard_layout = nk_console_textedit_layout_ascii;
 
     nk_console_add_event(textedit, NK_CONSOLE_EVENT_CLICKED, &nk_console_textedit_button_main_click);
+    nk_console_add_event(textedit, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
 
     return textedit;
 }
@@ -403,6 +332,12 @@ NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* la
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
     data->masked = nk_true;
     return textedit;
+}
+
+NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const nk_console_textedit_key** layout) {
+    if (!textedit || !textedit->data) return;
+    nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
+    data->keyboard_layout = layout != NULL ? layout : nk_console_textedit_layout_ascii;
 }
 
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
@@ -427,23 +362,21 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
 
     // Display the mocked textedit button
     int swap_columns = console->columns;
-    console->columns = 0; // We use 0 as w'ere not making a new row.
+    console->columns = 0; // We use 0 as we're not making a new row.
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
 
     // Display the label, which is the buffer.
     console->label = data->buffer;
     console->label_length = console->label == NULL ? 0 : nk_strlen(console->label);
-    if (console->label_length > 10) {
-        console->label_length = 10;
+    if (console->label_length > NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH) {
+        console->label_length = NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH;
     }
 
     // Mask it, if needed.
     if (data->masked) {
         console->label = data->masked_display;
-        if (console->label_length > NK_CONSOLE_TEXTEDIT_MASKED_LENGTH) {
-            console->label_length = NK_CONSOLE_TEXTEDIT_MASKED_LENGTH;
-        }
+        console->label_length = NK_CONSOLE_TEXTEDIT_MASKED_LENGTH;
     }
 
     struct nk_rect widget_bounds = nk_console_button_render(console);
