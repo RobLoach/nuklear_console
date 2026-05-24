@@ -8,6 +8,13 @@
 #define NK_CONSOLE_TEXTEDIT_MASKED_LENGTH 8
 #endif
 
+#ifndef NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH
+/**
+ * Maximum number of characters shown in the textedit button preview.
+ */
+#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 10
+#endif
+
 /**
  * A key entry in a keyboard layout row.
  * A row is a NULL-terminated array of these; the last entry has normal == NULL.
@@ -64,7 +71,7 @@ extern "C" {
 
 /* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
 static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
-    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","%"},
+    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","\%"},
     {"6","^"}, {"7","&"}, {"8","*"}, {"9","("}, {"0",")"},
     {NULL, NULL}
 };
@@ -311,6 +318,7 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     data->keyboard_layout = nk_console_textedit_layout_ascii;
 
     nk_console_add_event(textedit, NK_CONSOLE_EVENT_CLICKED, &nk_console_textedit_button_main_click);
+    nk_console_add_event(textedit, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
 
     return textedit;
 }
@@ -354,23 +362,21 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
 
     // Display the mocked textedit button
     int swap_columns = console->columns;
-    console->columns = 0; // We use 0 as w'ere not making a new row.
+    console->columns = 0; // We use 0 as we're not making a new row.
     const char* swap_label = console->label;
     int swap_label_length = console->label_length;
 
     // Display the label, which is the buffer.
     console->label = data->buffer;
     console->label_length = console->label == NULL ? 0 : nk_strlen(console->label);
-    if (console->label_length > 10) {
-        console->label_length = 10;
+    if (console->label_length > NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH) {
+        console->label_length = NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH;
     }
 
     // Mask it, if needed.
     if (data->masked) {
         console->label = data->masked_display;
-        if (console->label_length > NK_CONSOLE_TEXTEDIT_MASKED_LENGTH) {
-            console->label_length = NK_CONSOLE_TEXTEDIT_MASKED_LENGTH;
-        }
+        console->label_length = NK_CONSOLE_TEXTEDIT_MASKED_LENGTH;
     }
 
     struct nk_rect widget_bounds = nk_console_button_render(console);
