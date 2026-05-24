@@ -297,6 +297,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
+#include "nuklear_console_marquee.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
@@ -475,77 +476,6 @@ static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size cou
 #endif
 #include CVECTOR_H
 
-#ifndef NK_CONSOLE_MARQUEE_SCROLL_SPEED
-#define NK_CONSOLE_MARQUEE_SCROLL_SPEED 60.0f
-#endif
-#ifndef NK_CONSOLE_MARQUEE_SCROLL_PAUSE
-#define NK_CONSOLE_MARQUEE_SCROLL_PAUSE 1.5f
-#endif
-
-/**
- * Advance a marquee scroll offset and return a pointer to the visible slice of text.
- * Returns `text` unchanged when the text fits or delta time is unavailable.
- * The caller owns `buf` (minimum `buf_size` bytes).
- */
-static const char* nk_console_marquee_slice(
-    struct nk_context* ctx,
-    const char* text, int text_len,
-    float full_text_width, float avail_width,
-    float speed, float pause,
-    float* scroll_x,
-    char* buf, int buf_size)
-{
-    if (full_text_width <= avail_width || ctx->delta_time_seconds <= 0) {
-        return text;
-    }
-    float pause_pixels = pause * speed;
-    float total_cycle = full_text_width + pause_pixels;
-    *scroll_x += ctx->delta_time_seconds * speed;
-    if (*scroll_x > total_cycle) {
-        *scroll_x -= total_cycle;
-    }
-    float offset = *scroll_x - pause_pixels;
-    if (offset <= 0.0f) {
-        return text;
-    }
-    int start = 0;
-    for (int i = 1; i <= text_len; i++) {
-        float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, i);
-        if (w >= offset) { start = i - 1; break; }
-        if (i == text_len) { start = text_len; }
-    }
-    int copy_len = text_len - start;
-    if (copy_len >= buf_size) {
-        copy_len = buf_size - 1;
-    }
-    NK_MEMCPY(buf, text + start, (nk_size)copy_len);
-    buf[copy_len] = '\0';
-    return buf;
-}
-
-/**
- * Render a single-line marquee tooltip of `tooltip_width` at the current mock mouse position.
- */
-static void nk_console_tooltip_render_marquee(
-    struct nk_context* ctx,
-    const char* text, int text_len,
-    float full_text_width,
-    float tooltip_width, float text_height,
-    float speed, float pause,
-    float* scroll_x)
-{
-    float avail_width = tooltip_width - ctx->style.window.padding.x * 2.0f;
-    char display_buf[256];
-    const char* display_text = nk_console_marquee_slice(ctx, text, text_len,
-        full_text_width, avail_width, speed, pause, scroll_x, display_buf, (int)sizeof(display_buf));
-    struct nk_vec2 zero;
-    nk_zero_struct(zero);
-    if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
-        nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_label(ctx, display_text, NK_TEXT_LEFT);
-        nk_tooltip_end(ctx);
-    }
-}
 
 #ifdef __cplusplus
 extern "C" {
@@ -564,6 +494,7 @@ extern "C" {
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
+#include "nuklear_console_marquee.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
@@ -961,7 +892,7 @@ static void nk_console_tooltip_display(nk_console* console, const char* text) {
 
     int text_len = nk_strlen(text);
     float full_text_width = style->font->width(style->font->userdata, style->font->height, text, text_len);
-    nk_console_tooltip_render_marquee(ctx, text, text_len, full_text_width,
+    nk_console_marquee_tooltip_render(ctx, text, text_len, full_text_width,
         windowbounds.w - style->window.border, text_height,
         NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE,
         &data->tooltip_scroll_x);
