@@ -297,6 +297,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
+#include "nuklear_console_marquee.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
@@ -493,6 +494,7 @@ extern "C" {
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
+#include "nuklear_console_marquee.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
@@ -890,7 +892,7 @@ static void nk_console_tooltip_display(nk_console* console, const char* text) {
 
     int text_len = nk_strlen(text);
     float full_text_width = style->font->width(style->font->userdata, style->font->height, text, text_len);
-    nk_console_tooltip_render_marquee(ctx, text, text_len, full_text_width,
+    nk_console_marquee_tooltip_render(ctx, text, text_len, full_text_width,
         windowbounds.w - style->window.border, text_height,
         NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE,
         &data->tooltip_scroll_x);
