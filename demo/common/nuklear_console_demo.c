@@ -430,6 +430,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
 
             nk_console* dir_default = nk_console_dir(file_system, "Defaults to tmp", dir_buffer, dir_buffer_size);
             nk_console_file_set_directory(dir_default, "/tmp");
+
+            nk_console* file_filter = nk_console_file(file_system, "C Files Only", file_path_buffer, file_path_buffer_size);
+            nk_console_file_set_filter(file_filter, ".c;.h");
         }
 
         // Messages
