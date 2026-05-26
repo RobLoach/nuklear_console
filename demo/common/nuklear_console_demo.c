@@ -80,6 +80,7 @@ static int dir_buffer_size = 4096;
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 static char textedit_password_buffer[256] = "12345";
+static char textedit_action_buffer[256] = {0};
 
 // Input
 static int gamepad_number = 0;
@@ -144,6 +145,13 @@ void nk_console_file_action_changed(struct nk_console* widget, void* user_data) 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
     char message[NK_CONSOLE_FILE_PATH_MAX + 32];
     snprintf(message, sizeof(message), "Selected: %s", data->file_path_buffer);
+    nk_console_show_message(widget, message);
+}
+
+void nk_console_textedit_action_changed(struct nk_console* widget, void* user_data) {
+    const char* buffer = (const char*)user_data;
+    char message[288];
+    snprintf(message, sizeof(message), "Selected: %s", buffer);
     nk_console_show_message(widget, message);
 }
 
@@ -409,6 +417,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         nk_console_set_tooltip(textedit, "Enter your username!");
         struct nk_console* password = nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
         nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
+        struct nk_console* textedit_action = nk_console_textedit_action(widgets, "Enter Text", textedit_action_buffer, textedit_buffer_size);
+        nk_console_add_event_handler(textedit_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_textedit_action_changed, textedit_action_buffer, NULL);
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);

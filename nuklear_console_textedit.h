@@ -30,6 +30,8 @@ typedef struct nk_console_textedit_data {
     int buffer_size;
     nk_bool shift;
     nk_bool masked; // When true, displays '*' instead of the actual buffer content.
+    nk_bool textedit_action; /** When true, uses the label as the button text and skips the left-side label. */
+    nk_bool changed; /** Set when the buffer is edited; CHANGED event fires on back if true. */
     char masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH + 4]; // Space for null-terminator and some protection.
     const nk_console_textedit_key** keyboard_layout; /**< NULL-terminated array of key rows; last row gets shift/backspace added. */
 } nk_console_textedit_data;
@@ -49,6 +51,20 @@ extern "C" {
  */
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* label, char* buffer, int buffer_size);
+
+/**
+ * Creates a textedit action widget that shows a single full-width button. The label is used as the
+ * button text before any text is entered; afterwards the button shows a preview of the entered text.
+ * Clicking the button opens the on-screen keyboard, just like nk_console_textedit.
+ *
+ * @param parent The parent widget.
+ * @param label The button label. For example: "Enter text". Pass NULL for the default text.
+ * @param buffer The buffer to store the textedit data.
+ * @param buffer_size The size of the given buffer.
+ *
+ * @return The new textedit action widget.
+ */
+NK_API nk_console* nk_console_textedit_action(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const nk_console_textedit_key** layout);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
 NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data);
@@ -113,6 +129,11 @@ static void nk_console_textedit_free_children(nk_console* textedit, void* user_d
  */
 static void nk_console_textedit_text_event_back(struct nk_console* widget, void* user_data) {
     NK_UNUSED(user_data);
+    nk_console_textedit_data* data = (nk_console_textedit_data*)widget->data;
+    if (data != NULL && data->changed) {
+        data->changed = nk_false;
+        nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED);
+    }
     nk_console_add_event(widget, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_textedit_free_children);
 }
 
@@ -197,7 +218,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                     len--;
                 } while (len > 0 && ((unsigned char)data->buffer[len] & 0xC0) == 0x80);
                 data->buffer[len] = '\0';
-                nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+                data->changed = nk_true;
             }
         } break;
 
@@ -207,7 +228,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
             if (len < data->buffer_size - 1) {
                 data->buffer[len] = ' ';
                 data->buffer[len + 1] = '\0';
-                nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+                data->changed = nk_true;
             }
         } break;
 
@@ -218,7 +239,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
             int key_len = nk_strlen(key->label);
             if (len + key_len < data->buffer_size) {
                 NK_MEMCPY(data->buffer + len, key->label, (nk_size)(key_len + 1));
-                nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+                data->changed = nk_true;
             }
         } break;
 
@@ -243,6 +264,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
     nk_console_free_children(button);
 
     nk_console_textedit_data* data = (nk_console_textedit_data*)button->data;
+    data->changed = nk_false;
     nk_console* key;
 
     // Create the textedit_text widget, which is the input box.
@@ -334,6 +356,18 @@ NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* la
     return textedit;
 }
 
+NK_API nk_console* nk_console_textedit_action(nk_console* parent, const char* label, char* buffer, int buffer_size) {
+    nk_console* textedit = nk_console_textedit(parent, label, buffer, buffer_size);
+    if (textedit == NULL) {
+        return NULL;
+    }
+
+    nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
+    data->textedit_action = nk_true;
+    textedit->columns = 1;
+    return textedit;
+}
+
 NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const nk_console_textedit_key** layout) {
     if (!textedit || !textedit->data) return;
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
@@ -348,8 +382,8 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
 
     nk_console_layout_widget(console);
 
-    // Display the label
-    if (console->label != NULL && nk_strlen(console->label) > 0) {
+    // With textedit_action mode, change the label to what was entered?
+    if (!data->textedit_action && console->label != NULL && nk_strlen(console->label) > 0) {
         nk_bool active = nk_console_is_active_widget(console);
         if (!active) {
             nk_widget_disable_begin(console->ctx);
@@ -377,6 +411,18 @@ NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
     if (data->masked) {
         console->label = data->masked_display;
         console->label_length = NK_CONSOLE_TEXTEDIT_MASKED_LENGTH;
+    }
+
+    // In textedit_action mode, always use the widget label as the button text.
+    if (data->textedit_action) {
+        if (swap_label != NULL && swap_label[0] != '\0') {
+            console->label = swap_label;
+            console->label_length = swap_label_length;
+        }
+        else {
+            console->label = "[Enter Text]";
+            console->label_length = 0;
+        }
     }
 
     struct nk_rect widget_bounds = nk_console_button_render(console);
