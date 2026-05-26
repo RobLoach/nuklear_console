@@ -71,7 +71,7 @@ extern "C" {
 
 /* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
 static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
-    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","\%"},
+    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","%"},
     {"6","^"}, {"7","&"}, {"8","*"}, {"9","("}, {"0",")"},
     {NULL, NULL}
 };
