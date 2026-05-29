@@ -328,6 +328,14 @@ int main() {
         assert(list_view != NULL);
     }
 
+    // nk_console_color() - RGB and RGBA modes
+    struct nk_colorf rgb_color = {1.0f, 0.0f, 0.0f, 1.0f};
+    struct nk_colorf rgba_color = {0.0f, 1.0f, 0.0f, 0.5f};
+    nk_console* color_rgb = nk_console_color(console, "Color RGB", &rgb_color, NK_RGB);
+    assert(color_rgb != NULL);
+    nk_console* color_rgba = nk_console_color(console, "Color RGBA", &rgba_color, NK_RGBA);
+    assert(color_rgba != NULL);
+
     // Create the screen buffer
     pntr_image* screen = pntr_new_image(300, 800);
     assert(screen != NULL);
@@ -336,6 +344,17 @@ int main() {
     nk_console_render_window(console, "nuklear_console_test", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
 
     // Draw the nuklear context on the screen.
+    pntr_draw_nuklear(screen, ctx);
+
+    // nk_console_color() - mutate and re-render to verify no crash and color update
+    rgb_color.r = 0.0f;
+    rgb_color.g = 0.5f;
+    rgb_color.b = 1.0f;
+    rgba_color.r = 1.0f;
+    rgba_color.g = 0.0f;
+    rgba_color.b = 0.5f;
+    rgba_color.a = 0.8f;
+    nk_console_render_window(console, "nuklear_console_color_test", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
     pntr_draw_nuklear(screen, ctx);
 
     // Save the output test image.
