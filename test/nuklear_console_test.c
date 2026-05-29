@@ -186,6 +186,32 @@ int main() {
         assert(file != NULL);
     }
 
+    // nk_console_dir()
+    {
+        static const int dir_buffer_size = 256;
+        static char dir_buffer[256] = "";
+        nk_console* dir = nk_console_dir(console, "Directory", dir_buffer, dir_buffer_size);
+        assert(dir != NULL);
+
+        // Verify that setting a path with "." segments is normalized correctly.
+        snprintf(dir_buffer, (size_t)dir_buffer_size, "resources/./subdir");
+        nk_console_file_normalize_path(dir_buffer, dir_buffer_size);
+        assert(strcmp(dir_buffer, "resources/subdir") == 0);
+
+        // Verify that ".." collapses the preceding segment (regression for #188).
+        snprintf(dir_buffer, (size_t)dir_buffer_size, "resources/subdir/../other");
+        nk_console_file_normalize_path(dir_buffer, dir_buffer_size);
+        assert(strcmp(dir_buffer, "resources/other") == 0);
+    }
+
+    // nk_console_dir_action()
+    {
+        static const int dir_action_buffer_size = 256;
+        static char dir_action_buffer[256] = "";
+        nk_console* dir_action = nk_console_dir_action(console, "Select Directory", dir_action_buffer, dir_action_buffer_size);
+        assert(dir_action != NULL);
+    }
+
     // Navigation, with Events
     if (nk_begin(ctx, "nav_test", nk_rect(0, 0, 300, 600), 0)) {
         nk_console* nav = nk_console_init(ctx);
