@@ -85,6 +85,8 @@ static char textedit_action_buffer[256] = {0};
 // Input
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_key_binding = NK_KEY_ENTER;
+static enum nk_buttons input_mouse_button = NK_BUTTON_LEFT;
 
 // Key
 static nk_rune key_binding = NK_KEY_ENTER;
@@ -383,6 +385,12 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         // Input: From any gamepad (-1)
         nk_console* input_button = nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
         nk_console_input_set_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
+
+        // Input: keyboard-only binding
+        nk_console_input_key(widgets, "Key Input", &input_key_binding);
+
+        // Input: mouse-only binding
+        nk_console_input_mouse(widgets, "Mouse Input", &input_mouse_button);
 
         // Key: Capture a keyboard key binding
         nk_console* key_button = nk_console_key(widgets, "Key Binding", &key_binding);
