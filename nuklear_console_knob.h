@@ -4,7 +4,7 @@
 #include "nuklear_console_property.h"
 
 /**
- * Data for Property and Slider widgets.
+ * Data for Knob widgets.
  */
 typedef struct nk_console_knob_data {
     nk_console_property_data property; /* Inherited from property */
