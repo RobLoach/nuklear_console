@@ -32,6 +32,7 @@ typedef struct nk_console_file_data {
     char starting_directory[NK_CONSOLE_FILE_PATH_MAX]; /** Optional user-specified starting directory. When set, overrides the buffer-derived directory. */
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
+    char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -166,6 +167,27 @@ NK_API void nk_console_file_set_directory(nk_console* file, const char* director
 NK_API const char* nk_console_file_get_directory(nk_console* file);
 
 /**
+ * Sets a semicolon-separated extension filter for the file widget (e.g. ".png;.jpg").
+ *
+ * Only files whose extension matches one of the listed extensions will be shown.
+ * Directories are always shown regardless of the filter.
+ * Pass NULL or an empty string to clear the filter and show all files.
+ *
+ * @param file The file widget.
+ * @param filter The filter string, e.g. ".png;.jpg". Pass NULL to clear.
+ */
+NK_API void nk_console_file_set_filter(nk_console* file, const char* filter);
+
+/**
+ * Gets the extension filter set via nk_console_file_set_filter().
+ *
+ * @param file The file widget.
+ *
+ * @return The filter string, or NULL if no filter is set.
+ */
+NK_API const char* nk_console_file_get_filter(nk_console* file);
+
+/**
  * Refreshes the file widget with the contents with its given directory.
  *
  * @internal
@@ -239,6 +261,47 @@ static const char* nk_console_file_basename(const char* path) {
     }
 
     return path;
+}
+
+/**
+ * Returns nk_true if the given basename matches the semicolon-separated extension filter.
+ * Directories always match. Pass NULL filter to match everything.
+ *
+ * @internal
+ */
+static nk_bool nk_console_file_matches_filter(const char* basename, const char* filter) {
+    if (filter == NULL || filter[0] == '\0') {
+        return nk_true;
+    }
+
+    // Find the file extension.
+    const char* ext = NULL;
+    int len = nk_strlen(basename);
+    for (int i = len - 1; i >= 0; i--) {
+        if (basename[i] == '.') {
+            ext = basename + i;
+            break;
+        }
+    }
+    if (ext == NULL) {
+        return nk_false;
+    }
+    int ext_len = nk_strlen(ext);
+
+    // Walk the semicolon-separated token list.
+    const char* p = filter;
+    while (*p != '\0') {
+        const char* end = p;
+        while (*end != '\0' && *end != ';') {
+            end++;
+        }
+        int token_len = (int)(end - p);
+        if (token_len == ext_len && strncmp(ext, p, (size_t)token_len) == 0) {
+            return nk_true;
+        }
+        p = (*end == ';') ? end + 1 : end;
+    }
+    return nk_false;
 }
 
 NK_API struct nk_rect nk_console_file_render(nk_console* console) {
@@ -337,6 +400,12 @@ static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
         return;
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    // Free the extension filter.
+    if (data->filter != NULL) {
+        nk_console_mfree(nk_handle_id(0), data->filter);
+        data->filter = NULL;
+    }
 
     // Clear all the file entries.
     nk_console_file_entries_clear(data);
@@ -640,8 +709,12 @@ NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* pat
         return NULL;
     }
 
-    // Copy the basename as the entry label.
+    // Apply the extension filter to files (directories are never filtered out).
     const char* basename = nk_console_file_basename(path);
+    if (!is_directory && !nk_console_file_matches_filter(basename, data->filter)) {
+        return NULL;
+    }
+
     nk_size basename_len = (nk_size)nk_strlen(basename);
     char* label = (char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, basename_len + 1);
     if (label == NULL) {
@@ -937,6 +1010,39 @@ NK_API const char* nk_console_file_get_directory(nk_console* file) {
     }
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     return data->starting_directory;
+}
+
+NK_API void nk_console_file_set_filter(nk_console* file, const char* filter) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    // Free any existing filter.
+    if (data->filter != NULL) {
+        nk_console_mfree(nk_handle_id(0), data->filter);
+        data->filter = NULL;
+    }
+
+    if (filter == NULL || filter[0] == '\0') {
+        return;
+    }
+
+    nk_size len = (nk_size)nk_strlen(filter);
+    data->filter = (char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, len + 1);
+    if (data->filter != NULL) {
+        NK_MEMCPY(data->filter, filter, len + 1);
+    }
+}
+
+NK_API const char* nk_console_file_get_filter(nk_console* file) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return NULL;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    return data->filter;
 }
 
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {
