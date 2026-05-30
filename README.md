@@ -146,6 +146,7 @@ Define | Default | Description
 `NK_CONSOLE_MESSAGE_DURATION` | `4.0f` | Seconds a message widget is displayed before auto-dismissal
 `NK_CONSOLE_MESSAGE_SCROLL_SPEED` | `60.0f` | Pixels per second at which a long message scrolls horizontally
 `NK_CONSOLE_MESSAGE_SCROLL_PAUSE` | `1.5f` | Seconds to pause at the start and end of a scrolling message
+`NK_CONSOLE_FILE_SDL_NATIVE_DIALOG` | *(unset)* | In SDL3, will enable file widgets to use native file dialogs
 
 ## Development
 

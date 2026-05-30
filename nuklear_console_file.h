@@ -10,6 +10,10 @@
 #endif // NK_CONSOLE_FILE_PATH_MAX
 
 /**
+ * NK_CONSOLE_FILE_SDL_NATIVE_DIALOG: When abled in SDL3, will enable file widgets to use the native file dialogs.
+ */
+
+/**
  * A single file or directory entry stored for the file widget's list view.
  */
 typedef struct nk_console_file_entry {
@@ -33,7 +37,6 @@ typedef struct nk_console_file_data {
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
     char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
-    nk_console* widget_ref; /** Back-reference to the widget, used by the SDL dialog callback. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -923,15 +926,14 @@ static void nk_console_file_event_back(nk_console* file, void* user_data) {
  */
 static void nk_console_file_sdl_dialog_callback(void* userdata, const char* const* filelist, int filter) {
     NK_UNUSED(filter);
-    nk_console_file_data* data = (nk_console_file_data*)userdata;
+    nk_console* file = (nk_console*)userdata;
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (data == NULL) return;
     if (filelist == NULL || filelist[0] == NULL) return; /* dialog cancelled */
     int len = nk_strlen(filelist[0]);
     if (len >= data->file_path_buffer_size) return;
     NK_MEMCPY(data->file_path_buffer, filelist[0], (nk_size)(len + 1));
-    if (data->widget_ref != NULL) {
-        nk_console_trigger_event(data->widget_ref, NK_CONSOLE_EVENT_CHANGED);
-    }
+    nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
 }
 
 /**
@@ -978,19 +980,23 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
 
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
     {
-        /* Obtain the SDL_Window from user-defined macro, or use NULL for default. */
+        /* Obtain the SDL_Window from user-defined macro, or grab it from the file_user_data, or use NULL. */
 #ifndef NK_CONSOLE_FILE_SDL_WINDOW
 #define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
 #endif
+        // Get the SDL_Window if possible.
         SDL_Window* sdl_window = NK_CONSOLE_FILE_SDL_WINDOW(file);
+        if (sdl_window == NULL && data->file_user_data != NULL) {
+            sdl_window = (SDL_Window*)data->file_user_data;
+        }
+
         int filter_count = 0;
         SDL_DialogFileFilter* sdl_filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
         const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
         if (data->select_directory) {
-            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, data, sdl_window, starting, false);
+            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, starting, false);
         } else {
-            SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, data, sdl_window,
-                sdl_filters, filter_count, starting, false);
+            SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, sdl_filters, filter_count, starting, false);
         }
         if (sdl_filters) NK_CONSOLE_FREE(nk_handle_id(0), sdl_filters);
         return;
@@ -1132,7 +1138,6 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->render = nk_console_file_render;
     widget->selectable = nk_true;
     widget->data = data;
-    data->widget_ref = widget;
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_event_clicked);
     nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_event_back);
