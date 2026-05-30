@@ -10,8 +10,11 @@ typedef struct nk_console_progress_data {
 extern "C" {
 #endif
 
+/** Add a progress bar widget displaying @p current out of @p max. @return The new widget. */
 NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
+/** Update the value and label of an existing progress bar widget. */
 NK_API void nk_console_progress_update(nk_console* progress, const char* label, nk_size* current, nk_size max);
+/** Render the progress bar widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_progress_render(nk_console* console);
 
 #if defined(__cplusplus)
