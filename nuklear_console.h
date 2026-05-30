@@ -181,43 +181,77 @@ typedef struct nk_console_top_data {
 extern "C" {
 #endif
 
-// Console
+/** @defgroup console Console lifecycle */
+/** Initialize a top-level console for the given Nuklear context. @return The root console widget. */
 NK_API nk_console* nk_console_init(struct nk_context* context);
+/** Free the console and all its children. */
 NK_API void nk_console_free(nk_console* console);
+/** Render the console inside the current Nuklear window. */
 NK_API void nk_console_render(nk_console* console);
+/** Render the console inside a new Nuklear window. @return The bounding rect of the rendered window. */
 NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
-// Utilities
+/** @defgroup utilities Widget utilities */
+/** Return the top-level console that owns @p widget. */
 NK_API nk_console* nk_console_get_top(nk_console* widget);
+/** Return the zero-based index of @p widget among its siblings. */
 NK_API int nk_console_get_widget_index(nk_console* widget);
+/** Draw the tooltip for the currently active widget, if any. */
 NK_API void nk_console_check_tooltip(nk_console* console);
+/** Handle keyboard/gamepad up and down navigation for @p widget. */
 NK_API void nk_console_check_up_down(nk_console* widget);
+/** Return nk_true if @p widget is the currently focused widget. */
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
+/** Return the currently active parent (the visible menu level). */
 NK_API nk_console* nk_console_active_parent(nk_console* console);
+/** Set the active parent, switching the visible menu level. */
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
+/** Set the focused widget within the active parent. */
 NK_API void nk_console_set_active_widget(nk_console* widget);
+/** Return the currently focused widget, or NULL if none. */
 NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
+/** Allocate memory using the console's allocator (compatible with nk_allocator). */
 NK_API void* nk_console_malloc(nk_handle unused, void* old, nk_size size);
+/** Free memory using the console's allocator (compatible with nk_allocator). */
 NK_API void nk_console_mfree(nk_handle unused, void* ptr);
+/** Return nk_true if @p button was just pressed this frame (rising edge). */
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
+/** Return nk_true if @p button is currently held down. */
 NK_API nk_bool nk_console_button_down(nk_console* console, int button);
+/** Attach a nk_gamepads context to the console for gamepad input. */
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads);
+/** Return the nk_gamepads context attached to the console. */
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
+/** Set the number of gamepads polled each frame. */
 NK_API void nk_console_set_gamepad_num(nk_console* console, int num);
+/** Return the number of gamepads polled each frame. */
 NK_API int nk_console_get_gamepad_num(nk_console* console);
+/** Set the tooltip string shown when @p widget is focused. */
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
+/** Replace the label of @p widget; pass -1 for @p label_length to auto-detect. */
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
+/** Return the current label of @p widget. */
 NK_API const char* nk_console_get_label(nk_console* widget);
+/** Destroy and free all child widgets of @p console. */
 NK_API void nk_console_free_children(nk_console* console);
+/** Emit the Nuklear row layout for @p widget (called internally before rendering). */
 NK_API void nk_console_layout_widget(nk_console* widget);
+/** Append @p child as a child of @p parent. */
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
+/** Override the row height of @p widget in pixels. */
 NK_API void nk_console_set_height(nk_console* widget, int height);
+/** Return the row height of @p widget in pixels. */
 NK_API int nk_console_height(nk_console* widget);
+/** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
 
+/** Fire all handlers registered for @p type on @p widget. @return nk_true if any handler ran. */
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type);
+/** Register a simple callback for @p type on @p widget (no user data or destructor). */
 NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback);
+/** Register a callback with user data and an optional destructor for @p type on @p widget. */
 NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data, nk_console_event destructor);
+/** Unregister and free a specific event handler from @p widget. */
 NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_event_handler* handler);
 
 // Backwards compatibility

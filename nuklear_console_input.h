@@ -33,6 +33,7 @@ extern "C" {
  * @return The new input widget.
  */
 NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
+/** Render the input-capture widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 
 /**
