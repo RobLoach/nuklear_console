@@ -33,6 +33,7 @@ typedef struct nk_console_file_data {
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
     char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
+    nk_console* widget_ref; /** Back-reference to the widget, used by the SDL dialog callback. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -915,6 +916,53 @@ static void nk_console_file_event_back(nk_console* file, void* user_data) {
  *
  * @internal
  */
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+/**
+ * SDL_DialogFileCallback fired when the native file/folder picker closes.
+ * @internal
+ */
+static void nk_console_file_sdl_dialog_callback(void* userdata, const char* const* filelist, int filter) {
+    NK_UNUSED(filter);
+    nk_console_file_data* data = (nk_console_file_data*)userdata;
+    if (data == NULL) return;
+    if (filelist == NULL || filelist[0] == NULL) return; /* dialog cancelled */
+    int len = nk_strlen(filelist[0]);
+    if (len >= data->file_path_buffer_size) return;
+    NK_MEMCPY(data->file_path_buffer, filelist[0], (nk_size)(len + 1));
+    if (data->widget_ref != NULL) {
+        nk_console_trigger_event(data->widget_ref, NK_CONSOLE_EVENT_CHANGED);
+    }
+}
+
+/**
+ * Build a heap-allocated array of SDL_DialogFileFilter from the semicolon-separated filter string.
+ * Returns NULL if filter is NULL or empty. Caller must free with nk_console_mfree.
+ * @internal
+ */
+static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filter, int* out_count) {
+    *out_count = 0;
+    if (filter == NULL || filter[0] == '\0') return NULL;
+    /* Count semicolons to determine number of extensions. Wrap them all into one filter entry. */
+    /* SDL_DialogFileFilter has { name, pattern } where pattern is semicolon-separated. */
+    SDL_DialogFileFilter* filters = (SDL_DialogFileFilter*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(SDL_DialogFileFilter));
+    if (filters == NULL) return NULL;
+    /* Strip leading dots for the SDL pattern (SDL uses "png;jpg" not ".png;.jpg"). */
+    static char sdl_pattern[512];
+    int p = 0;
+    const char* src = filter;
+    while (*src && p < (int)sizeof(sdl_pattern) - 1) {
+        if (*src == '.') { src++; continue; } /* skip dot */
+        sdl_pattern[p++] = (*src == ';') ? ';' : *src;
+        src++;
+    }
+    sdl_pattern[p] = '\0';
+    filters[0].name = "Supported Files";
+    filters[0].pattern = sdl_pattern;
+    *out_count = 1;
+    return filters;
+}
+#endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
+
 static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (button == NULL || button->data == NULL) {
@@ -927,6 +975,27 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     }
 
     nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+    {
+        /* Obtain the SDL_Window from user-defined macro, or use NULL for default. */
+#ifndef NK_CONSOLE_FILE_SDL_WINDOW
+#define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
+#endif
+        SDL_Window* sdl_window = NK_CONSOLE_FILE_SDL_WINDOW(file);
+        int filter_count = 0;
+        SDL_DialogFileFilter* sdl_filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
+        const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
+        if (data->select_directory) {
+            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, data, sdl_window, starting, SDL_FALSE);
+        } else {
+            SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, data, sdl_window,
+                sdl_filters, filter_count, starting, SDL_FALSE);
+        }
+        if (sdl_filters) NK_CONSOLE_FREE(nk_handle_id(0), sdl_filters);
+        return;
+    }
+#endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
 
     if (data->starting_directory[0] != '\0') {
         int len = nk_strlen(data->starting_directory);
@@ -1063,6 +1132,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->render = nk_console_file_render;
     widget->selectable = nk_true;
     widget->data = data;
+    data->widget_ref = widget;
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_event_clicked);
     nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_event_back);
