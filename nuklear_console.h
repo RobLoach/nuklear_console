@@ -651,8 +651,8 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
     data->active_parent = new_parent;
 
     // Scroll to the active widget in the new parent, falling back to the top.
-    if (data->active_widget != NULL) {
-        data->scroll_to_widget = data->active_widget;
+    if (new_parent->activeWidget != NULL) {
+        data->scroll_to_widget = new_parent->activeWidget;
     } else {
         nk_window_set_scroll(top->ctx, 0, 0);
     }
