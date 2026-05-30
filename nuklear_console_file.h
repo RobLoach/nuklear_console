@@ -987,10 +987,10 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
         SDL_DialogFileFilter* sdl_filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
         const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
         if (data->select_directory) {
-            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, data, sdl_window, starting, SDL_FALSE);
+            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, data, sdl_window, starting, false);
         } else {
             SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, data, sdl_window,
-                sdl_filters, filter_count, starting, SDL_FALSE);
+                sdl_filters, filter_count, starting, false);
         }
         if (sdl_filters) NK_CONSOLE_FREE(nk_handle_id(0), sdl_filters);
         return;

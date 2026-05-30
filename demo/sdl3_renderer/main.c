@@ -32,6 +32,7 @@
 #define WINDOW_HEIGHT 600
 
 // Set up the Nuklear Console Demo
+#define NK_CONSOLE_FILE_SDL_NATIVE_DIALOG
 #include "../common/nuklear_console_demo.c"
 #include "../../nuklear_console_sdl.h"
 
