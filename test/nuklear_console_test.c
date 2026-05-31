@@ -134,6 +134,72 @@ int main() {
         enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
         nk_console* input = nk_console_input(console, "Input Button", -1, &gamepad_number, &gamepad_button);
         assert(input != NULL);
+        assert(nk_console_input_is_gamepad(input) == nk_true);
+        assert(nk_console_input_is_char(input) == nk_false);
+        assert(nk_console_input_is_key(input) == nk_false);
+        assert(nk_console_input_is_mouse(input) == nk_false);
+
+        // A typed character is stored as a Unicode codepoint.
+        nk_rune out_char = 'A';
+        nk_console* input_char = nk_console_input_char(console, "Character Input", &out_char);
+        assert(input_char != NULL);
+        assert(nk_console_input_is_char(input_char) == nk_true);
+        assert(nk_console_input_is_key(input_char) == nk_false);
+        assert(nk_console_input_get_flags(input_char) == NK_CONSOLE_INPUT_FLAG_CHAR);
+
+        // A special key is stored as an enum nk_keys value.
+        enum nk_keys out_key = NK_KEY_ENTER;
+        nk_console* input_key = nk_console_input_key(console, "Key Input", &out_key);
+        assert(input_key != NULL);
+        assert(nk_console_input_is_key(input_key) == nk_true);
+        assert(nk_console_input_is_char(input_key) == nk_false);
+        assert(nk_console_input_get_flags(input_key) == NK_CONSOLE_INPUT_FLAG_KEY);
+
+        // A mouse button binding.
+        enum nk_buttons out_mouse = NK_BUTTON_LEFT;
+        nk_console* input_mouse = nk_console_input_mouse(console, "Mouse Input", &out_mouse);
+        assert(input_mouse != NULL);
+        assert(nk_console_input_is_mouse(input_mouse) == nk_true);
+
+        // Names are unambiguous: a special key and a printable codepoint below
+        // NK_KEY_MAX (such as ',' == 44) no longer collide.
+        assert(strcmp(nk_console_input_key_name(NK_KEY_ENTER), "Enter") == 0);
+        assert(strcmp(nk_console_input_key_name(NK_KEY_NONE), "<None>") == 0);
+        assert(strcmp(nk_console_input_char_name('A'), "A") == 0);
+        assert(strcmp(nk_console_input_char_name(' '), "Space") == 0);
+        assert(strcmp(nk_console_input_char_name(','), ",") == 0);
+    }
+
+    // nk_console_input() combinations
+    {
+        // A multi-source widget reports exactly one active source, chosen by
+        // priority (char > key > mouse > gamepad) before anything is captured.
+        // (Statics so the stored pointers stay valid when the console renders.)
+        static int combo_gp_number = 0;
+        static enum nk_gamepad_button combo_gp_button = NK_GAMEPAD_BUTTON_A;
+        static nk_rune combo_char = 'A';
+        static enum nk_keys combo_key = NK_KEY_ENTER;
+        static enum nk_buttons combo_mouse = NK_BUTTON_LEFT;
+        nk_console* combo = nk_console_input(console, "Combination", -1, &combo_gp_number, &combo_gp_button);
+        nk_console_input_set_char_out(combo, &combo_char);
+        nk_console_input_set_key_out(combo, &combo_key);
+        nk_console_input_set_mouse_out(combo, &combo_mouse);
+        nk_console_input_set_flags(combo, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_CHAR | NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE);
+        assert(nk_console_input_is_char(combo) == nk_true);
+        assert(nk_console_input_is_key(combo) == nk_false);
+        assert(nk_console_input_is_mouse(combo) == nk_false);
+        assert(nk_console_input_is_gamepad(combo) == nk_false);
+
+        // Gamepad-or-key widget: priority falls through to the key.
+        static int gpkey_number = 0;
+        static enum nk_gamepad_button gpkey_button = NK_GAMEPAD_BUTTON_A;
+        static enum nk_keys gpkey_key = NK_KEY_ENTER;
+        nk_console* gpkey = nk_console_input(console, "Gamepad or Key", -1, &gpkey_number, &gpkey_button);
+        nk_console_input_set_key_out(gpkey, &gpkey_key);
+        nk_console_input_set_flags(gpkey, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY);
+        assert(nk_console_input_is_key(gpkey) == nk_true);
+        assert(nk_console_input_is_gamepad(gpkey) == nk_false);
+        assert(nk_console_input_is_char(gpkey) == nk_false);
     }
 
     // nk_console_combobox()
