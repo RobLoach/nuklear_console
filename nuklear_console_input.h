@@ -2,6 +2,14 @@
 #define NK_CONSOLE_INPUT_H__
 
 /**
+ * TODO:
+ * - Add nk_console_input_set_gamepad_default()
+ * - Add nk_console_input_set_key_default()
+ * - Add nk_console_input_set_mouse_default()
+ * - Update the nk_console_input_is_*() to return if the actively chosen button is of the given input type.
+ */
+
+/**
  * A keyboard key captured by an input widget, stored in an nk_rune as an ASCII-based code. Both a typed character and a Nuklear special key (enum nk_keys) resolve onto a single number line:
  *   - NK_CONSOLE_KEY_NONE
  *   - Control keys ASCII codes (8, 9, 13, 27, 127)
