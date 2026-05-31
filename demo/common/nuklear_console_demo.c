@@ -85,25 +85,23 @@ static char textedit_action_buffer[256] = {0};
 // Input
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
-static nk_rune input_char_binding = 'A';
-static enum nk_keys input_key_binding = NK_KEY_ENTER;
+static nk_rune input_key_binding = NK_CONSOLE_KEY_ENTER;
 static enum nk_buttons input_mouse_button = NK_BUTTON_LEFT;
 
-// Input: Combination (accepts gamepad, character, key, and mouse)
+// Input: Combination (accepts gamepad, keyboard, and mouse)
 static int input_combo_gamepad_number = 0;
 static enum nk_gamepad_button input_combo_gamepad_button = NK_GAMEPAD_BUTTON_A;
-static nk_rune input_combo_char = 'A';
-static enum nk_keys input_combo_key = NK_KEY_ENTER;
+static nk_rune input_combo_key = NK_CONSOLE_KEY_ENTER;
 static enum nk_buttons input_combo_mouse_button = NK_BUTTON_LEFT;
 
-// Input: Combination (gamepad button or special key)
+// Input: Combination (gamepad button or keyboard key)
 static int input_gamepad_key_number = 0;
 static enum nk_gamepad_button input_gamepad_key_gamepad_button = NK_GAMEPAD_BUTTON_A;
-static enum nk_keys input_gamepad_key_key = NK_KEY_ENTER;
+static nk_rune input_gamepad_key_key = NK_CONSOLE_KEY_ENTER;
 
-// Input: Combination (typed character or mouse button)
-static nk_rune input_char_mouse_char = 'A';
-static enum nk_buttons input_char_mouse_mouse_button = NK_BUTTON_LEFT;
+// Input: Combination (keyboard key or mouse button)
+static nk_rune input_keyboard_mouse_key = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_keyboard_mouse_button = NK_BUTTON_LEFT;
 
 // Key
 static nk_rune key_binding = NK_KEY_ENTER;
@@ -407,32 +405,28 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console* input_button = nk_console_input(input, "Input Button", -1, &gamepad_number, &gamepad_button);
             nk_console_input_set_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
 
-            // Input: character-only binding (a typed Unicode codepoint)
-            nk_console_input_char(input, "Character Input", &input_char_binding);
-
-            // Input: key-only binding (a special key from enum nk_keys)
+            // Input: keyboard binding (a typed character or special key, stored as nk_console_key)
             nk_console_input_key(input, "Key Input", &input_key_binding);
 
             // Input: mouse-only binding
             nk_console_input_mouse(input, "Mouse Input", &input_mouse_button);
 
-            // Input: Combination — accepts any gamepad, character, key, or mouse input
+            // Input: Combination — accepts any gamepad, keyboard, or mouse input
             nk_console* input_combo = nk_console_input(input, "Combination", -1, &input_combo_gamepad_number, &input_combo_gamepad_button);
-            nk_console_input_set_char_out(input_combo, &input_combo_char);
             nk_console_input_set_key_out(input_combo, &input_combo_key);
             nk_console_input_set_mouse_out(input_combo, &input_combo_mouse_button);
-            nk_console_input_set_flags(input_combo, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_CHAR | NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE);
+            nk_console_input_set_flags(input_combo, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE);
 
-            // Input: Combination — gamepad button or special key
+            // Input: Combination — gamepad button or keyboard key
             nk_console* input_gamepad_key = nk_console_input(input, "Gamepad or Key", -1, &input_gamepad_key_number, &input_gamepad_key_gamepad_button);
             nk_console_input_set_key_out(input_gamepad_key, &input_gamepad_key_key);
             nk_console_input_set_flags(input_gamepad_key, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY);
 
-            // Input: Combination — typed character or mouse button
-            nk_console* input_char_mouse = nk_console_input(input, "Character or Mouse", -1, NULL, NULL);
-            nk_console_input_set_char_out(input_char_mouse, &input_char_mouse_char);
-            nk_console_input_set_mouse_out(input_char_mouse, &input_char_mouse_mouse_button);
-            nk_console_input_set_flags(input_char_mouse, NK_CONSOLE_INPUT_FLAG_CHAR | NK_CONSOLE_INPUT_FLAG_MOUSE);
+            // Input: Combination — keyboard key or mouse button
+            nk_console* input_keyboard_mouse = nk_console_input(input, "Keyboard or Mouse", -1, NULL, NULL);
+            nk_console_input_set_key_out(input_keyboard_mouse, &input_keyboard_mouse_key);
+            nk_console_input_set_mouse_out(input_keyboard_mouse, &input_keyboard_mouse_button);
+            nk_console_input_set_flags(input_keyboard_mouse, NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE);
 
             nk_console_button_onclick(input, "Back", &nk_console_button_back);
         }

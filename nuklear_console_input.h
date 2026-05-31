@@ -2,15 +2,82 @@
 #define NK_CONSOLE_INPUT_H__
 
 /**
+ * A keyboard key captured by an input widget, stored in an nk_rune as an
+ * ASCII-based code. Both a typed character and a Nuklear special key
+ * (enum nk_keys) resolve onto a single number line:
+ *   - NK_CONSOLE_KEY_NONE = 0          : nothing captured.
+ *   - Control keys                     : their ASCII codes (8, 9, 13, 27, 127).
+ *   - Printable characters             : their Unicode codepoint (32 .. 0x10FFFF,
+ *                                        e.g. 'A' = 65); these have no macro.
+ *   - Keys with no ASCII equivalent    : NK_CONSOLE_KEY_SPECIAL + the enum nk_keys
+ *                                        value, a reserved range past Unicode's max.
+ *
+ * Convert to/from nk_keys with nk_console_input_key_from_keys() and
+ * nk_console_input_key_to_keys(). Note: this differs from nuklear_console_key.h,
+ * which stores keys in an nk_rune using a 0 / 1..NK_KEY_MAX / >NK_KEY_MAX
+ * convention.
+ *
+ * @see nk_console_input_key()
+ */
+#define NK_CONSOLE_KEY_NONE        0u
+#define NK_CONSOLE_KEY_BACKSPACE   8u   /* ASCII BS  */
+#define NK_CONSOLE_KEY_TAB         9u   /* ASCII HT  */
+#define NK_CONSOLE_KEY_ENTER       13u  /* ASCII CR  */
+#define NK_CONSOLE_KEY_ESCAPE      27u  /* ASCII ESC */
+#define NK_CONSOLE_KEY_SPACE       32u  /* ASCII SP  */
+#define NK_CONSOLE_KEY_DELETE      127u /* ASCII DEL */
+
+/* Printable characters occupy 32 .. 0x10FFFF (stored as their codepoint). */
+
+/* Keys with no ASCII equivalent live one past Unicode's last codepoint. */
+#define NK_CONSOLE_KEY_SPECIAL     0x110000u
+#define NK_CONSOLE_KEY_UP          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_UP)
+#define NK_CONSOLE_KEY_DOWN        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_DOWN)
+#define NK_CONSOLE_KEY_LEFT        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_LEFT)
+#define NK_CONSOLE_KEY_RIGHT       (NK_CONSOLE_KEY_SPECIAL + NK_KEY_RIGHT)
+#define NK_CONSOLE_KEY_SHIFT       (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SHIFT)
+#define NK_CONSOLE_KEY_CTRL        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_CTRL)
+#define NK_CONSOLE_KEY_ALT         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_ALT)
+#define NK_CONSOLE_KEY_COPY        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_COPY)
+#define NK_CONSOLE_KEY_CUT         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_CUT)
+#define NK_CONSOLE_KEY_PASTE       (NK_CONSOLE_KEY_SPECIAL + NK_KEY_PASTE)
+#define NK_CONSOLE_KEY_INSERT      (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_INSERT_MODE)
+#define NK_CONSOLE_KEY_REPLACE     (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_REPLACE_MODE)
+#define NK_CONSOLE_KEY_HOME        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_LINE_START)
+#define NK_CONSOLE_KEY_END         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_LINE_END)
+#define NK_CONSOLE_KEY_TEXT_START  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_START)
+#define NK_CONSOLE_KEY_TEXT_END    (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_END)
+#define NK_CONSOLE_KEY_UNDO        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_UNDO)
+#define NK_CONSOLE_KEY_REDO        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_REDO)
+#define NK_CONSOLE_KEY_SELECT_ALL  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_SELECT_ALL)
+#define NK_CONSOLE_KEY_WORD_LEFT   (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_WORD_LEFT)
+#define NK_CONSOLE_KEY_WORD_RIGHT  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_WORD_RIGHT)
+#define NK_CONSOLE_KEY_SCROLL_START (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_START)
+#define NK_CONSOLE_KEY_SCROLL_END  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_END)
+#define NK_CONSOLE_KEY_SCROLL_DOWN (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_DOWN)
+#define NK_CONSOLE_KEY_SCROLL_UP   (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_UP)
+#define NK_CONSOLE_KEY_F1          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F1)
+#define NK_CONSOLE_KEY_F2          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F2)
+#define NK_CONSOLE_KEY_F3          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F3)
+#define NK_CONSOLE_KEY_F4          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F4)
+#define NK_CONSOLE_KEY_F5          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F5)
+#define NK_CONSOLE_KEY_F6          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F6)
+#define NK_CONSOLE_KEY_F7          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F7)
+#define NK_CONSOLE_KEY_F8          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F8)
+#define NK_CONSOLE_KEY_F9          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F9)
+#define NK_CONSOLE_KEY_F10         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F10)
+#define NK_CONSOLE_KEY_F11         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F11)
+#define NK_CONSOLE_KEY_F12         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F12)
+
+/**
  * Flags that control which input sources are accepted by an input widget.
  *
  * @see nk_console_input()
  */
 typedef enum nk_console_input_flags {
     NK_CONSOLE_INPUT_FLAG_GAMEPAD = NK_FLAG(0), /**< Accept a gamepad button. @see out_gamepad_button */
-    NK_CONSOLE_INPUT_FLAG_CHAR    = NK_FLAG(1), /**< Accept a typed character (Unicode codepoint). @see out_char */
-    NK_CONSOLE_INPUT_FLAG_KEY     = NK_FLAG(2), /**< Accept a special key (enum nk_keys). @see out_key */
-    NK_CONSOLE_INPUT_FLAG_MOUSE   = NK_FLAG(3), /**< Accept a mouse button. @see out_mouse_button */
+    NK_CONSOLE_INPUT_FLAG_KEY     = NK_FLAG(1), /**< Accept a keyboard key (typed character or special key). @see out_key */
+    NK_CONSOLE_INPUT_FLAG_MOUSE   = NK_FLAG(2), /**< Accept a mouse button. @see out_mouse_button */
 } nk_console_input_flags;
 
 /**
@@ -26,8 +93,7 @@ typedef struct nk_console_input_data {
     float timer; /**< A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
     enum nk_gamepad_button default_gamepad_button; /**< Value assigned to out_gamepad_button on timeout. @see nk_console_input_set_default */
     nk_uint flags; /**< Bitfield of nk_console_input_flags controlling accepted input sources. */
-    nk_rune* out_char; /**< Where to store a typed character as a Unicode codepoint. Only used when NK_CONSOLE_INPUT_FLAG_CHAR is set. */
-    enum nk_keys* out_key; /**< Where to store a captured special key. Only used when NK_CONSOLE_INPUT_FLAG_KEY is set. */
+    nk_rune* out_key; /**< Where to store a captured keyboard key (NK_CONSOLE_KEY_*). Only used when NK_CONSOLE_INPUT_FLAG_KEY is set. */
     enum nk_buttons* out_mouse_button; /**< Where to store a captured mouse button. Only used when NK_CONSOLE_INPUT_FLAG_MOUSE is set. */
     nk_uint active; /**< The nk_console_input_flags bit of the most recently captured source. 0 until a capture occurs. */
 } nk_console_input_data;
@@ -51,35 +117,30 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
 NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
 
 /**
- * Create a new input widget to capture a typed character.
+ * Create a new input widget to capture a keyboard key.
+ *
+ * Captures either a typed character or a special key and stores the result as
+ * an NK_CONSOLE_KEY_* (ASCII-based) value in the given nk_rune.
  *
  * @param parent The parent console of where to add the widget.
  * @param label The label to display.
- * @param out_char Where to store the captured character as a Unicode codepoint.
+ * @param out_key Where to store the captured key as an NK_CONSOLE_KEY_* value.
  *
  * @return The new input widget.
  */
-NK_API nk_console* nk_console_input_char(nk_console* parent, const char* label, nk_rune* out_char);
-
-/**
- * Create a new input widget to capture a special key.
- *
- * @param parent The parent console of where to add the widget.
- * @param label The label to display.
- * @param out_key Where to store the captured key as an enum nk_keys value.
- *
- * @return The new input widget.
- */
-NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, enum nk_keys* out_key);
+NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key);
 NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button);
 /** Render the input-capture widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 
-/** Get the display name for a special key (enum nk_keys). */
-NK_API const char* nk_console_input_key_name(enum nk_keys key);
+/** Resolve a Nuklear special key (enum nk_keys) to its NK_CONSOLE_KEY_* value. */
+NK_API nk_rune nk_console_input_key_from_keys(enum nk_keys key);
 
-/** Get the display name for a typed character (Unicode codepoint). */
-NK_API const char* nk_console_input_char_name(nk_rune ch);
+/** Port an NK_CONSOLE_KEY_* value back to an enum nk_keys; NK_KEY_NONE if it has no equivalent (e.g. a printable character). */
+NK_API enum nk_keys nk_console_input_key_to_keys(nk_rune key);
+
+/** Get the display name for a captured keyboard key (NK_CONSOLE_KEY_*). */
+NK_API const char* nk_console_input_key_name(nk_rune key);
 
 /**
  * Set the default gamepad button assigned to out_gamepad_button when the capture prompt times out.
@@ -105,14 +166,9 @@ NK_API void nk_console_input_set_flags(nk_console* widget, nk_uint flags);
 NK_API nk_uint nk_console_input_get_flags(nk_console* widget);
 
 /**
- * Set the character output pointer. Written when a character is captured with NK_CONSOLE_INPUT_FLAG_CHAR.
+ * Set the keyboard-key output pointer. Written when a key is captured with NK_CONSOLE_INPUT_FLAG_KEY.
  */
-NK_API void nk_console_input_set_char_out(nk_console* widget, nk_rune* out_char);
-
-/**
- * Set the key output pointer. Written when a special key is captured with NK_CONSOLE_INPUT_FLAG_KEY.
- */
-NK_API void nk_console_input_set_key_out(nk_console* widget, enum nk_keys* out_key);
+NK_API void nk_console_input_set_key_out(nk_console* widget, nk_rune* out_key);
 
 /**
  * Set the mouse button output pointer. Called when a mouse button is captured with NK_CONSOLE_INPUT_FLAG_MOUSE.
@@ -130,12 +186,7 @@ NK_API void nk_console_input_set_gamepad_out(nk_console* widget, int gamepad_num
 NK_API nk_bool nk_console_input_is_gamepad(nk_console* widget);
 
 /**
- * Returns nk_true if the widget's active output is a typed character.
- */
-NK_API nk_bool nk_console_input_is_char(nk_console* widget);
-
-/**
- * Returns nk_true if the widget's active output is a special key.
+ * Returns nk_true if the widget's active output is a keyboard key.
  */
 NK_API nk_bool nk_console_input_is_key(nk_console* widget);
 
@@ -184,7 +235,7 @@ static nk_bool nk_gamepad_any_button_released(struct nk_gamepads* g, int n, int*
  *
  * Prefers the most recently captured source (data->active); before any capture
  * it falls back to the highest-priority configured output pointer, in the order
- * char, key, mouse, gamepad.
+ * key, mouse, gamepad.
  *
  * @return An nk_console_input_flags bit, or 0 when no output pointer is set.
  */
@@ -198,7 +249,6 @@ static nk_uint nk_console_input_active_source(const nk_console_input_data* data)
     // Prefer the most recently captured source, when still accepted and stored.
     if ((flags & data->active) != 0) {
         switch (data->active) {
-            case NK_CONSOLE_INPUT_FLAG_CHAR:    if (data->out_char != NULL) return NK_CONSOLE_INPUT_FLAG_CHAR; break;
             case NK_CONSOLE_INPUT_FLAG_KEY:     if (data->out_key != NULL) return NK_CONSOLE_INPUT_FLAG_KEY; break;
             case NK_CONSOLE_INPUT_FLAG_MOUSE:   if (data->out_mouse_button != NULL) return NK_CONSOLE_INPUT_FLAG_MOUSE; break;
             case NK_CONSOLE_INPUT_FLAG_GAMEPAD: if (data->out_gamepad_button != NULL) return NK_CONSOLE_INPUT_FLAG_GAMEPAD; break;
@@ -207,7 +257,6 @@ static nk_uint nk_console_input_active_source(const nk_console_input_data* data)
     }
 
     // Otherwise fall back to the highest-priority accepted, configured output.
-    if ((flags & NK_CONSOLE_INPUT_FLAG_CHAR) && data->out_char != NULL) return NK_CONSOLE_INPUT_FLAG_CHAR;
     if ((flags & NK_CONSOLE_INPUT_FLAG_KEY) && data->out_key != NULL) return NK_CONSOLE_INPUT_FLAG_KEY;
     if ((flags & NK_CONSOLE_INPUT_FLAG_MOUSE) && data->out_mouse_button != NULL) return NK_CONSOLE_INPUT_FLAG_MOUSE;
     if ((flags & NK_CONSOLE_INPUT_FLAG_GAMEPAD) && data->out_gamepad_button != NULL) return NK_CONSOLE_INPUT_FLAG_GAMEPAD;
@@ -221,7 +270,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     nk_console_input_data* data = (nk_console_input_data*)console->data;
 
     // Require at least one valid output pointer.
-    if (data->out_gamepad_button == NULL && data->out_char == NULL && data->out_key == NULL && data->out_mouse_button == NULL) {
+    if (data->out_gamepad_button == NULL && data->out_key == NULL && data->out_mouse_button == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
 
@@ -249,9 +298,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     const char* display_label = "<None>";
     nk_uint active = nk_console_input_active_source(data);
     nk_console_button_set_symbol(console, NK_SYMBOL_NONE);
-    if (active == NK_CONSOLE_INPUT_FLAG_CHAR) {
-        display_label = nk_console_input_char_name(*data->out_char);
-    } else if (active == NK_CONSOLE_INPUT_FLAG_KEY) {
+    if (active == NK_CONSOLE_INPUT_FLAG_KEY) {
         display_label = nk_console_input_key_name(*data->out_key);
     } else if (active == NK_CONSOLE_INPUT_FLAG_MOUSE) {
         switch (*data->out_mouse_button) {
@@ -373,17 +420,16 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
     // Blinking prompt label listing each accepted input source.
     if (((int)(data->timer * 2)) % 2 == 0) {
-        // Longest prompt is "Press a Button, Character, Key, or Mouse Button"
-        // (~48 chars); 80 leaves headroom, and every copy below is bounded.
+        // Longest prompt is "Press a Button, Key, or Mouse Button" (~37 chars);
+        // 80 leaves headroom, and every copy below is bounded.
         char prompt[80];
-        const char* sources[4];
+        const char* sources[3];
         int source_count = 0;
         char* p = prompt;
         char* end = prompt + sizeof(prompt) - 1; // reserve room for the '\0'
         const char* word = "Press a ";
         int i;
         if (flags & NK_CONSOLE_INPUT_FLAG_GAMEPAD) sources[source_count++] = "Button";
-        if (flags & NK_CONSOLE_INPUT_FLAG_CHAR)    sources[source_count++] = "Character";
         if (flags & NK_CONSOLE_INPUT_FLAG_KEY)     sources[source_count++] = "Key";
         if (flags & NK_CONSOLE_INPUT_FLAG_MOUSE)   sources[source_count++] = "Mouse Button";
 
@@ -413,30 +459,30 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         // A capture records the active source rather than clearing the other
         // output pointers, so a multi-source widget stays re-bindable.
 
-        // Typed character captured (printable Unicode codepoint).
-        if (!finished && (flags & NK_CONSOLE_INPUT_FLAG_CHAR) && data->out_char != NULL) {
+        // Keyboard key captured. A printable typed character (stored as its
+        // codepoint) takes priority over special keys; control characters
+        // (< 32) fall through to the special-key loop.
+        if (!finished && (flags & NK_CONSOLE_INPUT_FLAG_KEY) && data->out_key != NULL) {
             if (console->ctx->input.keyboard.text_len > 0) {
                 nk_rune ch = 0;
                 nk_utf_decode(console->ctx->input.keyboard.text, &ch, console->ctx->input.keyboard.text_len);
                 if (ch >= 32) {
-                    *data->out_char = ch;
-                    data->active = NK_CONSOLE_INPUT_FLAG_CHAR;
+                    *data->out_key = ch; // printable: store the codepoint directly
+                    data->active = NK_CONSOLE_INPUT_FLAG_KEY;
                     nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                     finished = nk_true;
                 }
             }
-        }
-
-        // Special key released (arrows, Enter, Backspace, function keys, etc.).
-        if (!finished && (flags & NK_CONSOLE_INPUT_FLAG_KEY) && data->out_key != NULL) {
-            int ki;
-            for (ki = NK_KEY_NONE + 1; ki < NK_KEY_MAX; ki++) {
-                if (nk_input_is_key_released(&console->ctx->input, (enum nk_keys)ki)) {
-                    *data->out_key = (enum nk_keys)ki;
-                    data->active = NK_CONSOLE_INPUT_FLAG_KEY;
-                    nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
-                    finished = nk_true;
-                    break;
+            if (!finished) {
+                int ki;
+                for (ki = NK_KEY_NONE + 1; ki < NK_KEY_MAX; ki++) {
+                    if (nk_input_is_key_released(&console->ctx->input, (enum nk_keys)ki)) {
+                        *data->out_key = nk_console_input_key_from_keys((enum nk_keys)ki);
+                        data->active = NK_CONSOLE_INPUT_FLAG_KEY;
+                        nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
+                        finished = nk_true;
+                        break;
+                    }
                 }
             }
         }
@@ -507,12 +553,7 @@ NK_API nk_uint nk_console_input_get_flags(nk_console* widget) {
     return flags != 0 ? flags : NK_CONSOLE_INPUT_FLAG_GAMEPAD;
 }
 
-NK_API void nk_console_input_set_char_out(nk_console* widget, nk_rune* out_char) {
-    if (widget == NULL || widget->data == NULL) return;
-    ((nk_console_input_data*)widget->data)->out_char = out_char;
-}
-
-NK_API void nk_console_input_set_key_out(nk_console* widget, enum nk_keys* out_key) {
+NK_API void nk_console_input_set_key_out(nk_console* widget, nk_rune* out_key) {
     if (widget == NULL || widget->data == NULL) return;
     ((nk_console_input_data*)widget->data)->out_key = out_key;
 }
@@ -535,11 +576,6 @@ NK_API nk_bool nk_console_input_is_gamepad(nk_console* widget) {
     return nk_console_input_active_source((nk_console_input_data*)widget->data) == NK_CONSOLE_INPUT_FLAG_GAMEPAD ? nk_true : nk_false;
 }
 
-NK_API nk_bool nk_console_input_is_char(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) return nk_false;
-    return nk_console_input_active_source((nk_console_input_data*)widget->data) == NK_CONSOLE_INPUT_FLAG_CHAR ? nk_true : nk_false;
-}
-
 NK_API nk_bool nk_console_input_is_key(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
     return nk_console_input_active_source((nk_console_input_data*)widget->data) == NK_CONSOLE_INPUT_FLAG_KEY ? nk_true : nk_false;
@@ -550,63 +586,96 @@ NK_API nk_bool nk_console_input_is_mouse(nk_console* widget) {
     return nk_console_input_active_source((nk_console_input_data*)widget->data) == NK_CONSOLE_INPUT_FLAG_MOUSE ? nk_true : nk_false;
 }
 
-NK_API const char* nk_console_input_key_name(enum nk_keys key) {
+NK_API nk_rune nk_console_input_key_from_keys(enum nk_keys key) {
+    // The five keys with an ASCII code map to it; every other special key lands
+    // in the reserved range as NK_CONSOLE_KEY_SPECIAL + its enum nk_keys value.
     switch (key) {
-        case NK_KEY_NONE: return "<None>";
-        case NK_KEY_SHIFT: return "Shift";
-        case NK_KEY_CTRL: return "Ctrl";
-        case NK_KEY_ALT: return "Alt";
-        case NK_KEY_DEL: return "Delete";
-        case NK_KEY_ENTER: return "Enter";
-        case NK_KEY_TAB: return "Tab";
-        case NK_KEY_BACKSPACE: return "Backspace";
-        case NK_KEY_COPY: return "Copy";
-        case NK_KEY_CUT: return "Cut";
-        case NK_KEY_PASTE: return "Paste";
-        case NK_KEY_UP: return "Up";
-        case NK_KEY_DOWN: return "Down";
-        case NK_KEY_LEFT: return "Left";
-        case NK_KEY_RIGHT: return "Right";
-        case NK_KEY_TEXT_INSERT_MODE: return "Insert";
-        case NK_KEY_TEXT_REPLACE_MODE: return "Replace";
-        case NK_KEY_TEXT_RESET_MODE: return "Escape";
-        case NK_KEY_TEXT_LINE_START: return "Home";
-        case NK_KEY_TEXT_LINE_END: return "End";
-        case NK_KEY_TEXT_START: return "Ctrl+Home";
-        case NK_KEY_TEXT_END: return "Ctrl+End";
-        case NK_KEY_TEXT_UNDO: return "Ctrl+Z";
-        case NK_KEY_TEXT_REDO: return "Ctrl+Y";
-        case NK_KEY_TEXT_SELECT_ALL: return "Ctrl+A";
-        case NK_KEY_TEXT_WORD_LEFT: return "Ctrl+Left";
-        case NK_KEY_TEXT_WORD_RIGHT: return "Ctrl+Right";
-        case NK_KEY_SCROLL_START: return "Scroll Start";
-        case NK_KEY_SCROLL_END: return "Scroll End";
-        case NK_KEY_SCROLL_DOWN: return "Scroll Down";
-        case NK_KEY_SCROLL_UP: return "Scroll Up";
-        case NK_KEY_F1: return "F1";
-        case NK_KEY_F2: return "F2";
-        case NK_KEY_F3: return "F3";
-        case NK_KEY_F4: return "F4";
-        case NK_KEY_F5: return "F5";
-        case NK_KEY_F6: return "F6";
-        case NK_KEY_F7: return "F7";
-        case NK_KEY_F8: return "F8";
-        case NK_KEY_F9: return "F9";
-        case NK_KEY_F10: return "F10";
-        case NK_KEY_F11: return "F11";
-        case NK_KEY_F12: return "F12";
-        default: return "Unknown";
+        case NK_KEY_BACKSPACE: return NK_CONSOLE_KEY_BACKSPACE;
+        case NK_KEY_TAB: return NK_CONSOLE_KEY_TAB;
+        case NK_KEY_ENTER: return NK_CONSOLE_KEY_ENTER;
+        case NK_KEY_TEXT_RESET_MODE: return NK_CONSOLE_KEY_ESCAPE;
+        case NK_KEY_DEL: return NK_CONSOLE_KEY_DELETE;
+        default: break;
     }
+    if (key > NK_KEY_NONE && key < NK_KEY_MAX) {
+        return NK_CONSOLE_KEY_SPECIAL + (nk_rune)key;
+    }
+    return NK_CONSOLE_KEY_NONE;
 }
 
-NK_API const char* nk_console_input_char_name(nk_rune ch) {
-    static char nk_console_input_char_buf[NK_UTF_SIZE + 1];
+NK_API enum nk_keys nk_console_input_key_to_keys(nk_rune key) {
+    // Inverse of nk_console_input_key_from_keys(). Printable characters have no
+    // enum nk_keys equivalent and resolve to NK_KEY_NONE.
+    switch (key) {
+        case NK_CONSOLE_KEY_BACKSPACE: return NK_KEY_BACKSPACE;
+        case NK_CONSOLE_KEY_TAB: return NK_KEY_TAB;
+        case NK_CONSOLE_KEY_ENTER: return NK_KEY_ENTER;
+        case NK_CONSOLE_KEY_ESCAPE: return NK_KEY_TEXT_RESET_MODE;
+        case NK_CONSOLE_KEY_DELETE: return NK_KEY_DEL;
+        default: break;
+    }
+    if (key >= NK_CONSOLE_KEY_SPECIAL && (key - NK_CONSOLE_KEY_SPECIAL) < (nk_rune)NK_KEY_MAX) {
+        return (enum nk_keys)(key - NK_CONSOLE_KEY_SPECIAL);
+    }
+    return NK_KEY_NONE;
+}
+
+NK_API const char* nk_console_input_key_name(nk_rune key) {
+    static char nk_console_input_key_buf[NK_UTF_SIZE + 1];
     int len;
-    if (ch == 0) return "<None>";
-    if (ch == 32) return "Space";
-    len = nk_utf_encode(ch, nk_console_input_char_buf, NK_UTF_SIZE);
-    nk_console_input_char_buf[len] = '\0';
-    return nk_console_input_char_buf;
+    switch (key) {
+        case NK_CONSOLE_KEY_NONE: return "<None>";
+        case NK_CONSOLE_KEY_BACKSPACE: return "Backspace";
+        case NK_CONSOLE_KEY_TAB: return "Tab";
+        case NK_CONSOLE_KEY_ENTER: return "Enter";
+        case NK_CONSOLE_KEY_ESCAPE: return "Escape";
+        case NK_CONSOLE_KEY_DELETE: return "Delete";
+        case NK_CONSOLE_KEY_UP: return "Up";
+        case NK_CONSOLE_KEY_DOWN: return "Down";
+        case NK_CONSOLE_KEY_LEFT: return "Left";
+        case NK_CONSOLE_KEY_RIGHT: return "Right";
+        case NK_CONSOLE_KEY_SHIFT: return "Shift";
+        case NK_CONSOLE_KEY_CTRL: return "Ctrl";
+        case NK_CONSOLE_KEY_ALT: return "Alt";
+        case NK_CONSOLE_KEY_COPY: return "Copy";
+        case NK_CONSOLE_KEY_CUT: return "Cut";
+        case NK_CONSOLE_KEY_PASTE: return "Paste";
+        case NK_CONSOLE_KEY_INSERT: return "Insert";
+        case NK_CONSOLE_KEY_REPLACE: return "Replace";
+        case NK_CONSOLE_KEY_HOME: return "Home";
+        case NK_CONSOLE_KEY_END: return "End";
+        case NK_CONSOLE_KEY_TEXT_START: return "Ctrl+Home";
+        case NK_CONSOLE_KEY_TEXT_END: return "Ctrl+End";
+        case NK_CONSOLE_KEY_UNDO: return "Ctrl+Z";
+        case NK_CONSOLE_KEY_REDO: return "Ctrl+Y";
+        case NK_CONSOLE_KEY_SELECT_ALL: return "Ctrl+A";
+        case NK_CONSOLE_KEY_WORD_LEFT: return "Ctrl+Left";
+        case NK_CONSOLE_KEY_WORD_RIGHT: return "Ctrl+Right";
+        case NK_CONSOLE_KEY_SCROLL_START: return "Scroll Start";
+        case NK_CONSOLE_KEY_SCROLL_END: return "Scroll End";
+        case NK_CONSOLE_KEY_SCROLL_DOWN: return "Scroll Down";
+        case NK_CONSOLE_KEY_SCROLL_UP: return "Scroll Up";
+        case NK_CONSOLE_KEY_F1: return "F1";
+        case NK_CONSOLE_KEY_F2: return "F2";
+        case NK_CONSOLE_KEY_F3: return "F3";
+        case NK_CONSOLE_KEY_F4: return "F4";
+        case NK_CONSOLE_KEY_F5: return "F5";
+        case NK_CONSOLE_KEY_F6: return "F6";
+        case NK_CONSOLE_KEY_F7: return "F7";
+        case NK_CONSOLE_KEY_F8: return "F8";
+        case NK_CONSOLE_KEY_F9: return "F9";
+        case NK_CONSOLE_KEY_F10: return "F10";
+        case NK_CONSOLE_KEY_F11: return "F11";
+        case NK_CONSOLE_KEY_F12: return "F12";
+        default: break; // fall through to printable-codepoint handling
+    }
+    if (key == 32) return "Space";
+    if (key >= 32 && key <= 0x10FFFF) {
+        len = nk_utf_encode((nk_rune)key, nk_console_input_key_buf, NK_UTF_SIZE);
+        nk_console_input_key_buf[len] = '\0';
+        return nk_console_input_key_buf;
+    }
+    return "Unknown";
 }
 
 NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
@@ -641,15 +710,7 @@ NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* labe
     return nk_console_input(parent, label, gamepad_number, out_gamepad_number, out_gamepad_button);
 }
 
-NK_API nk_console* nk_console_input_char(nk_console* parent, const char* label, nk_rune* out_char) {
-    nk_console* widget = nk_console_input(parent, label, -1, NULL, NULL);
-    if (widget == NULL) return NULL;
-    nk_console_input_set_char_out(widget, out_char);
-    nk_console_input_set_flags(widget, NK_CONSOLE_INPUT_FLAG_CHAR);
-    return widget;
-}
-
-NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, enum nk_keys* out_key) {
+NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key) {
     nk_console* widget = nk_console_input(parent, label, -1, NULL, NULL);
     if (widget == NULL) return NULL;
     nk_console_input_set_key_out(widget, out_key);
