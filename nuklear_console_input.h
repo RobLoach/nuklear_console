@@ -318,6 +318,8 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         // Gamepad button released.
         if (!finished && (flags & NK_CONSOLE_INPUT_FLAG_GAMEPAD)) {
             if (nk_gamepad_any_button_released((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
+                data->out_key = NULL;
+                data->out_mouse_button = NULL;
                 nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                 finished = nk_true;
             }
@@ -330,6 +332,8 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
                 nk_utf_decode(console->ctx->input.keyboard.text, &ch, console->ctx->input.keyboard.text_len);
                 if (ch >= 32 && data->out_key != NULL) {
                     *data->out_key = ch;
+                    data->out_gamepad_button = NULL;
+                    data->out_mouse_button = NULL;
                     nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                     finished = nk_true;
                 }
@@ -339,6 +343,8 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
                 for (ki = NK_KEY_NONE + 1; ki < NK_KEY_MAX; ki++) {
                     if (nk_input_is_key_released(&console->ctx->input, (enum nk_keys)ki)) {
                         if (data->out_key != NULL) *data->out_key = (nk_rune)ki;
+                        data->out_gamepad_button = NULL;
+                        data->out_mouse_button = NULL;
                         nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                         finished = nk_true;
                         break;
@@ -353,6 +359,8 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
             for (mi = NK_BUTTON_LEFT; mi < NK_BUTTON_MAX; mi++) {
                 if (nk_input_is_mouse_released(&console->ctx->input, (enum nk_buttons)mi)) {
                     if (data->out_mouse_button != NULL) *data->out_mouse_button = (enum nk_buttons)mi;
+                    data->out_gamepad_button = NULL;
+                    data->out_key = NULL;
                     nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                     finished = nk_true;
                     break;
@@ -421,21 +429,17 @@ NK_API void nk_console_input_set_gamepad_out(nk_console* widget, int gamepad_num
 
 NK_API nk_bool nk_console_input_is_gamepad(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
-    nk_console_input_data* data = (nk_console_input_data*)widget->data;
-    nk_uint flags = data->flags != 0 ? data->flags : NK_CONSOLE_INPUT_FLAG_GAMEPAD;
-    return (flags & NK_CONSOLE_INPUT_FLAG_GAMEPAD) ? nk_true : nk_false;
+    return ((nk_console_input_data*)widget->data)->out_gamepad_button != NULL ? nk_true : nk_false;
 }
 
 NK_API nk_bool nk_console_input_is_key(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
-    nk_uint flags = ((nk_console_input_data*)widget->data)->flags;
-    return (flags & NK_CONSOLE_INPUT_FLAG_KEYBOARD) ? nk_true : nk_false;
+    return ((nk_console_input_data*)widget->data)->out_key != NULL ? nk_true : nk_false;
 }
 
 NK_API nk_bool nk_console_input_is_mouse(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
-    nk_uint flags = ((nk_console_input_data*)widget->data)->flags;
-    return (flags & NK_CONSOLE_INPUT_FLAG_MOUSE) ? nk_true : nk_false;
+    return ((nk_console_input_data*)widget->data)->out_mouse_button != NULL ? nk_true : nk_false;
 }
 
 NK_API const char* nk_console_input_key_name(nk_rune key) {
@@ -527,8 +531,7 @@ NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* labe
 }
 
 NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key) {
-    static enum nk_gamepad_button dummy_button = NK_GAMEPAD_BUTTON_INVALID;
-    nk_console* widget = nk_console_input(parent, label, -1, NULL, &dummy_button);
+    nk_console* widget = nk_console_input(parent, label, -1, NULL, NULL);
     if (widget == NULL) return NULL;
     nk_console_input_set_keyboard_out(widget, out_key);
     nk_console_input_set_flags(widget, NK_CONSOLE_INPUT_FLAG_KEYBOARD);
@@ -536,8 +539,7 @@ NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, n
 }
 
 NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button) {
-    static enum nk_gamepad_button dummy_button = NK_GAMEPAD_BUTTON_INVALID;
-    nk_console* widget = nk_console_input(parent, label, -1, NULL, &dummy_button);
+    nk_console* widget = nk_console_input(parent, label, -1, NULL, NULL);
     if (widget == NULL) return NULL;
     nk_console_input_set_mouse_out(widget, out_mouse_button);
     nk_console_input_set_flags(widget, NK_CONSOLE_INPUT_FLAG_MOUSE);
