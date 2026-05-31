@@ -2,29 +2,23 @@
 #define NK_CONSOLE_INPUT_H__
 
 /**
- * A keyboard key captured by an input widget, stored in an nk_rune as an
- * ASCII-based code. Both a typed character and a Nuklear special key
- * (enum nk_keys) resolve onto a single number line:
- *   - NK_CONSOLE_KEY_NONE = 0          : nothing captured.
- *   - Control keys                     : their ASCII codes (8, 9, 13, 27, 127).
- *   - Printable characters             : their Unicode codepoint (32 .. 0x10FFFF,
- *                                        e.g. 'A' = 65); these have no macro.
- *   - Keys with no ASCII equivalent    : NK_CONSOLE_KEY_SPECIAL + the enum nk_keys
- *                                        value, a reserved range past Unicode's max.
+ * A keyboard key captured by an input widget, stored in an nk_rune as an ASCII-based code. Both a typed character and a Nuklear special key (enum nk_keys) resolve onto a single number line:
+ *   - NK_CONSOLE_KEY_NONE
+ *   - Control keys ASCII codes (8, 9, 13, 27, 127)
+ *   - Printable characters Unicode codepoint (32 .. 0x10FFFF. 'A' = 65)
+ *   - Keys with no ASCII equivalent: NK_CONSOLE_KEY_SPECIAL + the enum nk_keys value, a reserved range past Unicode's max.
  *
- * Convert to/from nk_keys with nk_console_input_key_from_keys() and
- * nk_console_input_key_to_keys(). Note: this differs from nuklear_console_key.h,
- * which stores keys in an nk_rune using a 0 / 1..NK_KEY_MAX / >NK_KEY_MAX
- * convention.
- *
+ * @see nk_console_input_key_from_keys()
+ * @see nk_console_input_key_to_keys()
  * @see nk_console_input_key()
  */
-#define NK_CONSOLE_KEY_NONE        0u
-#define NK_CONSOLE_KEY_BACKSPACE   8u   /* ASCII BS  */
-#define NK_CONSOLE_KEY_TAB         9u   /* ASCII HT  */
-#define NK_CONSOLE_KEY_ENTER       13u  /* ASCII CR  */
-#define NK_CONSOLE_KEY_ESCAPE      27u  /* ASCII ESC */
-#define NK_CONSOLE_KEY_SPACE       32u  /* ASCII SP  */
+
+#define NK_CONSOLE_KEY_NONE        0u /* Nothing */
+#define NK_CONSOLE_KEY_BACKSPACE   8u /* ASCII BS  */
+#define NK_CONSOLE_KEY_TAB         9u /* ASCII HT  */
+#define NK_CONSOLE_KEY_ENTER       13u /* ASCII CR  */
+#define NK_CONSOLE_KEY_ESCAPE      27u /* ASCII ESC */
+#define NK_CONSOLE_KEY_SPACE       32u /* ASCII SP  */
 #define NK_CONSOLE_KEY_DELETE      127u /* ASCII DEL */
 
 /* Printable characters occupy 32 .. 0x10FFFF (stored as their codepoint). */
@@ -86,16 +80,16 @@ typedef enum nk_console_input_flags {
  * @see nk_console_input()
  */
 typedef struct nk_console_input_data {
-    struct nk_console_button_data button_data; /**< Inherited from button */
-    int gamepad_number; /**< The gamepad number of which to expect input from. Provide -1 for any gamepad. */
-    int* out_gamepad_number; /**< A pointer for where to store the gamepad number the button is associated with. */
-    enum nk_gamepad_button* out_gamepad_button; /**< A pointer to where to store the gamepad button. */
-    float timer; /**< A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
-    enum nk_gamepad_button default_gamepad_button; /**< Value assigned to out_gamepad_button on timeout. @see nk_console_input_set_default */
-    nk_uint flags; /**< Bitfield of nk_console_input_flags controlling accepted input sources. */
-    nk_rune* out_key; /**< Where to store a captured keyboard key (NK_CONSOLE_KEY_*). Only used when NK_CONSOLE_INPUT_FLAG_KEY is set. */
-    enum nk_buttons* out_mouse_button; /**< Where to store a captured mouse button. Only used when NK_CONSOLE_INPUT_FLAG_MOUSE is set. */
-    nk_uint active; /**< The nk_console_input_flags bit of the most recently captured source. 0 until a capture occurs. */
+    struct nk_console_button_data button_data; /** Inherited from button */
+    int gamepad_number; /** The gamepad number of which to expect input from. Provide -1 for any gamepad. */
+    int* out_gamepad_number; /** A pointer for where to store the gamepad number the button is associated with. */
+    enum nk_gamepad_button* out_gamepad_button; /** A pointer to where to store the gamepad button. */
+    float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
+    enum nk_gamepad_button default_gamepad_button; /** Value assigned to out_gamepad_button on timeout. @see nk_console_input_set_default */
+    nk_uint flags; /** Bitfield of nk_console_input_flags controlling accepted input sources. */
+    nk_rune* out_key; /** Where to store a captured keyboard key (NK_CONSOLE_KEY_*). Only used when NK_CONSOLE_INPUT_FLAG_KEY is set. */
+    enum nk_buttons* out_mouse_button; /** Where to store a captured mouse button. Only used when NK_CONSOLE_INPUT_FLAG_MOUSE is set. */
+    nk_uint active; /** The nk_console_input_flags bit of the most recently captured source. 0 until a capture occurs. */
 } nk_console_input_data;
 
 #if defined(__cplusplus)
@@ -129,6 +123,7 @@ NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* labe
  * @return The new input widget.
  */
 NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key);
+#define nk_console_key(parent, label, out_key) nk_console_input_key(parent, label, out_key)
 NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button);
 /** Render the input-capture widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
@@ -141,6 +136,7 @@ NK_API enum nk_keys nk_console_input_key_to_keys(nk_rune key);
 
 /** Get the display name for a captured keyboard key (NK_CONSOLE_KEY_*). */
 NK_API const char* nk_console_input_key_name(nk_rune key);
+#define nk_console_key_name(key) nk_console_input_key_name(key)
 
 /**
  * Set the default gamepad button assigned to out_gamepad_button when the capture prompt times out.
