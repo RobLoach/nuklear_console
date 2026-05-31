@@ -103,9 +103,6 @@ static nk_rune input_gamepad_key_key = NK_CONSOLE_KEY_ENTER;
 static nk_rune input_keyboard_mouse_key = NK_CONSOLE_KEY_ENTER;
 static enum nk_buttons input_keyboard_mouse_button = NK_BUTTON_LEFT;
 
-// Key
-static nk_rune key_binding = NK_KEY_ENTER;
-
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
@@ -422,10 +419,6 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
 
             nk_console_button_onclick(input, "Back", &nk_console_button_back);
         }
-
-        // Key: Capture a keyboard key binding
-        nk_console* key_button = nk_console_input_key(widgets, "Key Binding", &key_binding);
-        nk_console_input_set_key_default(key_button, NK_CONSOLE_KEY_NONE);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)

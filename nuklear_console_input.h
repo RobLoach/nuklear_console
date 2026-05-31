@@ -8,8 +8,8 @@
  *   - Printable characters Unicode codepoint (32 .. 0x10FFFF. 'A' = 65)
  *   - Keys with no ASCII equivalent: NK_CONSOLE_KEY_SPECIAL + the enum nk_keys value, a reserved range past Unicode's max.
  *
- * @see nk_console_input_key_from_keys()
- * @see nk_console_input_key_to_keys()
+ * @see nk_console_input_rune_from_keys()
+ * @see nk_console_input_rune_to_keys()
  * @see nk_console_input_key()
  */
 
@@ -94,7 +94,7 @@ typedef struct nk_console_input_data {
     nk_rune default_key; /** Value assigned to out_key on timeout. @see nk_console_input_set_key_default */
 
     // Mouse
-    enum nk_buttons* out_mouse_button; /** Where to store a captured mouse button. Non-NULL enables mouse input. Set to NK_BUTTON_MAX when another source is captured. */
+    enum nk_buttons* out_mouse_button; /** Where to store a captured mouse button. Non-NULL enables mouse input. Set to -1 when another source is captured. */
     enum nk_buttons default_mouse_button; /** Value assigned to out_mouse_button on timeout. @see nk_console_input_set_mouse_default */
 } nk_console_input_data;
 
@@ -131,10 +131,10 @@ NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label,
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 
 /** Resolve a Nuklear special key (enum nk_keys) to its NK_CONSOLE_KEY_* value. */
-NK_API nk_rune nk_console_input_key_from_keys(enum nk_keys key);
+NK_API nk_rune nk_console_input_rune_from_keys(enum nk_keys key);
 
 /** Port an NK_CONSOLE_KEY_* value back to an enum nk_keys; NK_KEY_NONE if it has no equivalent (e.g. a printable character). */
-NK_API enum nk_keys nk_console_input_key_to_keys(nk_rune key);
+NK_API enum nk_keys nk_console_input_rune_to_keys(nk_rune key);
 
 /** Get the display name for a captured keyboard key (NK_CONSOLE_KEY_*). */
 NK_API const char* nk_console_input_key_name(nk_rune key);
@@ -232,12 +232,17 @@ static nk_bool nk_gamepad_any_button_released(struct nk_gamepads* g, int n, int*
  * Returns the highest-priority non-sentinel output value: key > mouse > gamepad.
  *
  * @return An nk_console_input_flags bit, or 0 when no active value is set.
+ * @see enum nk_console_input_flags
  */
 static nk_uint nk_console_input_active_source(const nk_console_input_data* data) {
-    if (data == NULL) return 0;
-    if (data->out_key != NULL && *data->out_key != NK_CONSOLE_KEY_NONE) return NK_CONSOLE_INPUT_FLAG_KEY;
-    if (data->out_mouse_button != NULL && *data->out_mouse_button != NK_BUTTON_MAX) return NK_CONSOLE_INPUT_FLAG_MOUSE;
-    if (data->out_gamepad_button != NULL && *data->out_gamepad_button != NK_GAMEPAD_BUTTON_INVALID) return NK_CONSOLE_INPUT_FLAG_GAMEPAD;
+    if (data == NULL)
+        return 0;
+    if (data->out_key != NULL && *data->out_key != NK_CONSOLE_KEY_NONE)
+        return NK_CONSOLE_INPUT_FLAG_KEY;
+    if (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX)
+        return NK_CONSOLE_INPUT_FLAG_MOUSE;
+    if (data->out_gamepad_button != NULL && *data->out_gamepad_button != NK_GAMEPAD_BUTTON_INVALID)
+        return NK_CONSOLE_INPUT_FLAG_GAMEPAD;
     return 0;
 }
 
@@ -283,7 +288,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
             case NK_BUTTON_LEFT: display_label = "Left Mouse";   break;
             case NK_BUTTON_MIDDLE: display_label = "Middle Mouse"; break;
             case NK_BUTTON_RIGHT: display_label = "Right Mouse";  break;
-            case NK_BUTTON_X1: display_label = "X1 Mouse"; break;
+            case NK_BUTTON_X1: display_label = "Mouse X1"; break;
             case NK_BUTTON_X2: display_label = "Mouse X2"; break;
             default: display_label = "Mouse Button"; break;
         }
@@ -334,14 +339,6 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
 }
 
 /**
- * Go back as a post-render hook so that it handles the events safely afterwards.
- */
-static void nk_console_input_back_post_render(nk_console* console, void* user_data) {
-    NK_UNUSED(user_data);
-    nk_console_button_back(console, NULL);
-}
-
-/**
  * Render the "Press a Button" prompt.
  *
  * @param console The console to render the prompt for.
@@ -384,11 +381,11 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         if (source == NK_CONSOLE_INPUT_FLAG_GAMEPAD) {
             *data->out_gamepad_button = data->default_gamepad_button;
             if (data->out_key != NULL) *data->out_key = NK_CONSOLE_KEY_NONE;
-            if (data->out_mouse_button != NULL) *data->out_mouse_button = NK_BUTTON_MAX;
+            if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
         } else if (source == NK_CONSOLE_INPUT_FLAG_KEY) {
             *data->out_key = data->default_key;
             if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
-            if (data->out_mouse_button != NULL) *data->out_mouse_button = NK_BUTTON_MAX;
+            if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
         } else if (source == NK_CONSOLE_INPUT_FLAG_MOUSE) {
             *data->out_mouse_button = data->default_mouse_button;
             if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
@@ -443,18 +440,17 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
                 if (ch >= 32) {
                     *data->out_key = ch;
                     if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
-                    if (data->out_mouse_button != NULL) *data->out_mouse_button = NK_BUTTON_MAX;
+                    if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
                     nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                     finished = nk_true;
                 }
             }
             if (!finished) {
-                int ki;
-                for (ki = NK_KEY_NONE + 1; ki < NK_KEY_MAX; ki++) {
+                for (int ki = NK_KEY_NONE + 1; ki < NK_KEY_MAX; ki++) {
                     if (nk_input_is_key_released(&console->ctx->input, (enum nk_keys)ki)) {
-                        *data->out_key = nk_console_input_key_from_keys((enum nk_keys)ki);
+                        *data->out_key = nk_console_input_rune_from_keys((enum nk_keys)ki);
                         if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
-                        if (data->out_mouse_button != NULL) *data->out_mouse_button = NK_BUTTON_MAX;
+                        if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
                         nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                         finished = nk_true;
                         break;
@@ -465,8 +461,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
         // Mouse button released.
         if (!finished && data->out_mouse_button != NULL) {
-            int mi;
-            for (mi = NK_BUTTON_LEFT; mi < NK_BUTTON_MAX; mi++) {
+            for (int mi = NK_BUTTON_LEFT; mi < NK_BUTTON_MAX; mi++) {
                 if (nk_input_is_mouse_released(&console->ctx->input, (enum nk_buttons)mi)) {
                     *data->out_mouse_button = (enum nk_buttons)mi;
                     if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
@@ -482,15 +477,26 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         if (!finished && data->out_gamepad_button != NULL) {
             if (nk_gamepad_any_button_released((struct nk_gamepads*)nk_console_get_gamepads(top), data->gamepad_number, data->out_gamepad_number, data->out_gamepad_button)) {
                 if (data->out_key != NULL) *data->out_key = NK_CONSOLE_KEY_NONE;
-                if (data->out_mouse_button != NULL) *data->out_mouse_button = NK_BUTTON_MAX;
+                if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
                 nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                 finished = nk_true;
             }
         }
 
-        // Cancel on dismiss keys when only gamepad mode (backward compat).
-        if (!finished && data->out_gamepad_button != NULL && data->out_key == NULL && data->out_mouse_button == NULL) {
-            if (nk_input_is_key_released(&console->ctx->input, NK_KEY_BACKSPACE) || nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER) || nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_LEFT) || nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_RIGHT)) {
+        // Allow Cancelling on un-active inputs.
+        if (!finished) {
+            // Mouse
+            if (data->out_mouse_button == NULL && (nk_input_is_mouse_released(&console->ctx->input, NK_BUTTON_X1) && nk_window_is_hovered(console->ctx))) {
+                finished = nk_true;
+            }
+
+            // Gamepad
+            if (data->out_gamepad_button == NULL && nk_gamepad_is_button_released((struct nk_gamepads*)nk_console_get_gamepads(top), -1, NK_GAMEPAD_BUTTON_B)) {
+                finished = nk_true;
+            }
+
+            // Key
+            if (data->out_key == NULL && nk_input_is_key_released(&console->ctx->input, NK_CONSOLE_KEY_BACK)) {
                 finished = nk_true;
             }
         }
@@ -499,7 +505,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     if (finished == nk_true) {
         top_data->input_processed = nk_true;
         data->timer = 0.0f;
-        nk_console_add_event(console, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_input_back_post_render);
+        nk_console_add_event(console, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_button_back);
     }
 
     return nk_rect(0, 0, 0, 0);
@@ -531,7 +537,7 @@ NK_API void nk_console_input_set_mouse_default(nk_console* widget, enum nk_butto
 }
 
 NK_API enum nk_buttons nk_console_input_get_mouse_default(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) return NK_BUTTON_LEFT;
+    if (widget == NULL || widget->data == NULL) return -1;
     return ((nk_console_input_data*)widget->data)->default_mouse_button;
 }
 
@@ -568,12 +574,10 @@ NK_API nk_bool nk_console_input_is_key(nk_console* widget) {
 NK_API nk_bool nk_console_input_is_mouse(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
     nk_console_input_data* data = (nk_console_input_data*)widget->data;
-    return (data->out_mouse_button != NULL && *data->out_mouse_button != NK_BUTTON_MAX) ? nk_true : nk_false;
+    return (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX) ? nk_true : nk_false;
 }
 
-NK_API nk_rune nk_console_input_key_from_keys(enum nk_keys key) {
-    // The five keys with an ASCII code map to it; every other special key lands
-    // in the reserved range as NK_CONSOLE_KEY_SPECIAL + its enum nk_keys value.
+NK_API nk_rune nk_console_input_rune_from_keys(enum nk_keys key) {
     switch (key) {
         case NK_KEY_BACKSPACE: return NK_CONSOLE_KEY_BACKSPACE;
         case NK_KEY_TAB: return NK_CONSOLE_KEY_TAB;
@@ -588,9 +592,7 @@ NK_API nk_rune nk_console_input_key_from_keys(enum nk_keys key) {
     return NK_CONSOLE_KEY_NONE;
 }
 
-NK_API enum nk_keys nk_console_input_key_to_keys(nk_rune key) {
-    // Inverse of nk_console_input_key_from_keys(). Printable characters have no
-    // enum nk_keys equivalent and resolve to NK_KEY_NONE.
+NK_API enum nk_keys nk_console_input_rune_to_keys(nk_rune key) {
     switch (key) {
         case NK_CONSOLE_KEY_BACKSPACE: return NK_KEY_BACKSPACE;
         case NK_CONSOLE_KEY_TAB: return NK_KEY_TAB;
@@ -678,7 +680,9 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
     data->out_gamepad_button = out_gamepad_button;
     data->default_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
     data->out_key = out_key;
+    data->default_key = NK_CONSOLE_KEY_NONE;
     data->out_mouse_button = out_mouse_button;
+    data->default_mouse_button = -1;
 
     widget = nk_console_label(parent, label);
     widget->type = NK_CONSOLE_INPUT;

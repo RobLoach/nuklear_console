@@ -153,16 +153,16 @@ int main() {
 
         // Resolvers: special keys and typed characters share one NK_CONSOLE_KEY_*
         // space. Control keys map to ASCII; printable chars to their codepoint.
-        assert(nk_console_input_key_from_keys(NK_KEY_ENTER) == NK_CONSOLE_KEY_ENTER);
-        assert(nk_console_input_key_from_keys(NK_KEY_TAB) == NK_CONSOLE_KEY_TAB);
-        assert(nk_console_input_key_from_keys(NK_KEY_UP) == NK_CONSOLE_KEY_UP);
-        assert(nk_console_input_key_from_keys(NK_KEY_NONE) == NK_CONSOLE_KEY_NONE);
+        assert(nk_console_input_rune_from_keys(NK_KEY_ENTER) == NK_CONSOLE_KEY_ENTER);
+        assert(nk_console_input_rune_from_keys(NK_KEY_TAB) == NK_CONSOLE_KEY_TAB);
+        assert(nk_console_input_rune_from_keys(NK_KEY_UP) == NK_CONSOLE_KEY_UP);
+        assert(nk_console_input_rune_from_keys(NK_KEY_NONE) == NK_CONSOLE_KEY_NONE);
 
         // Port back to enum nk_keys; printable characters have no equivalent.
-        assert(nk_console_input_key_to_keys(NK_CONSOLE_KEY_ENTER) == NK_KEY_ENTER);
-        assert(nk_console_input_key_to_keys(NK_CONSOLE_KEY_UP) == NK_KEY_UP);
-        assert(nk_console_input_key_to_keys(NK_CONSOLE_KEY_DELETE) == NK_KEY_DEL);
-        assert(nk_console_input_key_to_keys((nk_rune)'A') == NK_KEY_NONE);
+        assert(nk_console_input_rune_to_keys(NK_CONSOLE_KEY_ENTER) == NK_KEY_ENTER);
+        assert(nk_console_input_rune_to_keys(NK_CONSOLE_KEY_UP) == NK_KEY_UP);
+        assert(nk_console_input_rune_to_keys(NK_CONSOLE_KEY_DELETE) == NK_KEY_DEL);
+        assert(nk_console_input_rune_to_keys((nk_rune)'A') == NK_KEY_NONE);
 
         // Names cover special keys, control keys, and printable codepoints
         // (incl. ',' == 44, which collided under the old nk_rune scheme).
