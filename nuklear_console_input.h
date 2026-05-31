@@ -69,9 +69,9 @@
  * @see nk_console_input_gamepad()
  */
 typedef enum nk_console_input_flags {
-    NK_CONSOLE_INPUT_FLAG_GAMEPAD = NK_FLAG(0), /**< Accept a gamepad button. @see out_gamepad_button */
-    NK_CONSOLE_INPUT_FLAG_KEY     = NK_FLAG(1), /**< Accept a keyboard key (typed character or special key). @see out_key */
-    NK_CONSOLE_INPUT_FLAG_MOUSE   = NK_FLAG(2), /**< Accept a mouse button. @see out_mouse_button */
+    NK_CONSOLE_INPUT_FLAG_GAMEPAD = NK_FLAG(0), /** Accept a gamepad button. @see out_gamepad_button */
+    NK_CONSOLE_INPUT_FLAG_KEY     = NK_FLAG(1), /** Accept a keyboard key (typed character or special key). @see out_key */
+    NK_CONSOLE_INPUT_FLAG_MOUSE   = NK_FLAG(2), /** Accept a mouse button. @see out_mouse_button */
 } nk_console_input_flags;
 
 /**
@@ -81,15 +81,21 @@ typedef enum nk_console_input_flags {
  */
 typedef struct nk_console_input_data {
     struct nk_console_button_data button_data; /** Inherited from button */
+    float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
+
+    // Gamepad
     int gamepad_number; /** The gamepad number of which to expect input from. Provide -1 for any gamepad. */
     int* out_gamepad_number; /** A pointer for where to store the gamepad number the button is associated with. */
     enum nk_gamepad_button* out_gamepad_button; /** Where to store the captured gamepad button. Non-NULL enables gamepad input. Set to NK_GAMEPAD_BUTTON_INVALID when another source is captured. */
-    float timer; /** A countdown timer to prompt the user with. @see NK_CONSOLE_INPUT_TIMER */
     enum nk_gamepad_button default_gamepad_button; /** Value assigned to out_gamepad_button on timeout. @see nk_console_input_set_gamepad_default */
-    nk_rune default_key; /** Value assigned to out_key on timeout. @see nk_console_input_set_key_default */
-    enum nk_buttons default_mouse_button; /** Value assigned to out_mouse_button on timeout. @see nk_console_input_set_mouse_default */
+
+    // Keyboard
     nk_rune* out_key; /** Where to store a captured keyboard key (NK_CONSOLE_KEY_*). Non-NULL enables keyboard input. Set to NK_CONSOLE_KEY_NONE when another source is captured. */
+    nk_rune default_key; /** Value assigned to out_key on timeout. @see nk_console_input_set_key_default */
+
+    // Mouse
     enum nk_buttons* out_mouse_button; /** Where to store a captured mouse button. Non-NULL enables mouse input. Set to NK_BUTTON_MAX when another source is captured. */
+    enum nk_buttons default_mouse_button; /** Value assigned to out_mouse_button on timeout. @see nk_console_input_set_mouse_default */
 } nk_console_input_data;
 
 #if defined(__cplusplus)
