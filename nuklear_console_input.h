@@ -144,13 +144,7 @@ NK_API const char* nk_console_input_key_name(nk_rune key);
  * Set the default gamepad button assigned to out_gamepad_button when the capture prompt times out.
  * Defaults to NK_GAMEPAD_BUTTON_INVALID.
  */
-NK_API void nk_console_input_set_default(nk_console* widget, enum nk_gamepad_button gamepad_button);
 NK_API void nk_console_input_set_gamepad_default(nk_console* widget, enum nk_gamepad_button gamepad_button);
-
-/**
- * Get the default gamepad button assigned to out_gamepad_button when the capture prompt times out.
- */
-NK_API enum nk_gamepad_button nk_console_input_get_default(nk_console* widget);
 
 /**
  * Set the default keyboard key assigned to out_key when the capture prompt times out.
@@ -545,22 +539,9 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
     return nk_rect(0, 0, 0, 0);
 }
 
-NK_API void nk_console_input_set_default(nk_console* widget, enum nk_gamepad_button gamepad_button) {
-    if (widget == NULL || widget->data == NULL) {
-        return;
-    }
-    ((nk_console_input_data*)widget->data)->default_gamepad_button = gamepad_button;
-}
-
-NK_API enum nk_gamepad_button nk_console_input_get_default(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) {
-        return NK_GAMEPAD_BUTTON_INVALID;
-    }
-    return ((nk_console_input_data*)widget->data)->default_gamepad_button;
-}
-
 NK_API void nk_console_input_set_gamepad_default(nk_console* widget, enum nk_gamepad_button gamepad_button) {
-    nk_console_input_set_default(widget, gamepad_button);
+    if (widget == NULL || widget->data == NULL) return;
+    ((nk_console_input_data*)widget->data)->default_gamepad_button = gamepad_button;
 }
 
 NK_API void nk_console_input_set_key_default(nk_console* widget, nk_rune key) {

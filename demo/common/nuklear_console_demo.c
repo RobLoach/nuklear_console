@@ -403,7 +403,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
 
             // Input: From any gamepad (-1)
             nk_console* input_button = nk_console_input(input, "Input Button", -1, &gamepad_number, &gamepad_button);
-            nk_console_input_set_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
+            nk_console_input_set_gamepad_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
 
             // Input: keyboard binding (a typed character or special key, stored as nk_console_key)
             nk_console_input_key(input, "Key Input", &input_key_binding);
