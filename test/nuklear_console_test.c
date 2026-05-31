@@ -351,6 +351,27 @@ int main() {
         assert(back_count == 1);
         assert(nk_console_active_parent(nav) == nav);
 
+        // Navigate back from a widget inside a row skips the row and goes to
+        // the row's parent, preventing a crash (#227).
+        {
+            nk_console* menu = nk_console_button(nav, "Menu");
+            nk_console* row = nk_console_row_begin(menu);
+            nk_console* btn_in_row = nk_console_button(row, "Row Button");
+            nk_console_row_end(row);
+            assert(btn_in_row->parent == row);
+            assert(row->type == NK_CONSOLE_ROW);
+
+            // Navigate into menu so it becomes the active parent.
+            nk_console_set_active_parent(menu);
+            assert(nk_console_active_parent(nav) == menu);
+
+            // Simulate navigating back when the active widget is inside a row.
+            // nk_console_navigate_back(btn_in_row->parent) == navigate_back(row).
+            // The row should be skipped; active parent should become nav (row->parent->parent).
+            nk_console_navigate_back(row);
+            assert(nk_console_active_parent(nav) == nav);
+        }
+
         nk_console_free(nav);
     }
     nk_end(ctx);

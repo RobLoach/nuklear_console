@@ -1462,11 +1462,19 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
         data->input_processed = nk_true;
         return;
     }
-    nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
+
+    // If leaving_parent is a row (or any non-navigable widget), skip up to its
+    // parent so we don't land on a widget that cannot act as an active parent.
+    nk_console* target = leaving_parent;
+    while (target != top && target->type == NK_CONSOLE_ROW) {
+        target = (target->parent != NULL) ? target->parent : top;
+    }
+
+    nk_console* destination = (target->parent != NULL) ? target->parent : top;
     nk_console_set_active_parent(destination);
-    nk_console_set_active_widget(leaving_parent);
+    nk_console_set_active_widget(target);
     if (data != NULL) {
-        data->scroll_to_widget = leaving_parent;
+        data->scroll_to_widget = target;
         data->input_processed = nk_true;
     }
     nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
