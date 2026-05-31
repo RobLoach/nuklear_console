@@ -431,30 +431,17 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
     // Blinking prompt label listing each accepted input source.
     if (((int)(data->timer * 2)) % 2 == 0) {
-        // Longest prompt is "Press a Button, Key, or Mouse Button" (~37 chars);
-        // 80 leaves headroom, and every copy below is bounded.
-        char prompt[80];
-        const char* sources[3];
-        int source_count = 0;
-        char* p = prompt;
-        char* end = prompt + sizeof(prompt) - 1; // reserve room for the '\0'
-        const char* word = "Press a ";
-        int i;
-        if (flags & NK_CONSOLE_INPUT_FLAG_GAMEPAD) sources[source_count++] = "Button";
-        if (flags & NK_CONSOLE_INPUT_FLAG_KEY)     sources[source_count++] = "Key";
-        if (flags & NK_CONSOLE_INPUT_FLAG_MOUSE)   sources[source_count++] = "Mouse Button";
-
-        // Build "Press a A", "Press a A or B", or "Press a A, B, or C".
-        while (*word != '\0' && p < end) *p++ = *word++;
-        for (i = 0; i < source_count; i++) {
-            if (i > 0) {
-                const char* sep = (i == source_count - 1) ? (source_count > 2 ? ", or " : " or ") : ", ";
-                while (*sep != '\0' && p < end) *p++ = *sep++;
-            }
-            word = sources[i];
-            while (*word != '\0' && p < end) *p++ = *word++;
+        const char* prompt;
+        switch (flags) {
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD:                                          prompt = "Press a Button";                      break;
+            case NK_CONSOLE_INPUT_FLAG_KEY:                                              prompt = "Press a Key";                         break;
+            case NK_CONSOLE_INPUT_FLAG_MOUSE:                                            prompt = "Press a Mouse Button";                break;
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY:              prompt = "Press a Button or Key";               break;
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_MOUSE:            prompt = "Press a Button or Mouse Button";      break;
+            case NK_CONSOLE_INPUT_FLAG_KEY     | NK_CONSOLE_INPUT_FLAG_MOUSE:            prompt = "Press a Key or Mouse Button";         break;
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE: prompt = "Press a Button, Key, or Mouse Button"; break;
+            default:                                                                     prompt = "Press a Button";                      break;
         }
-        *p = '\0';
         nk_label(console->ctx, prompt, NK_TEXT_CENTERED);
     }
     else {
