@@ -151,6 +151,15 @@ int main() {
         assert(input_mouse != NULL);
         assert(nk_console_input_is_mouse(input_mouse) == nk_true);
 
+        // Value getters return the captured value of the active source, and the
+        // sentinel for sources that aren't active on that widget.
+        assert(nk_console_input_get_gamepad(input) == NK_GAMEPAD_BUTTON_LB);
+        assert(nk_console_input_get_key(input_key) == NK_CONSOLE_KEY_ENTER);
+        assert(nk_console_input_get_mouse(input_mouse) == NK_BUTTON_LEFT);
+        assert(nk_console_input_get_key(input) == NK_CONSOLE_KEY_NONE);
+        assert(nk_console_input_get_gamepad(input_key) == NK_GAMEPAD_BUTTON_INVALID);
+        assert((int)nk_console_input_get_mouse(input_key) == -1);
+
         // Resolvers: special keys and typed characters share one NK_CONSOLE_KEY_*
         // space. Control keys map to ASCII; printable chars to their codepoint.
         assert(nk_console_input_rune_from_keys(NK_KEY_ENTER) == NK_CONSOLE_KEY_ENTER);

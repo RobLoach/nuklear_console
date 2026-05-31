@@ -191,6 +191,27 @@ NK_API nk_bool nk_console_input_is_key(nk_console* widget);
  */
 NK_API nk_bool nk_console_input_is_mouse(nk_console* widget);
 
+/**
+ * Get the captured gamepad button when the gamepad is the active input, otherwise NK_GAMEPAD_BUTTON_INVALID.
+ *
+ * @see nk_console_input_is_gamepad()
+ */
+NK_API enum nk_gamepad_button nk_console_input_get_gamepad(nk_console* widget);
+
+/**
+ * Get the captured keyboard key (NK_CONSOLE_KEY_*) when the keyboard is the active input, otherwise NK_CONSOLE_KEY_NONE.
+ *
+ * @see nk_console_input_is_key()
+ */
+NK_API nk_rune nk_console_input_get_key(nk_console* widget);
+
+/**
+ * Get the captured mouse button when the mouse is the active input, otherwise -1.
+ *
+ * @see nk_console_input_is_mouse()
+ */
+NK_API enum nk_buttons nk_console_input_get_mouse(nk_console* widget);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -575,6 +596,21 @@ NK_API nk_bool nk_console_input_is_mouse(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
     nk_console_input_data* data = (nk_console_input_data*)widget->data;
     return (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX) ? nk_true : nk_false;
+}
+
+NK_API enum nk_gamepad_button nk_console_input_get_gamepad(nk_console* widget) {
+    if (!nk_console_input_is_gamepad(widget)) return NK_GAMEPAD_BUTTON_INVALID;
+    return *((nk_console_input_data*)widget->data)->out_gamepad_button;
+}
+
+NK_API nk_rune nk_console_input_get_key(nk_console* widget) {
+    if (!nk_console_input_is_key(widget)) return NK_CONSOLE_KEY_NONE;
+    return *((nk_console_input_data*)widget->data)->out_key;
+}
+
+NK_API enum nk_buttons nk_console_input_get_mouse(nk_console* widget) {
+    if (!nk_console_input_is_mouse(widget)) return -1;
+    return *((nk_console_input_data*)widget->data)->out_mouse_button;
 }
 
 NK_API nk_rune nk_console_input_rune_from_keys(enum nk_keys key) {
