@@ -176,7 +176,7 @@ int main() {
         // Defaults: getters return initial values before any set.
         assert(nk_console_input_get_gamepad_default(input) == NK_GAMEPAD_BUTTON_INVALID);
         assert(nk_console_input_get_key_default(input_key) == NK_CONSOLE_KEY_NONE);
-        assert(nk_console_input_get_mouse_default(input_mouse) == NK_BUTTON_LEFT);
+        assert((int)nk_console_input_get_mouse_default(input_mouse) == -1);
 
         // Defaults: round-trip set then get.
         nk_console_input_set_gamepad_default(input, NK_GAMEPAD_BUTTON_A);

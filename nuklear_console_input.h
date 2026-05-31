@@ -156,7 +156,7 @@ NK_API nk_rune nk_console_input_get_key_default(nk_console* widget);
 
 /**
  * Set/get the default mouse button assigned to out_mouse_button when the capture prompt times out.
- * Defaults to NK_BUTTON_LEFT.
+ * Defaults to -1 (no button), matching the gamepad/key defaults that clear the binding on timeout.
  */
 NK_API void nk_console_input_set_mouse_default(nk_console* widget, enum nk_buttons mouse_button);
 NK_API enum nk_buttons nk_console_input_get_mouse_default(nk_console* widget);
