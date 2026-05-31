@@ -431,8 +431,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         }
 
         // Key: Capture a keyboard key binding
-        nk_console* key_button = nk_console_key(widgets, "Key Binding", &key_binding);
-        nk_console_key_set_default(key_button, NK_KEY_NONE);
+        nk_console* key_button = nk_console_input_key(widgets, "Key Binding", &key_binding);
+        nk_console_input_set_key_default(key_button, NK_CONSOLE_KEY_NONE);
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)

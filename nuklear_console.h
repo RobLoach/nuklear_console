@@ -71,8 +71,7 @@ typedef enum {
     NK_CONSOLE_COLOR,
     NK_CONSOLE_INPUT,
     NK_CONSOLE_INPUT_ACTIVE,
-    NK_CONSOLE_KEY,
-    NK_CONSOLE_KEY_ACTIVE,
+
     NK_CONSOLE_RADIO,
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
@@ -327,7 +326,6 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
-#include "nuklear_console_key.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
@@ -524,7 +522,6 @@ extern "C" {
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
-#include "nuklear_console_key.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
