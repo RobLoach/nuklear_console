@@ -77,7 +77,7 @@ NK_API nk_uint nk_console_input_get_flags(nk_console* widget);
 /**
  * Set the keyboard output pointer. Called when a key is captured with NK_CONSOLE_INPUT_FLAG_KEYBOARD.
  */
-NK_API void nk_console_input_set_keyboard_out(nk_console* widget, nk_rune* out_key);
+NK_API void nk_console_input_set_key_out(nk_console* widget, nk_rune* out_key);
 
 /**
  * Set the mouse button output pointer. Called when a mouse button is captured with NK_CONSOLE_INPUT_FLAG_MOUSE.
@@ -333,6 +333,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
                 if (ch >= 32 && data->out_key != NULL) {
                     *data->out_key = ch;
                     data->out_gamepad_button = NULL;
+                    data->gamepad_number = -1;
                     data->out_mouse_button = NULL;
                     nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                     finished = nk_true;
@@ -344,6 +345,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
                     if (nk_input_is_key_released(&console->ctx->input, (enum nk_keys)ki)) {
                         if (data->out_key != NULL) *data->out_key = (nk_rune)ki;
                         data->out_gamepad_button = NULL;
+                        data->gamepad_number = -1;
                         data->out_mouse_button = NULL;
                         nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                         finished = nk_true;
@@ -360,6 +362,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
                 if (nk_input_is_mouse_released(&console->ctx->input, (enum nk_buttons)mi)) {
                     if (data->out_mouse_button != NULL) *data->out_mouse_button = (enum nk_buttons)mi;
                     data->out_gamepad_button = NULL;
+                    data->gamepad_number = -1;
                     data->out_key = NULL;
                     nk_console_trigger_event(input, NK_CONSOLE_EVENT_CHANGED);
                     finished = nk_true;
@@ -409,7 +412,7 @@ NK_API nk_uint nk_console_input_get_flags(nk_console* widget) {
     return ((nk_console_input_data*)widget->data)->flags;
 }
 
-NK_API void nk_console_input_set_keyboard_out(nk_console* widget, nk_rune* out_key) {
+NK_API void nk_console_input_set_key_out(nk_console* widget, nk_rune* out_key) {
     if (widget == NULL || widget->data == NULL) return;
     ((nk_console_input_data*)widget->data)->out_key = out_key;
 }
@@ -533,7 +536,7 @@ NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* labe
 NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key) {
     nk_console* widget = nk_console_input(parent, label, -1, NULL, NULL);
     if (widget == NULL) return NULL;
-    nk_console_input_set_keyboard_out(widget, out_key);
+    nk_console_input_set_key_out(widget, out_key);
     nk_console_input_set_flags(widget, NK_CONSOLE_INPUT_FLAG_KEYBOARD);
     return widget;
 }
