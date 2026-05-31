@@ -173,6 +173,21 @@ int main() {
         assert(strcmp(nk_console_input_key_name((nk_rune)'A'), "A") == 0);
         assert(strcmp(nk_console_input_key_name((nk_rune)' '), "Space") == 0);
         assert(strcmp(nk_console_input_key_name((nk_rune)','), ",") == 0);
+
+        // Defaults: getters return initial values before any set.
+        assert(nk_console_input_get_gamepad_default(input) == NK_GAMEPAD_BUTTON_INVALID);
+        assert(nk_console_input_get_key_default(input_key) == NK_CONSOLE_KEY_NONE);
+        assert(nk_console_input_get_mouse_default(input_mouse) == NK_BUTTON_LEFT);
+
+        // Defaults: round-trip set then get.
+        nk_console_input_set_gamepad_default(input, NK_GAMEPAD_BUTTON_A);
+        assert(nk_console_input_get_gamepad_default(input) == NK_GAMEPAD_BUTTON_A);
+
+        nk_console_input_set_key_default(input_key, NK_CONSOLE_KEY_ENTER);
+        assert(nk_console_input_get_key_default(input_key) == NK_CONSOLE_KEY_ENTER);
+
+        nk_console_input_set_mouse_default(input_mouse, NK_BUTTON_RIGHT);
+        assert(nk_console_input_get_mouse_default(input_mouse) == NK_BUTTON_RIGHT);
     }
 
     // nk_console_input() combinations
