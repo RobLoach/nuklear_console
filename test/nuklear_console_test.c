@@ -144,7 +144,6 @@ int main() {
         nk_console* input_key = nk_console_input_key(console, "Key Input", &out_key);
         assert(input_key != NULL);
         assert(nk_console_input_is_key(input_key) == nk_true);
-        assert(nk_console_input_get_flags(input_key) == NK_CONSOLE_INPUT_FLAG_KEY);
 
         // A mouse button binding.
         enum nk_buttons out_mouse = NK_BUTTON_LEFT;
