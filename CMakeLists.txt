@@ -19,7 +19,7 @@ if (NUKLEAR_CONSOLE_GAMEPAD)
         FetchContent_Declare(
             nuklear_gamepad
             GIT_REPOSITORY https://github.com/RobLoach/nuklear_gamepad.git
-            GIT_TAG 82056c3
+            GIT_TAG master
         )
         FetchContent_GetProperties(nuklear_gamepad)
         if (NOT nuklear_gamepad_POPULATED)

@@ -128,12 +128,97 @@ int main() {
         assert(progress != NULL);
     }
 
-    // nk_console_input()
+    // nk_console_input_gamepad()
     {
         int gamepad_number = 0;
         enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
-        nk_console* input = nk_console_input(console, "Input Button", -1, &gamepad_number, &gamepad_button);
+        nk_console* input = nk_console_input_gamepad(console, "Input Button", -1, &gamepad_number, &gamepad_button);
         assert(input != NULL);
+        assert(nk_console_input_is_gamepad(input) == nk_true);
+        assert(nk_console_input_is_key(input) == nk_false);
+        assert(nk_console_input_is_mouse(input) == nk_false);
+
+        // A keyboard key (typed character or special key) is stored in an
+        // nk_rune as an NK_CONSOLE_KEY_* value.
+        nk_rune out_key = NK_CONSOLE_KEY_ENTER;
+        nk_console* input_key = nk_console_input_key(console, "Key Input", &out_key);
+        assert(input_key != NULL);
+        assert(nk_console_input_is_key(input_key) == nk_true);
+
+        // A mouse button binding.
+        enum nk_buttons out_mouse = NK_BUTTON_LEFT;
+        nk_console* input_mouse = nk_console_input_mouse(console, "Mouse Input", &out_mouse);
+        assert(input_mouse != NULL);
+        assert(nk_console_input_is_mouse(input_mouse) == nk_true);
+
+        // Value getters return the captured value of the active source, and the
+        // sentinel for sources that aren't active on that widget.
+        assert(nk_console_input_get_gamepad(input) == NK_GAMEPAD_BUTTON_LB);
+        assert(nk_console_input_get_key(input_key) == NK_CONSOLE_KEY_ENTER);
+        assert(nk_console_input_get_mouse(input_mouse) == NK_BUTTON_LEFT);
+        assert(nk_console_input_get_key(input) == NK_CONSOLE_KEY_NONE);
+        assert(nk_console_input_get_gamepad(input_key) == NK_GAMEPAD_BUTTON_INVALID);
+        assert((int)nk_console_input_get_mouse(input_key) == -1);
+
+        // Resolvers: special keys and typed characters share one NK_CONSOLE_KEY_*
+        // space. Control keys map to ASCII; printable chars to their codepoint.
+        assert(nk_console_input_rune_from_keys(NK_KEY_ENTER) == NK_CONSOLE_KEY_ENTER);
+        assert(nk_console_input_rune_from_keys(NK_KEY_TAB) == NK_CONSOLE_KEY_TAB);
+        assert(nk_console_input_rune_from_keys(NK_KEY_UP) == NK_CONSOLE_KEY_UP);
+        assert(nk_console_input_rune_from_keys(NK_KEY_NONE) == NK_CONSOLE_KEY_NONE);
+
+        // Port back to enum nk_keys; printable characters have no equivalent.
+        assert(nk_console_input_rune_to_keys(NK_CONSOLE_KEY_ENTER) == NK_KEY_ENTER);
+        assert(nk_console_input_rune_to_keys(NK_CONSOLE_KEY_UP) == NK_KEY_UP);
+        assert(nk_console_input_rune_to_keys(NK_CONSOLE_KEY_DELETE) == NK_KEY_DEL);
+        assert(nk_console_input_rune_to_keys((nk_rune)'A') == NK_KEY_NONE);
+
+        // Names cover special keys, control keys, and printable codepoints
+        // (incl. ',' == 44, which collided under the old nk_rune scheme).
+        assert(strcmp(nk_console_input_key_name(NK_CONSOLE_KEY_ENTER), "Enter") == 0);
+        assert(strcmp(nk_console_input_key_name(NK_CONSOLE_KEY_NONE), "<None>") == 0);
+        assert(strcmp(nk_console_input_key_name(NK_CONSOLE_KEY_UP), "Up") == 0);
+        assert(strcmp(nk_console_input_key_name((nk_rune)'A'), "A") == 0);
+        assert(strcmp(nk_console_input_key_name((nk_rune)' '), "Space") == 0);
+        assert(strcmp(nk_console_input_key_name((nk_rune)','), ",") == 0);
+
+        // Defaults: getters return initial values before any set.
+        assert(nk_console_input_get_gamepad_default(input) == NK_GAMEPAD_BUTTON_INVALID);
+        assert(nk_console_input_get_key_default(input_key) == NK_CONSOLE_KEY_NONE);
+        assert((int)nk_console_input_get_mouse_default(input_mouse) == -1);
+
+        // Defaults: round-trip set then get.
+        nk_console_input_set_gamepad_default(input, NK_GAMEPAD_BUTTON_A);
+        assert(nk_console_input_get_gamepad_default(input) == NK_GAMEPAD_BUTTON_A);
+
+        nk_console_input_set_key_default(input_key, NK_CONSOLE_KEY_ENTER);
+        assert(nk_console_input_get_key_default(input_key) == NK_CONSOLE_KEY_ENTER);
+
+        nk_console_input_set_mouse_default(input_mouse, NK_BUTTON_RIGHT);
+        assert(nk_console_input_get_mouse_default(input_mouse) == NK_BUTTON_RIGHT);
+    }
+
+    // nk_console_input() combinations
+    {
+        // Before any capture, is_*() reflects which pointers are configured.
+        // (Statics so the stored pointers stay valid when the console renders.)
+        static int combo_gp_number = 0;
+        static enum nk_gamepad_button combo_gp_button = NK_GAMEPAD_BUTTON_A;
+        static nk_rune combo_key = NK_CONSOLE_KEY_ENTER;
+        static enum nk_buttons combo_mouse = NK_BUTTON_LEFT;
+        nk_console* combo = nk_console_input(console, "Combination", -1, &combo_gp_number, &combo_gp_button, &combo_key, &combo_mouse);
+        assert(nk_console_input_is_gamepad(combo) == nk_true);
+        assert(nk_console_input_is_key(combo) == nk_true);
+        assert(nk_console_input_is_mouse(combo) == nk_true);
+
+        // Gamepad-or-key: both pointers configured, both return true before capture.
+        static int gpkey_number = 0;
+        static enum nk_gamepad_button gpkey_button = NK_GAMEPAD_BUTTON_A;
+        static nk_rune gpkey_key = NK_CONSOLE_KEY_ENTER;
+        nk_console* gpkey = nk_console_input(console, "Gamepad or Key", -1, &gpkey_number, &gpkey_button, &gpkey_key, NULL);
+        assert(nk_console_input_is_key(gpkey) == nk_true);
+        assert(nk_console_input_is_gamepad(gpkey) == nk_true);
+        assert(nk_console_input_is_mouse(gpkey) == nk_false);
     }
 
     // nk_console_combobox()

@@ -85,9 +85,23 @@ static char textedit_action_buffer[256] = {0};
 // Input
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_key_binding = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_mouse_button = NK_BUTTON_LEFT;
 
-// Key
-static nk_rune key_binding = NK_KEY_ENTER;
+// Input: Combination (accepts gamepad, keyboard, and mouse)
+static int input_combo_gamepad_number = 0;
+static enum nk_gamepad_button input_combo_gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_combo_key = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_combo_mouse_button = NK_BUTTON_LEFT;
+
+// Input: Combination (gamepad button or keyboard key)
+static int input_gamepad_key_number = 0;
+static enum nk_gamepad_button input_gamepad_key_gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_gamepad_key_key = NK_CONSOLE_KEY_ENTER;
+
+// Input: Combination (keyboard key or mouse button)
+static nk_rune input_keyboard_mouse_key = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_keyboard_mouse_button = NK_BUTTON_LEFT;
 
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
@@ -380,13 +394,31 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
-        // Input: From any gamepad (-1)
-        nk_console* input_button = nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
-        nk_console_input_set_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
+        // Input
+        {
+            struct nk_console* input = nk_console_button(widgets, "Input");
 
-        // Key: Capture a keyboard key binding
-        nk_console* key_button = nk_console_key(widgets, "Key Binding", &key_binding);
-        nk_console_key_set_default(key_button, NK_KEY_NONE);
+            // Input: From any gamepad (-1)
+            nk_console* input_button = nk_console_input_gamepad(input, "Input Button", -1, &gamepad_number, &gamepad_button);
+            nk_console_input_set_gamepad_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
+
+            // Input: keyboard binding (a typed character or special key, stored as nk_console_key)
+            nk_console_input_key(input, "Key Input", &input_key_binding);
+
+            // Input: mouse-only binding
+            nk_console_input_mouse(input, "Mouse Input", &input_mouse_button);
+
+            // Input: Combination — accepts any gamepad, keyboard, or mouse input
+            nk_console_input(input, "Combination", -1, &input_combo_gamepad_number, &input_combo_gamepad_button, &input_combo_key, &input_combo_mouse_button);
+
+            // Input: Combination — gamepad button or keyboard key
+            nk_console_input(input, "Gamepad or Key", -1, &input_gamepad_key_number, &input_gamepad_key_gamepad_button, &input_gamepad_key_key, NULL);
+
+            // Input: Combination — keyboard key or mouse button
+            nk_console_input(input, "Keyboard or Mouse", -1, NULL, NULL, &input_keyboard_mouse_key, &input_keyboard_mouse_button);
+
+            nk_console_button_onclick(input, "Back", &nk_console_button_back);
+        }
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)

@@ -44,7 +44,7 @@ int main() {
 
 ## Widgets
 
-Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Gamepad Input Buttons, Keyboard Keys, Labels, Properties, Sliders, Knobs, Radio Options, Images, Rows, Spacing, TextEdit, Tree, Rule Horizontal, List View, Messages.
+Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Input (Gamepad, Keyboard, Mouse), Labels, Properties, Sliders, Knobs, Radio Options, Images, Rows, Spacing, TextEdit, Tree, Rule Horizontal, List View, Messages.
 
 ## API
 
@@ -70,8 +70,10 @@ nk_console* nk_console_file(nk_console* parent, const char* label, char* file_pa
 nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
 nk_console* nk_console_image(nk_console* parent, struct nk_image image);
 nk_console* nk_console_image_color(nk_console* parent, struct nk_image image, struct nk_color color);
-nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
-nk_console* nk_console_key(nk_console* parent, const char* label, nk_rune* out_key);
+nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button, nk_rune* out_key, enum nk_buttons* out_mouse_button);
+nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
+nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key);
+nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button);
 nk_console* nk_console_knob_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel);
 nk_console* nk_console_knob_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
 nk_console* nk_console_label(nk_console* parent, const char* text);
@@ -139,8 +141,7 @@ Define | Default | Description
 `NK_CONSOLE_ENABLE_TINYDIR` | *(unset)* | Define to use tinydir for file enumeration
 `NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H` | `"vendor/tinydir/tinydir.h"` | Path to the tinydir header when using the tinydir file backend
 `NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP` | *(unset)* | Define to skip the tinydir header include (provide your own include before)
-`NK_CONSOLE_INPUT_TIMER` | `6.0f` | Number of characters per second typed when holding a key in the text-input widget
-`NK_CONSOLE_KEY_TIMER` | `6.0f` | Number of characters per second typed when holding a key in the key-capture widget
+`NK_CONSOLE_INPUT_TIMER` | `6.0f` | Seconds to wait for input before timing out in the input widget
 `NK_CONSOLE_TEXTEDIT_MASKED_LENGTH` | `8` | Number of `*` characters shown when the text-edit widget is in masked/password mode
 `NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH` | `10` | Maximum preview character count shown in a collapsed text-edit widget
 `NK_CONSOLE_MESSAGE_DURATION` | `4.0f` | Seconds a message widget is displayed before auto-dismissal
