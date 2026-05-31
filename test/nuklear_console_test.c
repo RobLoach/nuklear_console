@@ -191,25 +191,25 @@ int main() {
 
     // nk_console_input() combinations
     {
-        // A multi-source widget reports exactly one active source, chosen by
-        // priority (key > mouse > gamepad) before anything is captured.
+        // Before any capture, is_*() reflects which pointers are configured.
         // (Statics so the stored pointers stay valid when the console renders.)
         static int combo_gp_number = 0;
         static enum nk_gamepad_button combo_gp_button = NK_GAMEPAD_BUTTON_A;
         static nk_rune combo_key = NK_CONSOLE_KEY_ENTER;
         static enum nk_buttons combo_mouse = NK_BUTTON_LEFT;
         nk_console* combo = nk_console_input(console, "Combination", -1, &combo_gp_number, &combo_gp_button, &combo_key, &combo_mouse);
+        assert(nk_console_input_is_gamepad(combo) == nk_true);
         assert(nk_console_input_is_key(combo) == nk_true);
-        assert(nk_console_input_is_mouse(combo) == nk_false);
-        assert(nk_console_input_is_gamepad(combo) == nk_false);
+        assert(nk_console_input_is_mouse(combo) == nk_true);
 
-        // Gamepad-or-key widget: priority falls through to the key.
+        // Gamepad-or-key: both pointers configured, both return true before capture.
         static int gpkey_number = 0;
         static enum nk_gamepad_button gpkey_button = NK_GAMEPAD_BUTTON_A;
         static nk_rune gpkey_key = NK_CONSOLE_KEY_ENTER;
         nk_console* gpkey = nk_console_input(console, "Gamepad or Key", -1, &gpkey_number, &gpkey_button, &gpkey_key, NULL);
         assert(nk_console_input_is_key(gpkey) == nk_true);
-        assert(nk_console_input_is_gamepad(gpkey) == nk_false);
+        assert(nk_console_input_is_gamepad(gpkey) == nk_true);
+        assert(nk_console_input_is_mouse(gpkey) == nk_false);
     }
 
     // nk_console_combobox()
