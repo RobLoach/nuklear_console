@@ -65,6 +65,10 @@ static nk_bool checkbox4 = nk_false;
 static nk_bool checkbox5 = nk_false;
 static nk_bool checkbox6 = nk_true;
 
+// Chart
+static const float chart_line_values[] = {0.1f, 0.5f, 0.3f, 0.9f, 0.4f, 0.7f, 0.2f, 0.8f};
+static const float chart_col_values[] = {0.6f, 0.3f, 0.8f, 0.1f, 0.5f, 0.9f, 0.4f, 0.7f};
+
 // Messages
 static int message_count = 0;
 
@@ -324,6 +328,16 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_row_end(row);
 
             nk_console_button_onclick(spacing, "Back", &nk_console_button_back);
+        }
+
+        // Chart
+        struct nk_console* chart_button = nk_console_button(widgets, "Chart");
+        {
+            nk_console_label(chart_button, "Line Chart");
+            nk_console_chart(chart_button, NULL, NK_CHART_LINES, chart_line_values, 8, 0.0f, 1.0f);
+            nk_console_label(chart_button, "Column Chart");
+            nk_console_chart(chart_button, NULL, NK_CHART_COLUMN, chart_col_values, 8, 0.0f, 1.0f);
+            nk_console_button_onclick(chart_button, "Back", &nk_console_button_back);
         }
 
         // Horizontal Rule

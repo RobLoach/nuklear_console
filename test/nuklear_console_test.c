@@ -418,6 +418,17 @@ int main() {
         assert(radio3 != NULL);
     }
 
+    // nk_console_chart()
+    {
+        static const float chart_values[] = {0.1f, 0.5f, 0.3f, 0.8f, 0.2f, 0.9f};
+        nk_console* chart = nk_console_chart(console, "Chart", NK_CHART_LINES, chart_values, 6, 0.0f, 1.0f);
+        assert(chart != NULL);
+        assert(chart->type == NK_CONSOLE_CHART);
+        nk_console_chart_update(chart, chart_values, 6, 0.0f, 1.0f);
+        nk_console* chart_col = nk_console_chart(console, NULL, NK_CHART_COLUMN, chart_values, 6, 0.0f, 1.0f);
+        assert(chart_col != NULL);
+    }
+
     // nk_console_rule_horizontal()
     {
         struct nk_color rule_color = {200, 200, 200, 255};
