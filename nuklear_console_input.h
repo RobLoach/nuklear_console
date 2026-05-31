@@ -48,6 +48,7 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
 NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
 NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key);
 NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button);
+/** Render the input-capture widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
 NK_API const char* nk_console_input_key_name(nk_rune key);
 
