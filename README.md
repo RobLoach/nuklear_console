@@ -70,6 +70,7 @@ nk_console* nk_console_file(nk_console* parent, const char* label, char* file_pa
 nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
 nk_console* nk_console_image(nk_console* parent, struct nk_image image);
 nk_console* nk_console_image_color(nk_console* parent, struct nk_image image, struct nk_color color);
+nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button, nk_rune* out_key, enum nk_buttons* out_mouse_button);
 nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
 nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key);
 nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button);

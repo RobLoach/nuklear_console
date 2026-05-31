@@ -1,14 +1,6 @@
 #ifndef NK_CONSOLE_INPUT_H__
 #define NK_CONSOLE_INPUT_H__
 
-#if defined(__GNUC__) || defined(__clang__)
-    #define NK_CONSOLE_DEPRECATED(msg) __attribute__((deprecated(msg)))
-#elif defined(_MSC_VER)
-    #define NK_CONSOLE_DEPRECATED(msg) __declspec(deprecated(msg))
-#else
-    #define NK_CONSOLE_DEPRECATED(msg)
-#endif
-
 /**
  * A keyboard key captured by an input widget, stored in an nk_rune as an ASCII-based code. Both a typed character and a Nuklear special key (enum nk_keys) resolve onto a single number line:
  *   - NK_CONSOLE_KEY_NONE
@@ -107,35 +99,29 @@ extern "C" {
 #endif
 
 /**
- * Create a new input widget to get a gamepad button.
+ * Create a new input widget accepting any combination of gamepad, keyboard, and mouse.
+ * Pass NULL for output pointers you don't need; flags are derived automatically.
  *
- * @param parent The parent console of where to add the widget.
+ * @param parent The parent console.
  * @param label The label to display.
- * @param gamepad_number The gamepad number to expect input from. Provide -1 for any gamepad.
- * @param out_gamepad_number When the user enters a button, this is where the gamepad number that was used to press the button.
- * @param out_gamepad_button When the user enters a button, this is where the gamepad button will be stored.
+ * @param gamepad_number Gamepad to listen on (-1 for any). Ignored when out_gamepad_button is NULL.
+ * @param out_gamepad_number Where to store which gamepad was used. May be NULL.
+ * @param out_gamepad_button Where to store the captured gamepad button. NULL to disable gamepad input.
+ * @param out_key Where to store the captured keyboard key (NK_CONSOLE_KEY_*). NULL to disable keyboard input.
+ * @param out_mouse_button Where to store the captured mouse button. NULL to disable mouse input.
  *
  * @return The new input widget.
  */
+NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button, nk_rune* out_key, enum nk_buttons* out_mouse_button);
+
+/** Create a gamepad-only input widget. Shorthand for nk_console_input() with key/mouse set to NULL. */
 NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
 
-/** @deprecated Use nk_console_input_gamepad(), nk_console_input_key(), or nk_console_input_mouse() instead. */
-NK_API NK_CONSOLE_DEPRECATED("Use nk_console_input_gamepad() instead") nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button);
-
-/**
- * Create a new input widget to capture a keyboard key.
- *
- * Captures either a typed character or a special key and stores the result as
- * an NK_CONSOLE_KEY_* (ASCII-based) value in the given nk_rune.
- *
- * @param parent The parent console of where to add the widget.
- * @param label The label to display.
- * @param out_key Where to store the captured key as an NK_CONSOLE_KEY_* value.
- *
- * @return The new input widget.
- */
+/** Create a keyboard-only input widget. Shorthand for nk_console_input() with gamepad/mouse set to NULL. */
 NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key);
 #define nk_console_key(parent, label, out_key) nk_console_input_key(parent, label, out_key)
+
+/** Create a mouse-only input widget. Shorthand for nk_console_input() with gamepad/key set to NULL. */
 NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button);
 /** Render the input-capture widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_input_render(nk_console* widget);
@@ -710,7 +696,7 @@ NK_API const char* nk_console_input_key_name(nk_rune key) {
     return "Unknown";
 }
 
-NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
+NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button, nk_rune* out_key, enum nk_buttons* out_mouse_button) {
     nk_console_input_data* data;
     nk_console* widget;
     nk_console* active_state;
@@ -724,6 +710,12 @@ NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* labe
     data->out_gamepad_number = out_gamepad_number;
     data->out_gamepad_button = out_gamepad_button;
     data->default_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
+    data->out_key = out_key;
+    data->out_mouse_button = out_mouse_button;
+
+    if (out_gamepad_button != NULL) data->flags |= NK_CONSOLE_INPUT_FLAG_GAMEPAD;
+    if (out_key != NULL)            data->flags |= NK_CONSOLE_INPUT_FLAG_KEY;
+    if (out_mouse_button != NULL)   data->flags |= NK_CONSOLE_INPUT_FLAG_MOUSE;
 
     widget = nk_console_label(parent, label);
     widget->type = NK_CONSOLE_INPUT;
@@ -739,24 +731,16 @@ NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* labe
     return widget;
 }
 
-NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
-    return nk_console_input_gamepad(parent, label, gamepad_number, out_gamepad_number, out_gamepad_button);
+NK_API nk_console* nk_console_input_gamepad(nk_console* parent, const char* label, int gamepad_number, int* out_gamepad_number, enum nk_gamepad_button* out_gamepad_button) {
+    return nk_console_input(parent, label, gamepad_number, out_gamepad_number, out_gamepad_button, NULL, NULL);
 }
 
 NK_API nk_console* nk_console_input_key(nk_console* parent, const char* label, nk_rune* out_key) {
-    nk_console* widget = nk_console_input_gamepad(parent, label, -1, NULL, NULL);
-    if (widget == NULL) return NULL;
-    nk_console_input_set_key_out(widget, out_key);
-    nk_console_input_set_flags(widget, NK_CONSOLE_INPUT_FLAG_KEY);
-    return widget;
+    return nk_console_input(parent, label, -1, NULL, NULL, out_key, NULL);
 }
 
 NK_API nk_console* nk_console_input_mouse(nk_console* parent, const char* label, enum nk_buttons* out_mouse_button) {
-    nk_console* widget = nk_console_input_gamepad(parent, label, -1, NULL, NULL);
-    if (widget == NULL) return NULL;
-    nk_console_input_set_mouse_out(widget, out_mouse_button);
-    nk_console_input_set_flags(widget, NK_CONSOLE_INPUT_FLAG_MOUSE);
-    return widget;
+    return nk_console_input(parent, label, -1, NULL, NULL, NULL, out_mouse_button);
 }
 
 #if defined(__cplusplus)

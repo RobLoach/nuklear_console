@@ -175,7 +175,7 @@ int main() {
         assert(strcmp(nk_console_input_key_name((nk_rune)','), ",") == 0);
     }
 
-    // nk_console_input_gamepad() combinations
+    // nk_console_input() combinations
     {
         // A multi-source widget reports exactly one active source, chosen by
         // priority (key > mouse > gamepad) before anything is captured.
@@ -184,10 +184,7 @@ int main() {
         static enum nk_gamepad_button combo_gp_button = NK_GAMEPAD_BUTTON_A;
         static nk_rune combo_key = NK_CONSOLE_KEY_ENTER;
         static enum nk_buttons combo_mouse = NK_BUTTON_LEFT;
-        nk_console* combo = nk_console_input_gamepad(console, "Combination", -1, &combo_gp_number, &combo_gp_button);
-        nk_console_input_set_key_out(combo, &combo_key);
-        nk_console_input_set_mouse_out(combo, &combo_mouse);
-        nk_console_input_set_flags(combo, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE);
+        nk_console* combo = nk_console_input(console, "Combination", -1, &combo_gp_number, &combo_gp_button, &combo_key, &combo_mouse);
         assert(nk_console_input_is_key(combo) == nk_true);
         assert(nk_console_input_is_mouse(combo) == nk_false);
         assert(nk_console_input_is_gamepad(combo) == nk_false);
@@ -196,9 +193,7 @@ int main() {
         static int gpkey_number = 0;
         static enum nk_gamepad_button gpkey_button = NK_GAMEPAD_BUTTON_A;
         static nk_rune gpkey_key = NK_CONSOLE_KEY_ENTER;
-        nk_console* gpkey = nk_console_input_gamepad(console, "Gamepad or Key", -1, &gpkey_number, &gpkey_button);
-        nk_console_input_set_key_out(gpkey, &gpkey_key);
-        nk_console_input_set_flags(gpkey, NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY);
+        nk_console* gpkey = nk_console_input(console, "Gamepad or Key", -1, &gpkey_number, &gpkey_button, &gpkey_key, NULL);
         assert(nk_console_input_is_key(gpkey) == nk_true);
         assert(nk_console_input_is_gamepad(gpkey) == nk_false);
     }
