@@ -1463,10 +1463,10 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
         return;
     }
 
-    // If leaving_parent is a row (or any non-navigable widget), skip up to its
-    // parent so we don't land on a widget that cannot act as an active parent.
+    // If leaving_parent is a row or tree (non-navigable containers), skip up to
+    // the first ancestor that can act as an active parent.
     nk_console* target = leaving_parent;
-    while (target != top && target->type == NK_CONSOLE_ROW) {
+    while (target != top && (target->type == NK_CONSOLE_ROW || target->type == NK_CONSOLE_TREE)) {
         target = (target->parent != NULL) ? target->parent : top;
     }
 
