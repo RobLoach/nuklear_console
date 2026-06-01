@@ -117,6 +117,14 @@ NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, 
     nk_console* backbutton = nk_console_button_onclick(combobox, label, &nk_console_combobox_button_click);
     nk_console_button_set_symbol(backbutton, NK_SYMBOL_TRIANGLE_UP);
 
+    // NULL items: clamp selected and leave only the back button.
+    if (items_separated_by_separator == NULL) {
+        if (selected != NULL) {
+            *selected = 0;
+        }
+        return;
+    }
+
     // Add new items as children
     const char* button_text_start = items_separated_by_separator;
     int text_length = 0;
