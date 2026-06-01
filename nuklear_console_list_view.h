@@ -170,12 +170,12 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
     widget_bounds.h = row_height * (float)data->rows_visible;
 
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_begin(top->ctx);
     }
 
     // Handle keyboard/gamepad navigation.
-    if (is_active && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (is_active && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Hold-to-accelerate timers - mirrors nk_console_check_up_down.
         nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
         nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
@@ -309,7 +309,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
             top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A) && !(widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A) && NK_FLAG_DISABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED)) {
             nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
             top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
@@ -336,7 +336,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
 
             // Mouse Selection
-            if (nk_input_is_mouse_moved(&top->ctx->input) && nk_widget_is_hovered(top->ctx) && !(widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
+            if (nk_input_is_mouse_moved(&top->ctx->input) && nk_widget_is_hovered(top->ctx) && NK_FLAG_DISABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED)) {
                 data->selected = (nk_uint)(data->view.begin + i);
                 nk_console_set_active_widget(widget);
             }
@@ -358,7 +358,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 top->ctx->style.button.text_normal = saved_text;
             }
 
-            if (mouse_clicked && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+            if (mouse_clicked && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
                 data->selected = (nk_uint)(data->view.begin + i);
                 top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
@@ -372,7 +372,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
     }
 
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_end(top->ctx);
     }
 

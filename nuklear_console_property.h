@@ -75,9 +75,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
 
     // Allow changing the value with left/right
-    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
+    if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+        if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
                 switch (console->type) {
                     case NK_CONSOLE_SLIDER_INT:
@@ -165,7 +165,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_begin(console->ctx);
     }
 
@@ -235,7 +235,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         console->ctx->style.knob.border_color = border_color;
     }
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_end(console->ctx);
     }
 

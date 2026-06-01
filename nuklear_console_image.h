@@ -79,16 +79,16 @@ NK_API struct nk_rect nk_console_image_render(nk_console* widget) {
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
 
     // Toggle it as disabled if needed.
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED) ||
-        ((widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && nk_console_get_active_widget(widget) != widget)) {
+    if (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) ||
+        (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) && nk_console_get_active_widget(widget) != widget)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
     nk_image_color(widget->ctx, data->image, data->color);
 
     // Release the disabled state if needed.
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED) ||
-        ((widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && nk_console_get_active_widget(widget) != widget)) {
+    if (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) ||
+        (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) && nk_console_get_active_widget(widget) != widget)) {
         nk_widget_disable_end(widget->ctx);
     }
 

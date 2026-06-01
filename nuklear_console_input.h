@@ -446,7 +446,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
     // Check for input.
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Keyboard and mouse are checked before the gamepad so that physical
         // keyboard/mouse input wins over a keyboard-backed virtual gamepad
         // (which maps characters such as 'a' or space onto gamepad buttons).

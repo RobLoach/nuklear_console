@@ -42,7 +42,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)nk_console_get_top(widget)->data;
 
     // Process checking the up/down switching in widgets before processing showing the widget itself
-    if (nk_console_is_active_widget(widget) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (nk_console_is_active_widget(widget) && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Allow using ENTER to go back
         if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
             top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
@@ -58,7 +58,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         nk_console_check_tooltip(textedit);
     }
 
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -108,7 +108,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         }
     }
 
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_end(widget->ctx);
     }
 

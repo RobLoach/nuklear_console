@@ -94,13 +94,13 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_begin(console->ctx);
     }
 
     // Check the button state.
     nk_bool selected = nk_false;
-    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
+    if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
         selected = nk_true;
     }
 
@@ -174,7 +174,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
         }
     }
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_end(console->ctx);
     }
 

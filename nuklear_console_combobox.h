@@ -188,9 +188,9 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     nk_console_layout_widget(console);
 
     // Allow changing the value with left/right
-    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
+    if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && data->selected != NULL && console->children != NULL) {
+        if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && data->selected != NULL && console->children != NULL) {
             nk_bool changed = nk_false;
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && *data->selected > 0) {
                 *data->selected = *data->selected - 1;

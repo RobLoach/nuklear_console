@@ -32,12 +32,12 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     nk_console_layout_widget(widget);
 
     nk_bool selected = nk_false;
-    if (!(widget->flags & NK_CONSOLE_FLAG_DISABLED) && (widget->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
+    if (NK_FLAG_DISABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) && NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
         selected = nk_console_is_active_widget(widget);
     }
 
     // Toggle it as disabled if needed.
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED) || ((widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && !selected)) {
+    if (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) || (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) && !selected)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -50,7 +50,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     }
 
     // Release the disabled state if needed.
-    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED) || ((widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && !selected)) {
+    if (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) || (NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) && !selected)) {
         nk_widget_disable_end(widget->ctx);
     }
 

@@ -68,7 +68,7 @@ static int nk_console_row_next_selectable_child(nk_console* row, int direction) 
     nk_console_row_data* data = (nk_console_row_data*)row->data;
     int numChildren = (int)cvector_size(row->children);
     for (int i = data->activeChild + direction; i >= 0 && i < numChildren; i += direction) {
-        if (row->children[i]->flags & NK_CONSOLE_FLAG_SELECTABLE) {
+        if (NK_FLAG_ENABLED(row->children[i]->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
             return i;
         }
     }
@@ -91,11 +91,11 @@ static nk_bool nk_console_row_pick_nearest_selectable_child(nk_console* row) {
     nk_console_row_data* data = (nk_console_row_data*)row->data;
     int amount = (int)cvector_size(row->children);
     for (int i = 1; i < amount; ++i) {
-        if (data->activeChild + i < amount && (row->children[data->activeChild + i]->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
+        if (data->activeChild + i < amount && NK_FLAG_ENABLED(row->children[data->activeChild + i]->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
             data->activeChild += i;
             return nk_true;
         }
-        if (data->activeChild - i >= 0 && (row->children[data->activeChild - i]->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
+        if (data->activeChild - i >= 0 && NK_FLAG_ENABLED(row->children[data->activeChild - i]->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
             data->activeChild -= i;
             return nk_true;
         }
@@ -136,7 +136,7 @@ NK_API void nk_console_row_end(nk_console* row) {
         nk_console* child = row->children[i];
 
         // This row is selectable if there's at least one selectable child.
-        if (child->flags & NK_CONSOLE_FLAG_SELECTABLE) row->flags |= NK_CONSOLE_FLAG_SELECTABLE;
+        if NK_FLAG_ENABLED(child->flags, NK_CONSOLE_FLAG_SELECTABLE) row->flags |= NK_CONSOLE_FLAG_SELECTABLE;
 
         // The row's height is taken from the tallest child.
         if (child->height > row->height) {
@@ -148,7 +148,7 @@ NK_API void nk_console_row_end(nk_console* row) {
     }
 
     // Make sure we start on a selectable child by default.
-    if (!(active_child->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
+    if (NK_FLAG_DISABLED(active_child->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
         nk_console_row_pick_nearest_selectable_child(row);
     }
 
@@ -159,7 +159,7 @@ NK_API void nk_console_row_end(nk_console* row) {
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
     nk_console_row_data* data = (nk_console_row_data*)row->data;
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    if ((top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) {
         return;
     }
 
@@ -192,7 +192,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     // Consume mouse movement before children have a chance to.
     int numChildren = (int)cvector_size(console->children);
     struct nk_input* input = &console->ctx->input;
-    if ((console->flags & NK_CONSOLE_FLAG_SELECTABLE) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) &&
+    if (NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_SELECTABLE) && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) &&
         widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
         nk_input_is_mouse_hovering_rect(input, widget_bounds)) {
         // First, make sure that the active widget is the row.
@@ -216,7 +216,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
         }
 
         // Ensure the new active child is actually selectable.
-        if (!(nk_console_row_active_child(console)->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
+        if (NK_FLAG_DISABLED(nk_console_row_active_child(console)->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
             nk_console_row_pick_nearest_selectable_child(console);
         }
     }
@@ -249,24 +249,24 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
 
             // Ensure we switched to a selectable child.
             nk_console* new_active_child = nk_console_row_active_child(active);
-            if (new_active_child != NULL && !(new_active_child->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
+            if (new_active_child != NULL && NK_FLAG_DISABLED(new_active_child->flags, NK_CONSOLE_FLAG_SELECTABLE)) {
                 nk_console_row_pick_nearest_selectable_child(active);
             }
         }
     }
 
     // Set the active widget to the active child of the row.
-    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && numChildren > 0) {
+    if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && numChildren > 0) {
         console->activeWidget = nk_console_row_active_child(console);
     }
 
     // Render all the children
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = console->children[i];
-        if (child->render != NULL && (child->flags & NK_CONSOLE_FLAG_VISIBLE)) {
+        if (child->render != NULL && NK_FLAG_ENABLED(child->flags, NK_CONSOLE_FLAG_VISIBLE)) {
             // If the row is disabled, then temporarily disable the child when rendering.
-            if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
-                nk_bool child_disabled = (child->flags & NK_CONSOLE_FLAG_DISABLED);
+            if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
+                nk_bool child_disabled = NK_FLAG_ENABLED(child->flags, NK_CONSOLE_FLAG_DISABLED);
                 child->flags |= NK_CONSOLE_FLAG_DISABLED;
                 child->render(child);
                 if (!child_disabled) child->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED;

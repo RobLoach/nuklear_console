@@ -43,7 +43,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
     // Allow changing the checkbox value.
     nk_bool active = nk_false;
-    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = !*data->value_bool;
@@ -81,7 +81,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         }
     }
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED) || !nk_console_is_active_widget(console)) {
+    if (NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) || !nk_console_is_active_widget(console)) {
         nk_widget_disable_begin(console->ctx);
     }
 
@@ -99,7 +99,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
     }
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED) || !nk_console_is_active_widget(console)) {
+    if (NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) || !nk_console_is_active_widget(console)) {
         nk_widget_disable_end(console->ctx);
     }
 

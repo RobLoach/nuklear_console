@@ -105,6 +105,10 @@ typedef enum {
     NK_CONSOLE_FLAG_VISIBLE    = NK_FLAG(2), /** When false, the widget will not be displayed. */
 } nk_console_flag;
 
+#define NK_FLAG_ENABLED(flags, flag)  ((flags) & (flag))
+#define NK_FLAG_DISABLED(flags, flag) (!((flags) & (flag)))
+#define NK_FLAG_TOGGLE(flags, flag)   ((flags) ^= (flag))
+
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* label;
@@ -797,7 +801,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
     }
 
     // Only process an active input once.
-    if (!(data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (NK_FLAG_DISABLED(data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Page Up
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
@@ -914,7 +918,7 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
         return nk_false;
     }
 
-    return (widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && (widget->flags & NK_CONSOLE_FLAG_VISIBLE) && !(widget->flags & NK_CONSOLE_FLAG_DISABLED);
+    return NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) && NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_VISIBLE) && NK_FLAG_DISABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED);
 }
 
 #ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
@@ -1062,21 +1066,21 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
         struct nk_rect content = nk_window_get_content_region(console->ctx);
         if (nk_input_is_mouse_hovering_rect(in, content)) top_data->state |= NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
         else top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
-        if ((top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED)) {
+        if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED) {
             top_data->drag_scroll_origin = in->mouse.pos;
             nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
             top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
         }
     }
     if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
-        if ((top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED)) {
+        if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED) {
             float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
             float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
-            if (!(top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE) &&
+            if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE) &&
                 (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
                 top_data->state |= NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
             }
-            if ((top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE)) {
+            if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE) {
                 nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
                 nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
                 nk_window_set_scroll(console->ctx, sx, sy);
@@ -1173,7 +1177,7 @@ static void nk_console_render_top(nk_console* console) {
 }
 
 NK_API void nk_console_render(nk_console* console) {
-    if (console == NULL || !(console->flags & NK_CONSOLE_FLAG_VISIBLE)) {
+    if (console == NULL || NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_VISIBLE)) {
         return;
     }
 
@@ -1210,7 +1214,7 @@ NK_API void nk_console_render(nk_console* console) {
         nk_window_get_scroll(console->ctx, &window_scroll_x, &window_scroll_y);
         widget_bounds.x -= (float)window_scroll_x;
         widget_bounds.y -= (float)window_scroll_y;
-        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
+        if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             if (nk_console_selectable(console)) {
                 nk_console_set_active_widget(console);
                 top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
@@ -1281,7 +1285,7 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
     // Determine if the scrollbar is needed.
     top_data = (nk_console_top_data*)console->data;
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
-        if ((top_data->state & NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED)) {
+        if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED) {
             flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
         }
         else {
@@ -1299,7 +1303,7 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
         if ((console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h)
             top_data->state |= NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
         else top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
-        if ((top_data->state & NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED)) {
+        if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED) {
             console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
         }
         else {
@@ -1594,10 +1598,10 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Keyboard/Mouse/Axis
     switch (button) {
-        case NK_GAMEPAD_BUTTON_UP: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_UP);
-        case NK_GAMEPAD_BUTTON_DOWN: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_DOWN);
-        case NK_GAMEPAD_BUTTON_LEFT: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_LEFT);
-        case NK_GAMEPAD_BUTTON_RIGHT: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_RIGHT);
+        case NK_GAMEPAD_BUTTON_UP: return NK_FLAG_ENABLED(data->state, NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return NK_FLAG_ENABLED(data->state, NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return NK_FLAG_ENABLED(data->state, NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return NK_FLAG_ENABLED(data->state, NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_RIGHT);
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER);
         case NK_GAMEPAD_BUTTON_B:
             // Escape Key

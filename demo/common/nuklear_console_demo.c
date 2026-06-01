@@ -127,13 +127,13 @@ void theme_changed(struct nk_console* combobox, void* user_data) {
 void exclude_other_checkbox(struct nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
     nk_console* other = (nk_console*)user_data;
-    if (!(other->flags & NK_CONSOLE_FLAG_DISABLED)) other->flags |= NK_CONSOLE_FLAG_DISABLED; else other->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED
+    NK_FLAG_TOGGLE(other->flags, NK_CONSOLE_FLAG_DISABLED)
 }
 
 void toggle_visibility(struct nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
     struct nk_console* other = (nk_console*)user_data;
-    if (!(other->flags & NK_CONSOLE_FLAG_VISIBLE)) other->flags |= NK_CONSOLE_FLAG_VISIBLE; else other->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE
+    NK_FLAG_TOGGLE(other->flags, NK_CONSOLE_FLAG_VISIBLE)
 }
 
 void nk_console_password_back(struct nk_console* widget, void* user_data) {

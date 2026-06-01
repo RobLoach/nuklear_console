@@ -80,9 +80,9 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
 
     // Allow changing the value.
     nk_bool active = nk_false;
-    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
+    if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+        if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
                 if (data->value_size != NULL && *data->value_size > 0) {
                     *data->value_size = *data->value_size - 1;
@@ -115,7 +115,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_begin(console->ctx);
     }
 
@@ -142,7 +142,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     console->ctx->style.progress.cursor_hover = cursor_hover;
     console->ctx->style.progress.cursor_active = cursor_active;
 
-    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
+    if NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) {
         nk_widget_disable_end(console->ctx);
     }
 
