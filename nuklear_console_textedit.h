@@ -324,7 +324,7 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     // Create the textedit widget.
     nk_console* textedit = nk_console_label(parent, label);
     textedit->type = NK_CONSOLE_TEXTEDIT;
-    textedit->selectable = nk_true;
+    textedit->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     data->buffer = buffer;
     data->buffer_size = buffer_size;
     textedit->columns = label != NULL ? 2 : 1;

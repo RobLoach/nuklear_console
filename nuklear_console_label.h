@@ -32,12 +32,12 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     nk_console_layout_widget(widget);
 
     nk_bool selected = nk_false;
-    if (!widget->disabled && widget->selectable) {
+    if (!(widget->flags & NK_CONSOLE_FLAG_DISABLED) && (widget->flags & NK_CONSOLE_FLAG_SELECTABLE)) {
         selected = nk_console_is_active_widget(widget);
     }
 
     // Toggle it as disabled if needed.
-    if (widget->disabled || (widget->selectable && !selected)) {
+    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED) || ((widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && !selected)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -50,7 +50,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
     }
 
     // Release the disabled state if needed.
-    if (widget->disabled || (widget->selectable && !selected)) {
+    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED) || ((widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && !selected)) {
         nk_widget_disable_end(widget->ctx);
     }
 
@@ -87,7 +87,7 @@ NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
     label->alignment = NK_TEXT_LEFT;
     label->columns = 1;
     label->render = nk_console_label_render;
-    label->visible = nk_true;
+    label->flags |= NK_CONSOLE_FLAG_VISIBLE;
     nk_console_add_child(parent, label);
     return label;
 }

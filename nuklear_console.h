@@ -99,15 +99,19 @@ typedef enum {
     NK_CONSOLE_MESSAGE_POSITION_RIGHT, /** Slide in from the right edge. */
 } nk_console_message_position;
 
+typedef enum {
+    NK_CONSOLE_FLAG_SELECTABLE = NK_FLAG(0), /** Whether or not the widget can be selected. */
+    NK_CONSOLE_FLAG_DISABLED   = NK_FLAG(1), /** Whether or not the widget is currently disabled. */
+    NK_CONSOLE_FLAG_VISIBLE    = NK_FLAG(2), /** When false, the widget will not be displayed. */
+} nk_console_flag;
+
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* label;
     int label_length;
     nk_flags alignment;
 
-    nk_bool selectable; /** Whether or not the widget can be selected. */
-    nk_bool disabled; /** Whether or not the widget is currently disabled. */
-    nk_bool visible; /** When false, the widget will not be displayed. */
+    nk_uint flags; /** NK_CONSOLE_FLAG_SELECTABLE | NK_CONSOLE_FLAG_DISABLED | NK_CONSOLE_FLAG_VISIBLE */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
     int height; /** When set, will determine the height of the row. */
     const char* tooltip; /** Tooltip */
@@ -123,10 +127,20 @@ typedef struct nk_console {
     nk_console_render_event render; /** Render the widget. */
 } nk_console;
 
+typedef enum {
+    NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED    = NK_FLAG(0), /** Whether or not user input has been processed. */
+    NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED = NK_FLAG(1), /** True when the scrollbar is needed to be rendered. */
+    NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED      = NK_FLAG(2), /** True this frame if an axis fired an up event. */
+    NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED    = NK_FLAG(3), /** True this frame if an axis fired a down event. */
+    NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED    = NK_FLAG(4), /** True this frame if an axis fired a left event. */
+    NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED   = NK_FLAG(5), /** True this frame if an axis fired a right event. */
+    NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE    = NK_FLAG(6), /** True when a drag-scroll gesture is in progress. */
+    NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED = NK_FLAG(7), /** True when the drag started from the content area (not scrollbar). */
+} nk_console_top_flag;
+
 typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
-    nk_bool input_processed; /** Whether or not user input has been processed. */
-    nk_bool scrollbar_required; /** True when the scrollbar is needed to be rendered. @see nk_console_render_window() */
+    nk_uint state; /** NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED | NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED | NK_CONSOLE_TOP_FLAG_AXIS_*_FIRED | NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_* */
     nk_console* scroll_to_widget; /** When set by nk_console_navigate_back, the render loop scrolls the window to this widget's bounds. */
 
     /**
@@ -180,13 +194,6 @@ typedef struct nk_console_top_data {
         float hold_timer; /** Total active hold time, drives acceleration. */
     } axis_ud, axis_lr;
 
-    nk_bool axis_up_fired; /** True this frame if an axis fired an up event. */
-    nk_bool axis_down_fired; /** True this frame if an axis fired a down event. */
-    nk_bool axis_left_fired; /** True this frame if an axis fired a left event. */
-    nk_bool axis_right_fired; /** True this frame if an axis fired a right event. */
-
-    nk_bool drag_scroll_active; /** True when a drag-scroll gesture is in progress. */
-    nk_bool drag_scroll_initiated; /** True when the drag started from the content area (not scrollbar). */
     struct nk_vec2 drag_scroll_origin; /** Mouse position when the drag started. */
     nk_uint drag_scroll_start_x; /** Window scroll X at drag start. */
     nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
@@ -790,7 +797,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
     }
 
     // Only process an active input once.
-    if (data->input_processed == nk_false) {
+    if (!(data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Page Up
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
@@ -809,7 +816,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
                 nk_console_set_active_widget(target);
                 data->scroll_to_widget = target;
             }
-            data->input_processed = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         // Page Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
@@ -831,7 +838,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
                 nk_console_set_active_widget(target);
                 data->scroll_to_widget = target;
             }
-            data->input_processed = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         // Up
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) || (up_held && up_down_repeat_fire)) {
@@ -844,7 +851,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
                     break;
                 }
             }
-            data->input_processed = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         // Down
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) || (down_held && up_down_repeat_fire)) {
@@ -859,12 +866,12 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
                     }
                 }
             }
-            data->input_processed = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         // Back
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (nk_console_active_parent(top) == NULL) {
-                data->input_processed = nk_true;
+                data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
                 return;
             }
 
@@ -872,7 +879,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
                 nk_console_navigate_back(widget->parent);
             }
 
-            data->input_processed = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
     }
 }
@@ -907,7 +914,7 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
         return nk_false;
     }
 
-    return widget->selectable && widget->visible && !widget->disabled;
+    return (widget->flags & NK_CONSOLE_FLAG_SELECTABLE) && (widget->flags & NK_CONSOLE_FLAG_VISIBLE) && !(widget->flags & NK_CONSOLE_FLAG_DISABLED);
 }
 
 #ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
@@ -1001,7 +1008,7 @@ static nk_bool nk_console_axis_tick(struct nk_console_axis_channel* ch, float st
  */
 static void nk_console_axis_update(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    data->axis_up_fired = data->axis_down_fired = data->axis_left_fired = data->axis_right_fired = nk_false;
+    data->state &= ~(nk_uint)(NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED);
     if (data->gamepads == NULL || console->ctx->delta_time_seconds <= 0) {
         return;
     }
@@ -1031,18 +1038,18 @@ static void nk_console_axis_update(nk_console* console) {
     // Up/Down
     if (nk_console_axis_tick(&data->axis_ud, NK_MAX(up_strength, down_strength), console->ctx->delta_time_seconds)) {
         if (up_strength >= down_strength) {
-            data->axis_up_fired = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED;
         }
         else {
-            data->axis_down_fired = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED;
         }
     }
     // Left/Right
     if (nk_console_axis_tick(&data->axis_lr, NK_MAX(left_strength, right_strength), console->ctx->delta_time_seconds)) {
         if (left_strength >= right_strength)
-            data->axis_left_fired = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED;
         else
-            data->axis_right_fired = nk_true;
+            data->state |= NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED;
     }
 }
 
@@ -1053,32 +1060,33 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
     struct nk_input* in = &console->ctx->input;
     if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
         struct nk_rect content = nk_window_get_content_region(console->ctx);
-        top_data->drag_scroll_initiated = nk_input_is_mouse_hovering_rect(in, content);
-        if (top_data->drag_scroll_initiated) {
+        if (nk_input_is_mouse_hovering_rect(in, content)) top_data->state |= NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
+        else top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
+        if ((top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED)) {
             top_data->drag_scroll_origin = in->mouse.pos;
             nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
-            top_data->drag_scroll_active = nk_false;
+            top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
         }
     }
     if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
-        if (top_data->drag_scroll_initiated) {
+        if ((top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED)) {
             float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
             float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
-            if (!top_data->drag_scroll_active &&
+            if (!(top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE) &&
                 (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
-                top_data->drag_scroll_active = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
             }
-            if (top_data->drag_scroll_active) {
+            if ((top_data->state & NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE)) {
                 nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
                 nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
                 nk_window_set_scroll(console->ctx, sx, sy);
-                top_data->input_processed = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
         }
     }
     else {
-        top_data->drag_scroll_active = nk_false;
-        top_data->drag_scroll_initiated = nk_false;
+        top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
+        top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
     }
 }
 
@@ -1146,7 +1154,7 @@ static void nk_console_update_drag_scroll(nk_console* console, nk_console_top_da
  */
 static void nk_console_render_top(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    data->input_processed = nk_false;
+    data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     nk_console_axis_update(console);
     nk_console_window_touch_drag(console, data);
     nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
@@ -1165,7 +1173,7 @@ static void nk_console_render_top(nk_console* console) {
 }
 
 NK_API void nk_console_render(nk_console* console) {
-    if (console == NULL || console->visible == nk_false) {
+    if (console == NULL || !(console->flags & NK_CONSOLE_FLAG_VISIBLE)) {
         return;
     }
 
@@ -1202,10 +1210,10 @@ NK_API void nk_console_render(nk_console* console) {
         nk_window_get_scroll(console->ctx, &window_scroll_x, &window_scroll_y);
         widget_bounds.x -= (float)window_scroll_x;
         widget_bounds.y -= (float)window_scroll_y;
-        if (top_data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
+        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             if (nk_console_selectable(console)) {
                 nk_console_set_active_widget(console);
-                top_data->input_processed = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
         }
     }
@@ -1234,7 +1242,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->type = NK_CONSOLE_PARENT;
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
-    console->visible = nk_true;
+    console->flags |= NK_CONSOLE_FLAG_VISIBLE;
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));
@@ -1273,7 +1281,7 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
     // Determine if the scrollbar is needed.
     top_data = (nk_console_top_data*)console->data;
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
-        if (top_data->scrollbar_required) {
+        if ((top_data->state & NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED)) {
             flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
         }
         else {
@@ -1288,8 +1296,10 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
 
     // After all elements have been rendered, update the layout flags.
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
-        top_data->scrollbar_required = (console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h;
-        if (top_data->scrollbar_required) {
+        if ((console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h)
+            top_data->state |= NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
+        else top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
+        if ((top_data->state & NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED)) {
             console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
         }
         else {
@@ -1480,7 +1490,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
     if (leaving_parent == top) {
         // Still trigger the back event if we're trying to leave the top.
         nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
-        data->input_processed = nk_true;
+        data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         return;
     }
     nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
@@ -1488,7 +1498,7 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
     nk_console_set_active_widget(leaving_parent);
     if (data != NULL) {
         data->scroll_to_widget = leaving_parent;
-        data->input_processed = nk_true;
+        data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     }
     nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
 }
@@ -1584,10 +1594,10 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 
     // Keyboard/Mouse/Axis
     switch (button) {
-        case NK_GAMEPAD_BUTTON_UP: return data->axis_up_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_UP);
-        case NK_GAMEPAD_BUTTON_DOWN: return data->axis_down_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_DOWN);
-        case NK_GAMEPAD_BUTTON_LEFT: return data->axis_left_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_LEFT);
-        case NK_GAMEPAD_BUTTON_RIGHT: return data->axis_right_fired || nk_input_is_key_released(&console->ctx->input, NK_KEY_RIGHT);
+        case NK_GAMEPAD_BUTTON_UP: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_UP);
+        case NK_GAMEPAD_BUTTON_DOWN: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_DOWN);
+        case NK_GAMEPAD_BUTTON_LEFT: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_LEFT);
+        case NK_GAMEPAD_BUTTON_RIGHT: return (data->state & NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED) || nk_input_is_key_released(&console->ctx->input, NK_KEY_RIGHT);
         case NK_GAMEPAD_BUTTON_A: return nk_input_is_key_released(&console->ctx->input, NK_KEY_ENTER);
         case NK_GAMEPAD_BUTTON_B:
             // Escape Key
@@ -1642,7 +1652,8 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
 
         // Set the visibility of the child based on whether the tree is expanded.
-        child->visible = nk_console_tree_expanded(parent);
+        if (nk_console_tree_expanded(parent)) child->flags |= NK_CONSOLE_FLAG_VISIBLE;
+        else child->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
 
         // Insert position: immediately after the tree and any previously owned children.
         int widget_index = nk_console_get_widget_index(parent);

@@ -74,7 +74,8 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     nk_console** referenced_children = data->referenced_children;
     for (size_t i = 0; i < cvector_size(referenced_children); i++) {
         if (referenced_children[i] != NULL) {
-            referenced_children[i]->visible = expanded;
+            if (expanded) referenced_children[i]->flags |= NK_CONSOLE_FLAG_VISIBLE;
+            else referenced_children[i]->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
         }
     }
 
@@ -83,7 +84,7 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     if (top != NULL && top->data != NULL) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
         top_data->scroll_to_widget = tree;
-        top_data->scrollbar_required = nk_true;
+        top_data->state |= NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
     }
 }
 
@@ -121,15 +122,15 @@ static struct nk_rect nk_console_tree_render(nk_console* tree) {
     if (nk_console_is_active_widget(tree)) {
         nk_console* top = nk_console_get_top(tree);
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (!top_data->input_processed) {
+        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT) && !nk_console_tree_expanded(tree)) {
                 nk_console_tree_apply_expanded(tree, nk_true);
                 nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
-                top_data->input_processed = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && nk_console_tree_expanded(tree)) {
                 nk_console_tree_apply_expanded(tree, nk_false);
                 nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
-                top_data->input_processed = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
         }
     }
@@ -187,7 +188,7 @@ NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_boo
     }
     widget->type = NK_CONSOLE_TREE;
     widget->data = (void*)data;
-    widget->selectable = nk_true;
+    widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     widget->columns = 1;
     widget->render = nk_console_tree_render;
     data->button.symbol = expanded ? NK_SYMBOL_TRIANGLE_DOWN : NK_SYMBOL_TRIANGLE_RIGHT;

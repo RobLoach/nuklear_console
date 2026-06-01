@@ -94,13 +94,13 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
-    if (console->disabled) {
+    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_begin(console->ctx);
     }
 
     // Check the button state.
     nk_bool selected = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top_data->input_processed && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
+    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) && nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
         selected = nk_true;
     }
 
@@ -164,7 +164,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Act on the button
     if (selected) {
-        top_data->input_processed = nk_true;
+        top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
 
         // Trigger the click event. If no event was invoked, switch the parent.
         if (nk_console_trigger_event(console, NK_CONSOLE_EVENT_CLICKED) == nk_false) {
@@ -174,7 +174,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
         }
     }
 
-    if (console->disabled) {
+    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_end(console->ctx);
     }
 
@@ -198,7 +198,7 @@ NK_API nk_console* nk_console_button(nk_console* parent, const char* text) {
     nk_console* button = nk_console_label(parent, text);
     button->type = NK_CONSOLE_BUTTON;
     button->data = (void*)data;
-    button->selectable = nk_true;
+    button->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     button->columns = 1;
     button->render = nk_console_button_render;
     return button;

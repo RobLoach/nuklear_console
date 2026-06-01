@@ -127,17 +127,17 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
     nk_bool selected = nk_console_radio_is_selected(widget);
 
     // Allow changing the radio value.
-    if (active && !selected && !top_data->input_processed) {
+    if (active && !selected && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             *data->selected = index;
             selected = nk_true;
-            top_data->input_processed = nk_true;
+            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
         }
     }
 
     // Release the disabled state if needed.
-    if (widget->disabled) {
+    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -191,14 +191,14 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
     if (radio_active == nk_true && radio_active != selected) {
         *data->selected = index;
         nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
-        top_data->input_processed = nk_true;
+        top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     }
 
     // Restore styles
     widget->ctx->style.option.normal = style;
 
     // Release the disabled state if needed.
-    if (widget->disabled) {
+    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_end(widget->ctx);
     }
 
@@ -230,7 +230,7 @@ NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* 
 
     nk_console* widget = nk_console_label(parent, label);
     widget->type = NK_CONSOLE_RADIO;
-    widget->selectable = nk_true;
+    widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     widget->columns = 1;
     widget->data = data;
     widget->render = nk_console_radio_render;

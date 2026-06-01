@@ -42,10 +42,10 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)nk_console_get_top(widget)->data;
 
     // Process checking the up/down switching in widgets before processing showing the widget itself
-    if (nk_console_is_active_widget(widget) && top_data->input_processed == nk_false) {
+    if (nk_console_is_active_widget(widget) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Allow using ENTER to go back
         if (nk_console_button_pushed(widget, NK_GAMEPAD_BUTTON_A)) {
-            top_data->input_processed = nk_true;
+            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             nk_console_textedit_button_back_click(widget, NULL);
             return nk_rect(0, 0, 0, 0);
         }
@@ -58,7 +58,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         nk_console_check_tooltip(textedit);
     }
 
-    if (widget->disabled) {
+    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_begin(widget->ctx);
     }
 
@@ -108,7 +108,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         }
     }
 
-    if (widget->disabled) {
+    if ((widget->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_end(widget->ctx);
     }
 
@@ -121,7 +121,7 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
     textedit_text->parent = parent;
     textedit_text->alignment = NK_TEXT_LEFT;
     textedit_text->columns = 1;
-    textedit_text->selectable = nk_true;
+    textedit_text->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     textedit_text->render = nk_console_textedit_text_render;
     return textedit_text;
 }

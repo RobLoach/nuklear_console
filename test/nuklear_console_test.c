@@ -393,18 +393,18 @@ int main() {
     // nk_console_selectable()
     {
         nk_console* widget = nk_console_label(console, "Selectable");
-        widget->selectable = nk_false;
-        widget->disabled = nk_false;
+        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
+        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED;
         assert(nk_console_selectable(widget) == nk_false);
-        widget->selectable = nk_true;
+        widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
         assert(nk_console_selectable(widget) == nk_true);
-        widget->disabled = nk_true;
+        widget->flags |= NK_CONSOLE_FLAG_DISABLED;
         assert(nk_console_selectable(widget) == nk_false);
-        widget->selectable = nk_true;
-        widget->disabled = nk_false;
-        widget->visible = nk_true;
+        widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
+        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED;
+        widget->flags |= NK_CONSOLE_FLAG_VISIBLE;
         assert(nk_console_selectable(widget) == nk_true);
-        widget->visible = nk_false;
+        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
         assert(nk_console_selectable(widget) == nk_false);
     }
 

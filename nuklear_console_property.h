@@ -75,9 +75,9 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
 
     // Allow changing the value with left/right
-    if (!console->disabled && nk_console_is_active_widget(console)) {
+    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (!top_data->input_processed) {
+        if (!(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
                 switch (console->type) {
                     case NK_CONSOLE_SLIDER_INT:
@@ -101,7 +101,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         break;
                 }
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
-                top_data->input_processed = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
             else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
                 switch (console->type) {
@@ -126,7 +126,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         break;
                 }
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
-                top_data->input_processed = nk_true;
+                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
         }
     }
@@ -165,7 +165,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
-    if (console->disabled) {
+    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_begin(console->ctx);
     }
 
@@ -235,7 +235,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
         console->ctx->style.knob.border_color = border_color;
     }
 
-    if (console->disabled) {
+    if ((console->flags & NK_CONSOLE_FLAG_DISABLED)) {
         nk_widget_disable_end(console->ctx);
     }
 
@@ -261,7 +261,7 @@ NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label
     nk_console* widget = nk_console_label(parent, label);
     widget->render = &nk_console_property_render;
     widget->type = NK_CONSOLE_PROPERTY_INT;
-    widget->selectable = nk_true;
+    widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     widget->data = (void*)data;
     widget->columns = label != NULL ? 2 : 1;
 

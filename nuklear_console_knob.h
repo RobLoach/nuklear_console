@@ -56,7 +56,7 @@ NK_API nk_console* nk_console_knob_int(nk_console* parent, const char* label, in
     nk_console* widget = nk_console_label(parent, label);
     widget->render = &nk_console_property_render;
     widget->type = NK_CONSOLE_KNOB_INT;
-    widget->selectable = nk_true;
+    widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     widget->data = (void*)data;
     widget->columns = label != NULL ? 2 : 1;
 

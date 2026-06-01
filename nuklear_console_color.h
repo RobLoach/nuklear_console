@@ -121,7 +121,7 @@ NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struc
     widget->type = NK_CONSOLE_COLOR;
     widget->columns = label == NULL ? 1 : 2;
     widget->render = nk_console_color_render;
-    widget->selectable = nk_true;
+    widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     widget->data = data;
     nk_console_button_set_symbol(widget, NK_SYMBOL_RECT_SOLID);
 

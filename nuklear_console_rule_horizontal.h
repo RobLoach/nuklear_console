@@ -64,8 +64,8 @@ NK_API nk_console* nk_console_rule_horizontal(nk_console* parent, struct nk_colo
     rule->alignment = NK_TEXT_CENTERED;
     rule->data = (void*)data;
     rule->render = nk_console_rule_horizontal_render;
-    rule->disabled = nk_true;
-    rule->selectable = nk_false;
+    rule->flags |= NK_CONSOLE_FLAG_DISABLED;
+    rule->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
     return rule;
 }
 

@@ -43,14 +43,14 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
     // Allow changing the checkbox value.
     nk_bool active = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console) && !top_data->input_processed) {
+    if (!(console->flags & NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console) && !(top_data->state & NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             if (data->value_bool != NULL) {
                 *data->value_bool = !*data->value_bool;
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
             }
             active = nk_true;
-            top_data->input_processed = nk_true;
+            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             if (data->value_bool != NULL) {
@@ -58,7 +58,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
             }
             active = nk_true;
-            top_data->input_processed = nk_true;
+            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             if (data->value_bool != NULL) {
@@ -66,7 +66,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
             }
             active = nk_true;
-            top_data->input_processed = nk_true;
+            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
     }
 
@@ -81,7 +81,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         }
     }
 
-    if (console->disabled || !nk_console_is_active_widget(console)) {
+    if ((console->flags & NK_CONSOLE_FLAG_DISABLED) || !nk_console_is_active_widget(console)) {
         nk_widget_disable_begin(console->ctx);
     }
 
@@ -99,7 +99,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
         nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
     }
 
-    if (console->disabled || !nk_console_is_active_widget(console)) {
+    if ((console->flags & NK_CONSOLE_FLAG_DISABLED) || !nk_console_is_active_widget(console)) {
         nk_widget_disable_end(console->ctx);
     }
 
@@ -124,7 +124,7 @@ NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_
     checkbox->render = nk_console_checkbox_render;
     data->value_bool = active;
     checkbox->type = NK_CONSOLE_CHECKBOX;
-    checkbox->selectable = nk_true;
+    checkbox->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     checkbox->columns = 1;
     checkbox->data = (void*)data;
     return checkbox;

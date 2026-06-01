@@ -856,7 +856,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
         if (cvector_empty(data->entries)) {
             nk_console* empty_label = nk_console_label(widget, "[Empty Directory]");
             empty_label->alignment = NK_TEXT_CENTERED;
-            empty_label->disabled = nk_true;
+            empty_label->flags |= NK_CONSOLE_FLAG_DISABLED;
         }
         else {
             for (size_t i = 0; i < cvector_size(data->entries); i++) {
@@ -882,7 +882,7 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 
     // Go back to the parent widget, and disable the widget.
     if (widget->parent != NULL) {
-        widget->disabled = nk_true;
+        widget->flags |= NK_CONSOLE_FLAG_DISABLED;
         nk_console_set_active_parent(widget->parent);
     }
 #endif
@@ -1136,7 +1136,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->type = NK_CONSOLE_FILE;
     widget->columns = label == NULL ? 1 : 2;
     widget->render = nk_console_file_render;
-    widget->selectable = nk_true;
+    widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
     widget->data = data;
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_event_clicked);
