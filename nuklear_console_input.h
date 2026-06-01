@@ -260,7 +260,7 @@ static nk_uint nk_console_input_active_source(const nk_console_input_data* data)
         return 0;
     if (data->out_key != NULL && *data->out_key != NK_CONSOLE_KEY_NONE)
         return NK_CONSOLE_INPUT_FLAG_KEY;
-    if (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX)
+    if (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX && *data->out_mouse_button != NK_BUTTON_DOUBLE)
         return NK_CONSOLE_INPUT_FLAG_MOUSE;
     if (data->out_gamepad_button != NULL && *data->out_gamepad_button != NK_GAMEPAD_BUTTON_INVALID)
         return NK_CONSOLE_INPUT_FLAG_GAMEPAD;
@@ -483,6 +483,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         // Mouse button released.
         if (!finished && data->out_mouse_button != NULL) {
             for (int mi = NK_BUTTON_LEFT; mi < NK_BUTTON_MAX; mi++) {
+                if (mi == NK_BUTTON_DOUBLE) continue;
                 if (nk_input_is_mouse_released(&console->ctx->input, (enum nk_buttons)mi)) {
                     *data->out_mouse_button = (enum nk_buttons)mi;
                     if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
@@ -595,7 +596,7 @@ NK_API nk_bool nk_console_input_is_key(nk_console* widget) {
 NK_API nk_bool nk_console_input_is_mouse(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
     nk_console_input_data* data = (nk_console_input_data*)widget->data;
-    return (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX) ? nk_true : nk_false;
+    return (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX && *data->out_mouse_button != NK_BUTTON_DOUBLE) ? nk_true : nk_false;
 }
 
 NK_API enum nk_gamepad_button nk_console_input_get_gamepad(nk_console* widget) {
