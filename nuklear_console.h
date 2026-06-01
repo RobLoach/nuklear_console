@@ -107,7 +107,9 @@ typedef enum {
 
 #define NK_FLAG_ENABLED(flags, flag)  ((flags) & (flag))
 #define NK_FLAG_DISABLED(flags, flag) (!((flags) & (flag)))
-#define NK_FLAG_TOGGLE(flags, flag)   ((flags) ^= (flag))
+#define NK_FLAG_SET(flags, flag)      ((flags) |= (nk_uint)(flag))
+#define NK_FLAG_CLEAR(flags, flag)    ((flags) &= ~(nk_uint)(flag))
+#define NK_FLAG_TOGGLE(flags, flag)   ((flags) ^= (nk_uint)(flag))
 
 typedef struct nk_console {
     nk_console_widget_type type;
