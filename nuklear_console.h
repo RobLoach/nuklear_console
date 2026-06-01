@@ -86,6 +86,19 @@ typedef struct nk_console_message {
     float scroll_x;
 } nk_console_message;
 
+/**
+ * Indicates which screen edge a message slides in from.
+ *
+ * @see nk_console_set_message_position()
+ * @see nk_console_get_message_position()
+ */
+typedef enum {
+    NK_CONSOLE_MESSAGE_POSITION_BOTTOM = 0, /** Slide in from the bottom of the screen (default). */
+    NK_CONSOLE_MESSAGE_POSITION_TOP, /** Slide in from the top edge. */
+    NK_CONSOLE_MESSAGE_POSITION_LEFT, /** Slide in from the left edge. */
+    NK_CONSOLE_MESSAGE_POSITION_RIGHT, /** Slide in from the right edge. */
+} nk_console_message_position;
+
 typedef struct nk_console {
     nk_console_widget_type type;
     const char* label;
@@ -125,6 +138,14 @@ typedef struct nk_console_top_data {
      * When set, will determine where messages should appear on the screen.
      */
     struct nk_rect message_bounds;
+
+    /**
+     * Which screen edge messages slide in from.
+     *
+     * @see nk_console_set_message_position()
+     * @see nk_console_get_message_position()
+     */
+    nk_console_message_position message_position;
 
     /**
      * The gamepad system to use for gamepad input.

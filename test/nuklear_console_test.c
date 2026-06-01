@@ -370,6 +370,17 @@ int main() {
         nk_console_show_message(console, "This is an info message");
     }
 
+    // nk_console_set_message_position() / nk_console_get_message_position()
+    {
+        assert(nk_console_get_message_position(console) == NK_CONSOLE_MESSAGE_POSITION_BOTTOM);
+        nk_console_set_message_position(console, NK_CONSOLE_MESSAGE_POSITION_TOP);
+        assert(nk_console_get_message_position(console) == NK_CONSOLE_MESSAGE_POSITION_TOP);
+        nk_console_set_message_position(console, NK_CONSOLE_MESSAGE_POSITION_LEFT);
+        assert(nk_console_get_message_position(console) == NK_CONSOLE_MESSAGE_POSITION_LEFT);
+        nk_console_set_message_position(console, NK_CONSOLE_MESSAGE_POSITION_BOTTOM);
+        assert(nk_console_get_message_position(console) == NK_CONSOLE_MESSAGE_POSITION_BOTTOM);
+    }
+
     // nk_console_row()
     {
         nk_console* row = nk_console_row_begin(console);
