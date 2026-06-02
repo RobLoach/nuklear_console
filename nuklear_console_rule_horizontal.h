@@ -65,7 +65,7 @@ NK_API nk_console* nk_console_rule_horizontal(nk_console* parent, struct nk_colo
     rule->data = (void*)data;
     rule->render = nk_console_rule_horizontal_render;
     rule->flags |= NK_CONSOLE_FLAG_DISABLED;
-    rule->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
+    rule->flags &= ~(nk_flags)NK_CONSOLE_FLAG_SELECTABLE;
     return rule;
 }
 

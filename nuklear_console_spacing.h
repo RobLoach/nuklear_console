@@ -42,7 +42,7 @@ NK_API nk_console* nk_console_spacing(nk_console* parent, int cols) {
     spacing->columns = cols;
     spacing->render = nk_console_spacing_render;
     spacing->flags |= NK_CONSOLE_FLAG_DISABLED;
-    spacing->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
+    spacing->flags &= ~(nk_flags)NK_CONSOLE_FLAG_SELECTABLE;
     return spacing;
 }
 

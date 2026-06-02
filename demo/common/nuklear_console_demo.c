@@ -127,13 +127,13 @@ void theme_changed(struct nk_console* combobox, void* user_data) {
 void exclude_other_checkbox(struct nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
     nk_console* other = (nk_console*)user_data;
-    NK_FLAG_TOGGLE(other->flags, NK_CONSOLE_FLAG_DISABLED);
+    nk_console_set_disabled(other, !nk_console_get_disabled(other));
 }
 
 void toggle_visibility(struct nk_console* unused, void* user_data) {
     NK_UNUSED(unused);
     struct nk_console* other = (nk_console*)user_data;
-    NK_FLAG_TOGGLE(other->flags, NK_CONSOLE_FLAG_VISIBLE);
+    nk_console_set_visible(other, !nk_console_get_visible(other));
 }
 
 void nk_console_password_back(struct nk_console* widget, void* user_data) {
@@ -222,13 +222,13 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         {
             nk_console_label(label_button, "Simple label.");
             struct nk_console* label1 = nk_console_label(label_button, "Selectable label #1");
-            label1->flags |= NK_CONSOLE_FLAG_SELECTABLE;
+            nk_console_set_selectable(label1, nk_true);
             nk_console_add_event(label1, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message);
 
-            NK_FLAG_SET(nk_console_label(label_button, "Selectable label #2.")->flags, NK_CONSOLE_FLAG_SELECTABLE);
+            nk_console_set_selectable(nk_console_label(label_button, "Selectable label #2."), nk_true);
             nk_console_label(label_button, "This is a label that will wrap across multiple lines.")
                 ->height = 128;
-            NK_FLAG_SET(nk_console_label(label_button, "This is a disabled label")->flags, NK_CONSOLE_FLAG_DISABLED);
+            nk_console_set_disabled(nk_console_label(label_button, "This is a disabled label"), nk_true);
             nk_console_label(label_button, "Center Aligned Label!")
                 ->alignment = NK_TEXT_CENTERED;
             nk_console_label(label_button, "Right Aligned Label!")
@@ -242,7 +242,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
                 ->tooltip = "This is a checkbox!";
             nk_console_checkbox(checkbox_button, "Right aligned", &checkbox3)
                 ->alignment = NK_TEXT_RIGHT;
-            NK_FLAG_SET(nk_console_checkbox(checkbox_button, "Disabled Checkbox", &checkbox2)->flags, NK_CONSOLE_FLAG_DISABLED);
+            nk_console_set_disabled(nk_console_checkbox(checkbox_button, "Disabled Checkbox", &checkbox2), nk_true);
 
             // Onchange callbacks can be used to implement custom logic.
             // These two checkboxes disable each other when checked.
@@ -263,7 +263,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         {
             nk_console_button(buttons, "Button");
             nk_console_button(buttons, "Button #2");
-            NK_FLAG_SET(nk_console_button(buttons, "Disabled Button")->flags, NK_CONSOLE_FLAG_DISABLED);
+            nk_console_set_disabled(nk_console_button(buttons, "Disabled Button"), nk_true);
 
             // Image Button
             struct nk_console* image_button = nk_console_button(buttons, "Image");
@@ -289,8 +289,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_radio(radios, "Center Aligned #2", &radio_option2)->alignment = NK_TEXT_CENTERED;
             nk_console_radio(radios, "Right Aligned #1", &radio_option2)->alignment = NK_TEXT_RIGHT;
             nk_console_radio(radios, "Right Aligned #2", &radio_option2)->alignment = NK_TEXT_RIGHT;
-            NK_FLAG_SET(nk_console_radio(radios, "Disabled", &radio_option2)->flags, NK_CONSOLE_FLAG_DISABLED);
-            NK_FLAG_CLEAR(nk_console_radio(radios, "Invisible", &radio_option2)->flags, NK_CONSOLE_FLAG_VISIBLE);
+            nk_console_set_disabled(nk_console_radio(radios, "Disabled", &radio_option2), nk_true);
+            nk_console_set_visible(nk_console_radio(radios, "Invisible", &radio_option2), nk_false);
 
             nk_console_button_onclick(radios, "Back", &nk_console_button_back);
         }
@@ -397,7 +397,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         struct nk_console* progressbar = nk_console_button(widgets, "Progress Bar");
         {
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
-            NK_FLAG_SET(nk_console_progress(progressbar, "Progress (Disabled)", &progressValue, 100)->flags, NK_CONSOLE_FLAG_DISABLED);
+            nk_console_set_disabled(nk_console_progress(progressbar, "Progress (Disabled)", &progressValue, 100), nk_true);
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
@@ -446,7 +446,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         {
             nk_console_slider_float(sliders, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f)->tooltip = "Slider float is cool! It's what you want to use.";
             nk_console_slider_int(sliders, "Slider Int", 0, &slider_int_test, 20, 1);
-            NK_FLAG_SET(nk_console_slider_int(sliders, "Slider Disabled", 0, &slider_int_test, 20, 1)->flags, NK_CONSOLE_FLAG_DISABLED);
+            nk_console_set_disabled(nk_console_slider_int(sliders, "Slider Disabled", 0, &slider_int_test, 20, 1), nk_true);
             nk_console_button_onclick(sliders, "Back", &nk_console_button_back);
         }
 
@@ -588,14 +588,14 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         nk_console_button_onclick(open_path, "Back", &nk_console_button_back);
     }
 
-    NK_FLAG_SET(nk_console_button(console, "Save Game")->flags, NK_CONSOLE_FLAG_DISABLED);
+    nk_console_set_disabled(nk_console_button(console, "Save Game"), nk_true);
 
     struct nk_console* quit_button = nk_console_button_onclick(console, "Quit Game", &button_clicked);
     nk_console_add_event(quit_button, NK_CONSOLE_EVENT_FOCUS, &nk_console_quit_button_focused);
 
     // Don't display the quit button on Emscripten.
     #ifdef PLATFORM_WEB
-    quit_button->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
+    nk_console_set_visible(quit_button, nk_false);
     #endif
 
     return console;

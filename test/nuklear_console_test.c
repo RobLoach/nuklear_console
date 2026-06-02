@@ -393,19 +393,53 @@ int main() {
     // nk_console_selectable()
     {
         nk_console* widget = nk_console_label(console, "Selectable");
-        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
-        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED;
+        widget->flags &= ~(nk_flags)NK_CONSOLE_FLAG_SELECTABLE;
+        widget->flags &= ~(nk_flags)NK_CONSOLE_FLAG_DISABLED;
         assert(nk_console_selectable(widget) == nk_false);
         widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
         assert(nk_console_selectable(widget) == nk_true);
         widget->flags |= NK_CONSOLE_FLAG_DISABLED;
         assert(nk_console_selectable(widget) == nk_false);
         widget->flags |= NK_CONSOLE_FLAG_SELECTABLE;
-        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED;
+        widget->flags &= ~(nk_flags)NK_CONSOLE_FLAG_DISABLED;
         widget->flags |= NK_CONSOLE_FLAG_VISIBLE;
         assert(nk_console_selectable(widget) == nk_true);
-        widget->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
+        widget->flags &= ~(nk_flags)NK_CONSOLE_FLAG_VISIBLE;
         assert(nk_console_selectable(widget) == nk_false);
+    }
+
+    // nk_console_set_selectable/disabled/visible() + getters
+    {
+        nk_console* widget = nk_console_label(console, "Flag Accessors");
+
+        nk_console_set_selectable(widget, nk_true);
+        assert(nk_console_get_selectable(widget) == nk_true);
+        nk_console_set_selectable(widget, nk_false);
+        assert(nk_console_get_selectable(widget) == nk_false);
+
+        nk_console_set_disabled(widget, nk_true);
+        assert(nk_console_get_disabled(widget) == nk_true);
+        nk_console_set_disabled(widget, nk_false);
+        assert(nk_console_get_disabled(widget) == nk_false);
+
+        nk_console_set_visible(widget, nk_true);
+        assert(nk_console_get_visible(widget) == nk_true);
+        nk_console_set_visible(widget, nk_false);
+        assert(nk_console_get_visible(widget) == nk_false);
+
+        // The setters compose with the focusable check in nk_console_selectable().
+        nk_console_set_selectable(widget, nk_true);
+        nk_console_set_visible(widget, nk_true);
+        nk_console_set_disabled(widget, nk_false);
+        assert(nk_console_selectable(widget) == nk_true);
+        nk_console_set_disabled(widget, nk_true);
+        assert(nk_console_selectable(widget) == nk_false);
+
+        // NULL safety.
+        nk_console_set_selectable(NULL, nk_true);
+        assert(nk_console_get_selectable(NULL) == nk_false);
+        assert(nk_console_get_disabled(NULL) == nk_false);
+        assert(nk_console_get_visible(NULL) == nk_false);
     }
 
     // nk_console_knob_int/float()

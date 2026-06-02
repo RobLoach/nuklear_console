@@ -116,7 +116,7 @@ NK_API nk_console* nk_console_row_begin(nk_console* parent) {
     row->type = NK_CONSOLE_ROW;
     row->render = nk_console_row_render;
     row->columns = 0;
-    row->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
+    row->flags &= ~(nk_flags)NK_CONSOLE_FLAG_SELECTABLE;
     return row;
 }
 
@@ -129,7 +129,7 @@ NK_API void nk_console_row_end(nk_console* row) {
 
     // Set up the row data based on the available children.
     row->columns = 0;
-    row->flags &= ~(nk_uint)NK_CONSOLE_FLAG_SELECTABLE;
+    row->flags &= ~(nk_flags)NK_CONSOLE_FLAG_SELECTABLE;
     row->height = 0;
     int numChildren = (int)cvector_size(row->children);
     for (int i = 0; i < numChildren; ++i) {
@@ -269,7 +269,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
                 nk_bool child_disabled = NK_FLAG_ENABLED(child->flags, NK_CONSOLE_FLAG_DISABLED);
                 child->flags |= NK_CONSOLE_FLAG_DISABLED;
                 child->render(child);
-                if (!child_disabled) child->flags &= ~(nk_uint)NK_CONSOLE_FLAG_DISABLED;
+                if (!child_disabled) child->flags &= ~(nk_flags)NK_CONSOLE_FLAG_DISABLED;
             }
             else {
                 child->render(child);

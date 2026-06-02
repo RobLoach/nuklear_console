@@ -75,7 +75,7 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     for (size_t i = 0; i < cvector_size(referenced_children); i++) {
         if (referenced_children[i] != NULL) {
             if (expanded) referenced_children[i]->flags |= NK_CONSOLE_FLAG_VISIBLE;
-            else referenced_children[i]->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
+            else referenced_children[i]->flags &= ~(nk_flags)NK_CONSOLE_FLAG_VISIBLE;
         }
     }
 

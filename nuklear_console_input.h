@@ -255,7 +255,7 @@ static nk_bool nk_gamepad_any_button_released(struct nk_gamepads* g, int n, int*
  * @return An nk_console_input_flags bit, or 0 when no active value is set.
  * @see enum nk_console_input_flags
  */
-static nk_uint nk_console_input_active_source(const nk_console_input_data* data) {
+static nk_flags nk_console_input_active_source(const nk_console_input_data* data) {
     if (data == NULL)
         return 0;
     if (data->out_key != NULL && *data->out_key != NK_CONSOLE_KEY_NONE)
@@ -300,7 +300,7 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     // Determine the display label based on the active output mode. Reset the
     // symbol each frame so a leftover gamepad glyph clears when rebound.
     const char* display_label = "<None>";
-    nk_uint active = nk_console_input_active_source(data);
+    nk_flags active = nk_console_input_active_source(data);
     nk_console_button_set_symbol(console, NK_SYMBOL_NONE);
     if (active == NK_CONSOLE_INPUT_FLAG_KEY) {
         display_label = nk_console_input_key_name(*data->out_key);
@@ -398,7 +398,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
     // Handle the timeout: apply the default for whichever source is active.
     if (data->timer >= NK_CONSOLE_INPUT_TIMER) {
-        nk_uint source = nk_console_input_active_source(data);
+        nk_flags source = nk_console_input_active_source(data);
         if (source == NK_CONSOLE_INPUT_FLAG_GAMEPAD) {
             *data->out_gamepad_button = data->default_gamepad_button;
             if (data->out_key != NULL) *data->out_key = NK_CONSOLE_KEY_NONE;
@@ -423,7 +423,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
 
     // Blinking prompt label listing each accepted input source.
     if (((int)(data->timer * 2)) % 2 == 0) {
-        nk_uint source_flags = 0;
+        nk_flags source_flags = 0;
         const char* prompt;
         if (data->out_gamepad_button != NULL) source_flags |= NK_CONSOLE_INPUT_FLAG_GAMEPAD;
         if (data->out_key != NULL)            source_flags |= NK_CONSOLE_INPUT_FLAG_KEY;

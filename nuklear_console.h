@@ -107,9 +107,9 @@ typedef enum {
 
 #define NK_FLAG_ENABLED(flags, flag)  ((flags) & (flag))
 #define NK_FLAG_DISABLED(flags, flag) (!((flags) & (flag)))
-#define NK_FLAG_SET(flags, flag)      ((flags) |= (nk_uint)(flag))
-#define NK_FLAG_CLEAR(flags, flag)    ((flags) &= ~(nk_uint)(flag))
-#define NK_FLAG_TOGGLE(flags, flag)   ((flags) ^= (nk_uint)(flag))
+#define NK_FLAG_SET(flags, flag)      ((flags) |= (nk_flags)(flag))
+#define NK_FLAG_CLEAR(flags, flag)    ((flags) &= ~(nk_flags)(flag))
+#define NK_FLAG_TOGGLE(flags, flag)   ((flags) ^= (nk_flags)(flag))
 
 typedef struct nk_console {
     nk_console_widget_type type;
@@ -117,7 +117,7 @@ typedef struct nk_console {
     int label_length;
     nk_flags alignment;
 
-    nk_uint flags; /** NK_CONSOLE_FLAG_SELECTABLE | NK_CONSOLE_FLAG_DISABLED | NK_CONSOLE_FLAG_VISIBLE */
+    nk_flags flags; /** NK_CONSOLE_FLAG_SELECTABLE | NK_CONSOLE_FLAG_DISABLED | NK_CONSOLE_FLAG_VISIBLE */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
     int height; /** When set, will determine the height of the row. */
     const char* tooltip; /** Tooltip */
@@ -146,7 +146,7 @@ typedef enum {
 
 typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
-    nk_uint state; /** NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED | NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED | NK_CONSOLE_TOP_FLAG_AXIS_*_FIRED | NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_* */
+    nk_flags state; /** NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED | NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED | NK_CONSOLE_TOP_FLAG_AXIS_*_FIRED | NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_* */
     nk_console* scroll_to_widget; /** When set by nk_console_navigate_back, the render loop scrolls the window to this widget's bounds. */
 
     /**
@@ -222,7 +222,7 @@ NK_API void nk_console_free(nk_console* console);
 /** Render the console inside the current Nuklear window. */
 NK_API void nk_console_render(nk_console* console);
 /** Render the console inside a new Nuklear window. @return The bounding rect of the rendered window. */
-NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
+NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_flags flags);
 
 /** @defgroup utilities Widget utilities */
 /** Return the top-level console that owns @p widget. */
@@ -277,6 +277,18 @@ NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
 /** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
+/** Set the SELECTABLE flag on @p widget, controlling whether it can receive focus. */
+NK_API void nk_console_set_selectable(nk_console* widget, nk_bool selectable);
+/** Return nk_true if the SELECTABLE flag is set on @p widget (raw flag; see nk_console_selectable()). */
+NK_API nk_bool nk_console_get_selectable(nk_console* widget);
+/** Set the DISABLED flag on @p widget, greying it out and blocking interaction. */
+NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled);
+/** Return nk_true if the DISABLED flag is set on @p widget. */
+NK_API nk_bool nk_console_get_disabled(nk_console* widget);
+/** Set the VISIBLE flag on @p widget, controlling whether it is displayed. */
+NK_API void nk_console_set_visible(nk_console* widget, nk_bool visible);
+/** Return nk_true if the VISIBLE flag is set on @p widget. */
+NK_API nk_bool nk_console_get_visible(nk_console* widget);
 
 /** Fire all handlers registered for @p type on @p widget. @return nk_true if any handler ran. */
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type);
@@ -923,6 +935,97 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
     return NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) && NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_VISIBLE) && NK_FLAG_DISABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED);
 }
 
+/**
+ * Sets whether or not the given widget can be selected (the SELECTABLE flag).
+ *
+ * @see nk_console_get_selectable()
+ */
+NK_API void nk_console_set_selectable(nk_console* widget, nk_bool selectable) {
+    if (widget == NULL) {
+        return;
+    }
+    if (selectable) {
+        NK_FLAG_SET(widget->flags, NK_CONSOLE_FLAG_SELECTABLE);
+    }
+    else {
+        NK_FLAG_CLEAR(widget->flags, NK_CONSOLE_FLAG_SELECTABLE);
+    }
+}
+
+/**
+ * Gets whether or not the SELECTABLE flag is set on the given widget.
+ *
+ * This reports the raw flag state. To know whether the widget can actually be
+ * focused right now (selectable, visible, and not disabled), use
+ * nk_console_selectable().
+ *
+ * @see nk_console_selectable()
+ */
+NK_API nk_bool nk_console_get_selectable(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_false;
+    }
+    return NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_SELECTABLE) != 0;
+}
+
+/**
+ * Sets whether or not the given widget is disabled (the DISABLED flag).
+ *
+ * @see nk_console_get_disabled()
+ */
+NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled) {
+    if (widget == NULL) {
+        return;
+    }
+    if (disabled) {
+        NK_FLAG_SET(widget->flags, NK_CONSOLE_FLAG_DISABLED);
+    }
+    else {
+        NK_FLAG_CLEAR(widget->flags, NK_CONSOLE_FLAG_DISABLED);
+    }
+}
+
+/**
+ * Gets whether or not the DISABLED flag is set on the given widget.
+ *
+ * @see nk_console_set_disabled()
+ */
+NK_API nk_bool nk_console_get_disabled(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_false;
+    }
+    return NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED) != 0;
+}
+
+/**
+ * Sets whether or not the given widget is visible (the VISIBLE flag).
+ *
+ * @see nk_console_get_visible()
+ */
+NK_API void nk_console_set_visible(nk_console* widget, nk_bool visible) {
+    if (widget == NULL) {
+        return;
+    }
+    if (visible) {
+        NK_FLAG_SET(widget->flags, NK_CONSOLE_FLAG_VISIBLE);
+    }
+    else {
+        NK_FLAG_CLEAR(widget->flags, NK_CONSOLE_FLAG_VISIBLE);
+    }
+}
+
+/**
+ * Gets whether or not the VISIBLE flag is set on the given widget.
+ *
+ * @see nk_console_set_visible()
+ */
+NK_API nk_bool nk_console_get_visible(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_false;
+    }
+    return NK_FLAG_ENABLED(widget->flags, NK_CONSOLE_FLAG_VISIBLE) != 0;
+}
+
 #ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
 #define NK_CONSOLE_TOOLTIP_SCROLL_SPEED NK_CONSOLE_MARQUEE_SCROLL_SPEED
 #endif
@@ -1014,7 +1117,7 @@ static nk_bool nk_console_axis_tick(struct nk_console_axis_channel* ch, float st
  */
 static void nk_console_axis_update(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    data->state &= ~(nk_uint)(NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED);
+    data->state &= ~(nk_flags)(NK_CONSOLE_TOP_FLAG_AXIS_UP_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_DOWN_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_LEFT_FIRED | NK_CONSOLE_TOP_FLAG_AXIS_RIGHT_FIRED);
     if (data->gamepads == NULL || console->ctx->delta_time_seconds <= 0) {
         return;
     }
@@ -1067,11 +1170,11 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
     if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
         struct nk_rect content = nk_window_get_content_region(console->ctx);
         if (nk_input_is_mouse_hovering_rect(in, content)) top_data->state |= NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
-        else top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
+        else top_data->state &= ~(nk_flags)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
         if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED) {
             top_data->drag_scroll_origin = in->mouse.pos;
             nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
-            top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
+            top_data->state &= ~(nk_flags)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
         }
     }
     if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
@@ -1091,8 +1194,8 @@ static void nk_console_window_touch_drag(nk_console* console, nk_console_top_dat
         }
     }
     else {
-        top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
-        top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
+        top_data->state &= ~(nk_flags)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_ACTIVE;
+        top_data->state &= ~(nk_flags)NK_CONSOLE_TOP_FLAG_DRAG_SCROLL_INITIATED;
     }
 }
 
@@ -1160,7 +1263,7 @@ static void nk_console_update_drag_scroll(nk_console* console, nk_console_top_da
  */
 static void nk_console_render_top(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
-    data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+    data->state &= ~(nk_flags)NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     nk_console_axis_update(console);
     nk_console_window_touch_drag(console, data);
     nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
@@ -1273,7 +1376,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
  *
  * @return The resulting size of the window.
  */
-NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags) {
+NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_flags flags) {
     nk_console_top_data* top_data;
     struct nk_rect window_bounds;
     if (console == NULL) {
@@ -1288,10 +1391,10 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
     top_data = (nk_console_top_data*)console->data;
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
         if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED) {
-            flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+            flags |= (nk_flags)NK_WINDOW_NO_SCROLLBAR;
         }
         else {
-            flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+            flags &= ~(nk_flags)NK_WINDOW_NO_SCROLLBAR;
         }
     }
 
@@ -1304,12 +1407,12 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
     if ((flags & NK_WINDOW_SCROLL_AUTO_HIDE) != 0) {
         if ((console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y) <= console->ctx->current->layout->bounds.h)
             top_data->state |= NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
-        else top_data->state &= ~(nk_uint)NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
+        else top_data->state &= ~(nk_flags)NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
         if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED) {
-            console->ctx->current->layout->flags |= (nk_uint)NK_WINDOW_NO_SCROLLBAR;
+            console->ctx->current->layout->flags |= (nk_flags)NK_WINDOW_NO_SCROLLBAR;
         }
         else {
-            console->ctx->current->layout->flags &= ~(nk_uint)NK_WINDOW_NO_SCROLLBAR;
+            console->ctx->current->layout->flags &= ~(nk_flags)NK_WINDOW_NO_SCROLLBAR;
         }
     }
 
@@ -1659,7 +1762,7 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
 
         // Set the visibility of the child based on whether the tree is expanded.
         if (nk_console_tree_expanded(parent)) child->flags |= NK_CONSOLE_FLAG_VISIBLE;
-        else child->flags &= ~(nk_uint)NK_CONSOLE_FLAG_VISIBLE;
+        else child->flags &= ~(nk_flags)NK_CONSOLE_FLAG_VISIBLE;
 
         // Insert position: immediately after the tree and any previously owned children.
         int widget_index = nk_console_get_widget_index(parent);
