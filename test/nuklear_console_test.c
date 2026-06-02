@@ -372,6 +372,30 @@ int main() {
             assert(nk_console_active_parent(nav) == nav);
         }
 
+        // Navigate back from a button *inside* a row that has its own children:
+        // opening the button then pressing Back must land on the row's parent
+        // page (not the row itself, which can't be an active parent) (#227).
+        {
+            nk_console* page = nk_console_button(nav, "Row Page");
+            nk_console* row = nk_console_row_begin(page);
+            nk_console* tools = nk_console_button(row, "Tools");
+            nk_console_button(tools, "Hammer"); // gives tools children, making it a sub-page
+            nk_console_row_end(row);
+            assert(tools->parent == row);
+
+            // Open the tools sub-page.
+            nk_console_set_active_parent(tools);
+            assert(nk_console_active_parent(nav) == tools);
+
+            // Press Back from inside tools: navigate_back(back_button->parent) == navigate_back(tools).
+            nk_console_navigate_back(tools);
+
+            // The row is skipped: the active parent is the row's parent page, and
+            // focus lands on the row (so its active child stays highlighted).
+            assert(nk_console_active_parent(nav) == page);
+            assert(nk_console_get_active_widget(row) == row);
+        }
+
         nk_console_free(nav);
     }
     nk_end(ctx);

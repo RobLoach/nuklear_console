@@ -1463,14 +1463,22 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
         return;
     }
 
-    // If leaving_parent is a row or tree (non-navigable containers), skip up to
-    // the first ancestor that can act as an active parent.
+    // Traverse up until we're not on a row or tree. Rows and trees can't act as
+    // active parents (their children render through the container, not directly),
+    // so keep skipping them and let target track the direct child of the
+    // destination, so focus lands on a navigable widget.
     nk_console* target = leaving_parent;
     while (target != top && (target->type == NK_CONSOLE_ROW || target->type == NK_CONSOLE_TREE)) {
         target = (target->parent != NULL) ? target->parent : top;
     }
 
+    // Verify the destination, and find the target.
     nk_console* destination = (target->parent != NULL) ? target->parent : top;
+    while (destination != top && (destination->type == NK_CONSOLE_ROW || destination->type == NK_CONSOLE_TREE)) {
+        target = destination;
+        destination = (destination->parent != NULL) ? destination->parent : top;
+    }
+
     nk_console_set_active_parent(destination);
     nk_console_set_active_widget(target);
     if (data != NULL) {
