@@ -572,6 +572,45 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
       calc->tooltip = "Demo rows and grids!";
     }
 
+    // Button within a row that owns a bunch of children.
+    // Verifies navigate back skips the row container and lands correctly (#227).
+    struct nk_console* row_submenu = nk_console_button(console, "Row Submenu");
+    {
+        nk_console_label(row_submenu, "Each button in the row below has its own children.");
+        nk_console_label(row_submenu, "Open one, then press Back to return to the row.");
+
+        struct nk_console* row = nk_console_row_begin(row_submenu);
+
+        // First button in the row, with a bunch of children.
+        struct nk_console* tools = nk_console_button(row, "Tools");
+        {
+            nk_console_label(tools, "Tools (children of a button inside a row):");
+            nk_console_button(tools, "Hammer");
+            nk_console_button(tools, "Wrench");
+            nk_console_button(tools, "Screwdriver");
+            nk_console_button(tools, "Pliers");
+            nk_console_button(tools, "Saw");
+            nk_console_button_onclick(tools, "Back", &nk_console_button_back);
+        }
+
+        // Second button in the row, also with a bunch of children.
+        struct nk_console* colors = nk_console_button(row, "Colors");
+        {
+            nk_console_label(colors, "Colors (children of a button inside a row):");
+            nk_console_button(colors, "Red");
+            nk_console_button(colors, "Green");
+            nk_console_button(colors, "Blue");
+            nk_console_button(colors, "Yellow");
+            nk_console_button_onclick(colors, "Back", &nk_console_button_back);
+        }
+
+        nk_console_row_end(row);
+
+        nk_console_button_onclick(row_submenu, "Back", &nk_console_button_back);
+
+        row_submenu->tooltip = "A button within a row that has children (tests navigate back).";
+    }
+
     // Open Path
     struct nk_console* open_path = nk_console_button(console, "Open Path");
     {
