@@ -707,25 +707,12 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
         return;
     }
 
+    // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
+    // TODO: Fix the scroll on the new window, since it may not be centered on the active widget.
+    nk_window_set_scroll(top->ctx, 0, 0);
+
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->active_parent = new_parent;
-
-    // Scroll to the active widget; fall back to first selectable child, then top.
-    nk_console* target = new_parent->activeWidget;
-    if (target == NULL && new_parent->children != NULL) {
-        int count = (int)cvector_size(new_parent->children);
-        for (int i = 0; i < count; i++) {
-            if (nk_console_selectable(new_parent->children[i])) {
-                target = new_parent->children[i];
-                break;
-            }
-        }
-    }
-    if (target != NULL) {
-        data->scroll_to_widget = target;
-    } else {
-        nk_window_set_scroll(top->ctx, 0, 0);
-    }
 }
 
 /**
