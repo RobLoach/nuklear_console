@@ -80,8 +80,16 @@ typedef enum {
     NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
+#ifndef NK_CONSOLE_MESSAGE_MAX_LENGTH
+/**
+ * Maximum number of characters (excluding null terminator) for a message.
+ * Define before including nuklear_console.h to allow longer messages.
+ */
+#define NK_CONSOLE_MESSAGE_MAX_LENGTH 255
+#endif // NK_CONSOLE_MESSAGE_MAX_LENGTH
+
 typedef struct nk_console_message {
-    char text[256];
+    char text[NK_CONSOLE_MESSAGE_MAX_LENGTH + 1];
     float duration;
     float scroll_x;
 } nk_console_message;

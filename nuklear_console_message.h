@@ -89,10 +89,11 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
-    // Grab the length of the string, limit length to 255.
+    // Grab the length of the string, clamped to NK_CONSOLE_MESSAGE_MAX_LENGTH.
     int len = nk_strlen(text);
-    if (len > 255) {
-        len = 255;
+    NK_ASSERT(len <= NK_CONSOLE_MESSAGE_MAX_LENGTH);
+    if (len > NK_CONSOLE_MESSAGE_MAX_LENGTH) {
+        len = NK_CONSOLE_MESSAGE_MAX_LENGTH;
     }
 
     // Only add the message if it's not already in the queue.
@@ -114,7 +115,7 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     nk_console_message message = {0};
     message.duration = NK_CONSOLE_MESSAGE_DURATION;
     NK_MEMCPY(message.text, text, (nk_size)len);
-    message.text[len] = '\0'; // Make sure it's null-terminated
+    message.text[len] = '\0';
 
     // Add the new message to the message queue.
     cvector_push_back(data->messages, message);
