@@ -81,7 +81,7 @@ typedef enum {
 } nk_console_widget_type;
 
 typedef struct nk_console_message {
-    char text[256];
+    char* text;
     float duration;
     float scroll_x;
 } nk_console_message;
@@ -1339,6 +1339,10 @@ NK_API void nk_console_free(nk_console* console) {
         if (console->type == NK_CONSOLE_PARENT) {
             nk_console_top_data* data = (nk_console_top_data*)console->data;
             if (data->messages != NULL) {
+                nk_console_message* msg_end = (nk_console_message*)cvector_end(data->messages);
+                for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != msg_end; it++) {
+                    nk_console_mfree(handle, it->text);
+                }
                 cvector_free(data->messages);
                 data->messages = NULL;
             }

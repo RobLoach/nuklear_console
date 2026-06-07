@@ -413,6 +413,15 @@ int main() {
     // nk_console_show_message()
     {
         nk_console_show_message(console, "This is an info message");
+
+        // Verify that messages longer than 255 characters are stored without truncation.
+        char long_msg[301];
+        memset(long_msg, 'A', 300);
+        long_msg[300] = '\0';
+        nk_console_show_message(console, long_msg);
+        nk_console_top_data* top_data = (nk_console_top_data*)(nk_console_get_top(console)->data);
+        nk_console_message* last_msg = &top_data->messages[cvector_size(top_data->messages) - 1];
+        assert(nk_strlen(last_msg->text) == 300);
     }
 
     // nk_console_set_message_position() / nk_console_get_message_position()
