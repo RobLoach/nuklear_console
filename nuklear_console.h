@@ -80,8 +80,16 @@ typedef enum {
     NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
+#ifndef NK_CONSOLE_MESSAGE_MAX_LENGTH
+/**
+ * Maximum number of characters stored per message (excluding null terminator).
+ * Define this before including nuklear_console.h to override the default.
+ */
+#define NK_CONSOLE_MESSAGE_MAX_LENGTH 255
+#endif
+
 typedef struct nk_console_message {
-    char text[256];
+    char text[NK_CONSOLE_MESSAGE_MAX_LENGTH + 1];
     float duration;
     float scroll_x;
 } nk_console_message;
@@ -724,12 +732,25 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
         return;
     }
 
-    // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
-    // TODO: Fix the scroll on the new window, since it may not be centered on the active widget.
-    nk_window_set_scroll(top->ctx, 0, 0);
-
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->active_parent = new_parent;
+
+    // Scroll to the active widget; fall back to first selectable child, then top.
+    nk_console* target = new_parent->activeWidget;
+    if (target == NULL && new_parent->children != NULL) {
+        int count = (int)cvector_size(new_parent->children);
+        for (int i = 0; i < count; i++) {
+            if (nk_console_selectable(new_parent->children[i])) {
+                target = new_parent->children[i];
+                break;
+            }
+        }
+    }
+    if (target != NULL) {
+        data->scroll_to_widget = target;
+    } else {
+        nk_window_set_scroll(top->ctx, 0, 0);
+    }
 }
 
 /**
