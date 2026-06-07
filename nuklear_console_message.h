@@ -89,17 +89,17 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         return;
     }
 
-    int len = nk_strlen(text);
-    if (len > NK_CONSOLE_MESSAGE_MAX_LENGTH) {
-        len = NK_CONSOLE_MESSAGE_MAX_LENGTH;
-    }
-
     // Only add the message if it's not already in the queue.
     nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
     for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
-        if (strncmp(it->text, text, (nk_size)NK_CONSOLE_MESSAGE_MAX_LENGTH) == 0) {
+        if (nk_stricmpn(it->text, text, NK_CONSOLE_MESSAGE_MAX_LENGTH) == 0) {
             return;
         }
+    }
+
+    int len = nk_strlen(text);
+    if (len > NK_CONSOLE_MESSAGE_MAX_LENGTH) {
+        len = NK_CONSOLE_MESSAGE_MAX_LENGTH;
     }
 
     // Create the new message.
