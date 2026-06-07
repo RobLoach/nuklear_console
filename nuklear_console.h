@@ -80,8 +80,16 @@ typedef enum {
     NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
+#ifndef NK_CONSOLE_MESSAGE_MAX_LENGTH
+/**
+ * Maximum number of characters stored per message (excluding null terminator).
+ * Define this before including nuklear_console.h to override the default.
+ */
+#define NK_CONSOLE_MESSAGE_MAX_LENGTH 255
+#endif
+
 typedef struct nk_console_message {
-    char* text;
+    char text[NK_CONSOLE_MESSAGE_MAX_LENGTH + 1];
     float duration;
     float scroll_x;
 } nk_console_message;
@@ -1339,10 +1347,6 @@ NK_API void nk_console_free(nk_console* console) {
         if (console->type == NK_CONSOLE_PARENT) {
             nk_console_top_data* data = (nk_console_top_data*)console->data;
             if (data->messages != NULL) {
-                nk_console_message* msg_end = (nk_console_message*)cvector_end(data->messages);
-                for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != msg_end; it++) {
-                    nk_console_mfree(handle, it->text);
-                }
                 cvector_free(data->messages);
                 data->messages = NULL;
             }

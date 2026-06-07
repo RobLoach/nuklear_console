@@ -90,30 +90,24 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
     }
 
     int len = nk_strlen(text);
+    if (len > NK_CONSOLE_MESSAGE_MAX_LENGTH) {
+        len = NK_CONSOLE_MESSAGE_MAX_LENGTH;
+    }
 
     // Only add the message if it's not already in the queue.
     nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
     for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
-        if (it->text != NULL && strcmp(it->text, text) == 0) {
+        if (strncmp(it->text, text, (nk_size)NK_CONSOLE_MESSAGE_MAX_LENGTH) == 0) {
             return;
         }
     }
 
-    // Allocate and copy the message text.
-    nk_handle handle = {0};
-    char* text_copy = (char*)nk_console_malloc(handle, NULL, (nk_size)(len + 1));
-    if (text_copy == NULL) {
-        return;
-    }
-    NK_MEMCPY(text_copy, text, (nk_size)len);
-    text_copy[len] = '\0';
-
     // Create the new message.
     nk_console_message message = {0};
     message.duration = NK_CONSOLE_MESSAGE_DURATION;
-    message.text = text_copy;
+    NK_MEMCPY(message.text, text, (nk_size)len);
+    message.text[len] = '\0';
 
-    // Add the new message to the message queue.
     cvector_push_back(data->messages, message);
 }
 
@@ -198,38 +192,23 @@ NK_API void nk_console_render_message(nk_console* console) {
         return;
     }
 
-    // Loop through all messages and display the first one.
-    nk_bool clear_all = nk_true;
-    nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
-    for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != end; it++) {
-        // Skip messages that have already been shown.
-        if (it->duration <= 0.0f) {
-            continue;
-        }
+    nk_console_message* it = &data->messages[0];
 
-        // Show only one message at a time.
-        if (console->ctx->delta_time_seconds > 0) {
-            it->duration -= console->ctx->delta_time_seconds;
-        }
-        // If animations arn't an option, allow dismissing the message.
-        else if (nk_console_button_pushed(console, NK_GAMEPAD_BUTTON_B)) {
-            data->input_processed = nk_true;
-            it->duration = 0.0f;
-        }
-
-        clear_all = nk_false;
-        nk_console_message_render(console, it);
-        break;
+    // Advance duration or allow dismissal when delta time is unavailable.
+    if (console->ctx->delta_time_seconds > 0) {
+        it->duration -= console->ctx->delta_time_seconds;
+    }
+    else if (nk_console_button_pushed(console, NK_GAMEPAD_BUTTON_B)) {
+        data->input_processed = nk_true;
+        it->duration = 0.0f;
     }
 
-    if (clear_all) {
-        nk_handle handle = {0};
-        nk_console_message* msg_end = (nk_console_message*)cvector_end(data->messages);
-        for (nk_console_message* it = (nk_console_message*)cvector_begin(data->messages); it != msg_end; it++) {
-            nk_console_mfree(handle, it->text);
-        }
-        cvector_clear(data->messages);
+    if (it->duration <= 0.0f) {
+        cvector_erase(data->messages, 0);
+        return;
     }
+
+    nk_console_message_render(console, it);
 }
 
 NK_API void nk_console_set_message_bounds(nk_console* console, struct nk_rect bounds) {
