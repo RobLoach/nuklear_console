@@ -159,19 +159,19 @@ NK_API void nk_console_row_end(nk_console* row) {
 static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
     nk_console_row_data* data = (nk_console_row_data*)row->data;
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-    if NK_FLAG_ENABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) {
+    if NK_FLAG_ENABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) {
         return;
     }
 
     // Left
     if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
         data->activeChild = nk_console_row_next_selectable_child(row, -1);
-        top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+        top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     }
     // Right
     else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
         data->activeChild = nk_console_row_next_selectable_child(row, 1);
-        top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+        top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     }
 }
 
@@ -192,7 +192,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     // Consume mouse movement before children have a chance to.
     int numChildren = (int)cvector_size(console->children);
     struct nk_input* input = &console->ctx->input;
-    if (NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_SELECTABLE) && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) &&
+    if (NK_FLAG_ENABLED(console->flags, NK_CONSOLE_FLAG_SELECTABLE) && NK_FLAG_DISABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED) &&
         widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
         nk_input_is_mouse_hovering_rect(input, widget_bounds)) {
         // First, make sure that the active widget is the row.

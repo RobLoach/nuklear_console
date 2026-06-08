@@ -84,7 +84,7 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     if (top != NULL && top->data != NULL) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
         top_data->scroll_to_widget = tree;
-        top_data->state |= NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
+        top_data->flags |= NK_CONSOLE_TOP_FLAG_SCROLLBAR_REQUIRED;
     }
 }
 
@@ -122,15 +122,15 @@ static struct nk_rect nk_console_tree_render(nk_console* tree) {
     if (nk_console_is_active_widget(tree)) {
         nk_console* top = nk_console_get_top(tree);
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+        if (NK_FLAG_DISABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT) && !nk_console_tree_expanded(tree)) {
                 nk_console_tree_apply_expanded(tree, nk_true);
                 nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
-                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+                top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && nk_console_tree_expanded(tree)) {
                 nk_console_tree_apply_expanded(tree, nk_false);
                 nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
-                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+                top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
         }
     }

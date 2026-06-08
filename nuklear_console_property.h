@@ -77,7 +77,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     // Allow changing the value with left/right
     if (NK_FLAG_DISABLED(console->flags, NK_CONSOLE_FLAG_DISABLED) && nk_console_is_active_widget(console)) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+        if (NK_FLAG_DISABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
                 switch (console->type) {
                     case NK_CONSOLE_SLIDER_INT:
@@ -101,7 +101,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         break;
                 }
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
-                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+                top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
             else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
                 switch (console->type) {
@@ -126,7 +126,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
                         break;
                 }
                 nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
-                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+                top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             }
         }
     }

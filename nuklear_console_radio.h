@@ -127,11 +127,11 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
     nk_bool selected = nk_console_radio_is_selected(widget);
 
     // Allow changing the radio value.
-    if (active && !selected && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (active && !selected && NK_FLAG_DISABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A)) {
             *data->selected = index;
             selected = nk_true;
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
             nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
         }
     }
@@ -191,7 +191,7 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
     if (radio_active == nk_true && radio_active != selected) {
         *data->selected = index;
         nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
-        top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+        top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
     }
 
     // Restore styles

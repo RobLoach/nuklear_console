@@ -175,7 +175,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     }
 
     // Handle keyboard/gamepad navigation.
-    if (is_active && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+    if (is_active && NK_FLAG_DISABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
         // Hold-to-accelerate timers - mirrors nk_console_check_up_down.
         nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
         nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
@@ -206,7 +206,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     data->_scroll_y = new_scroll;
                 }
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_DOWN)) {
             // Page down: jump selection down by rows_visible items.
@@ -224,7 +224,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     }
                 }
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) || (up_held && repeat_fire)) {
             if (data->selected > 0) {
@@ -247,7 +247,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     }
                 }
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_DOWN) || (down_held && repeat_fire)) {
             if (data->row_count > 0 && data->selected < data->row_count - 1) {
@@ -280,7 +280,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     }
                 }
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
             // Move focus to the previous sibling widget.
@@ -293,7 +293,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     break;
                 }
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RIGHT)) {
             // Move focus to the next sibling widget.
@@ -307,17 +307,17 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                     break;
                 }
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_A) && NK_FLAG_DISABLED(widget->flags, NK_CONSOLE_FLAG_DISABLED)) {
             nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_B)) {
             if (widget->parent != NULL) {
                 nk_console_navigate_back(widget->parent);
             }
-            top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+            top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
         }
     }
 
@@ -358,9 +358,9 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
                 top->ctx->style.button.text_normal = saved_text;
             }
 
-            if (mouse_clicked && NK_FLAG_DISABLED(top_data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
+            if (mouse_clicked && NK_FLAG_DISABLED(top_data->flags, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED)) {
                 data->selected = (nk_uint)(data->view.begin + i);
-                top_data->state |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
+                top_data->flags |= NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED;
                 nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CLICKED);
             }
         }
