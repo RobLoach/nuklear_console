@@ -199,7 +199,7 @@ NK_API void nk_console_render_message(nk_console* console) {
         it->duration -= console->ctx->delta_time_seconds;
     }
     else if (nk_console_button_pushed(console, NK_GAMEPAD_BUTTON_B)) {
-        data->input_processed = nk_true;
+        NK_FLAG_SET(data->state, NK_CONSOLE_TOP_FLAG_INPUT_PROCESSED);
         it->duration = 0.0f;
     }
 
