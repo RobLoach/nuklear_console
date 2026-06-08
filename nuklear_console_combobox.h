@@ -158,6 +158,7 @@ NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
     // Create the widget data.
     nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_combobox_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_combobox_data));
 
     // Set up the combobox
