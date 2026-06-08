@@ -56,6 +56,7 @@ NK_API nk_console* nk_console_rule_horizontal(nk_console* parent, struct nk_colo
     }
     nk_console_rule_horizontal_data* data =
         (nk_console_rule_horizontal_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_rule_horizontal_data));
+    if (data == NULL) return NULL;
     data->color = color;
     data->rounding = rounding;
 

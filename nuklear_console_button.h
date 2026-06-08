@@ -193,6 +193,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text) {
     // Create the widget data.
     nk_console_button_data* data = (nk_console_button_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_button_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_button_data));
 
     nk_console* button = nk_console_label(parent, text);

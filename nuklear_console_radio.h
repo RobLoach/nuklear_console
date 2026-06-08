@@ -225,6 +225,7 @@ NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* 
     }
 
     nk_console_radio_data* data = (nk_console_radio_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_radio_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_radio_data));
     data->selected = selected;
 
