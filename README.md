@@ -136,7 +136,7 @@ void nk_console_check_up_down(nk_console* widget);
 - `NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE`: Define to suppress the `NK_BUTTON_TRIGGER_ON_RELEASE` warning
 - `NK_CONSOLE_FILE_PATH_MAX`: Maximum file path length used by the file widget
 - `NK_CONSOLE_FILE_ADD_FILES`: The function callback used to enumerate files; see `nk_console_file_add_files_tinydir()`
-- `NK_CONSOLE_ENABLE_TINYDIR`: Define to use tinydir for file enumeration
+- `NK_CONSOLE_ENABLE_TINYDIR`: Define to use tinydir for file enumeration; corresponds to CMake option `NUKLEAR_CONSOLE_ENABLE_TINYDIR=ON` (default: OFF)
 - `NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H`: Path to the tinydir header when using the tinydir file backend
 - `NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP`: Define to skip the tinydir header include (provide your own include before)
 - `NK_CONSOLE_INPUT_TIMER`: Seconds to wait for input before timing out in the input widget
