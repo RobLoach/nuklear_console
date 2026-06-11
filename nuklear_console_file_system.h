@@ -32,7 +32,6 @@ extern "C" {
 extern "C" {
 #endif
 
-// TODO: Allow disabling tinydir
 #ifndef NK_CONSOLE_FILE_ADD_FILES
 #ifdef NK_CONSOLE_ENABLE_TINYDIR
 
