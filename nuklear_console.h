@@ -721,10 +721,11 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
             }
         }
     }
+
+    // Force a scroll to the top, and then afterwards, scroll to the widget.
+    nk_window_set_scroll(top->ctx, 0, 0);
     if (target != NULL) {
         data->scroll_to_widget = target;
-    } else {
-        nk_window_set_scroll(top->ctx, 0, 0);
     }
 }
 
