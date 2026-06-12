@@ -4,6 +4,8 @@
 typedef struct nk_console_progress_data {
     nk_size max_size;
     nk_size* value_size;
+    nk_bool indeterminate;
+    nk_uint frame;
 } nk_console_progress_data;
 
 #if defined(__cplusplus)
@@ -16,6 +18,10 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
 NK_API void nk_console_progress_update(nk_console* progress, const char* label, nk_size* current, nk_size max);
 /** Render the progress bar widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_progress_render(nk_console* console);
+/** Set whether the progress bar is in indeterminate (spinner) mode. */
+NK_API void nk_console_progress_set_indeterminate(nk_console* progress, nk_bool indeterminate);
+/** Returns nk_true if the progress bar is in indeterminate (spinner) mode. */
+NK_API nk_bool nk_console_progress_is_indeterminate(nk_console* progress);
 
 #if defined(__cplusplus)
 }
@@ -32,9 +38,6 @@ extern "C" {
 #endif
 
 NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max) {
-    NK_ASSERT(current != NULL);
-    NK_ASSERT(max > 0);
-
     // Create the widget data.
     nk_console_progress_data* data = (nk_console_progress_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_progress_data));
     if (data == NULL) return NULL;
@@ -48,7 +51,7 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
     data->max_size = max;
     progress->columns = text != NULL ? 2 : 1;
     progress->data = (void*)data;
-    if (*current > max) {
+    if (current != NULL && max > 0 && *current > max) {
         *current = max;
     }
     return progress;
@@ -69,6 +72,19 @@ NK_API void nk_console_progress_update(nk_console* progress, const char* label, 
     }
 }
 
+NK_API void nk_console_progress_set_indeterminate(nk_console* progress, nk_bool indeterminate) {
+    if (!progress || !progress->data) return;
+    nk_console_progress_data* data = (nk_console_progress_data*)progress->data;
+    data->indeterminate = indeterminate;
+    data->frame = 0;
+}
+
+NK_API nk_bool nk_console_progress_is_indeterminate(nk_console* progress) {
+    if (!progress || !progress->data) return nk_false;
+    nk_console_progress_data* data = (nk_console_progress_data*)progress->data;
+    return data->indeterminate;
+}
+
 NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     nk_console_progress_data* data = (nk_console_progress_data*)console->data;
     if (data == NULL) {
@@ -79,9 +95,9 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
 
     nk_console* top = nk_console_get_top(console);
 
-    // Allow changing the value.
+    // Allow changing the value (bounded mode only).
     nk_bool active = nk_false;
-    if (!console->disabled && nk_console_is_active_widget(console)) {
+    if (!data->indeterminate && !console->disabled && nk_console_is_active_widget(console)) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
         if (!top_data->input_processed) {
             if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT)) {
@@ -120,28 +136,36 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
         nk_widget_disable_begin(console->ctx);
     }
 
-    // Progress
-    struct nk_style_item cursor_normal = console->ctx->style.progress.cursor_normal;
-    struct nk_style_item cursor_hover = console->ctx->style.progress.cursor_hover;
-    struct nk_style_item cursor_active = console->ctx->style.progress.cursor_active;
-    if (nk_console_is_active_widget(console)) {
-        if (active) {
-            console->ctx->style.progress.cursor_normal = cursor_active;
+    if (data->indeterminate) {
+        // Animate a bouncing segment: sweep 0→half→0 over 'period' frames.
+        data->frame++;
+        nk_uint period = 120;
+        nk_uint half = period / 2;
+        nk_uint t = data->frame % period;
+        nk_size fake_val = (nk_size)(t < half ? t : (period - t));
+        nk_size fake_max = (nk_size)half;
+        nk_progress(console->ctx, &fake_val, fake_max, nk_false);
+    } else {
+        struct nk_style_item cursor_normal = console->ctx->style.progress.cursor_normal;
+        struct nk_style_item cursor_hover = console->ctx->style.progress.cursor_hover;
+        struct nk_style_item cursor_active = console->ctx->style.progress.cursor_active;
+        if (nk_console_is_active_widget(console)) {
+            if (active) {
+                console->ctx->style.progress.cursor_normal = cursor_active;
+            }
+            else {
+                console->ctx->style.progress.cursor_normal = cursor_hover;
+            }
         }
-        else {
-            console->ctx->style.progress.cursor_normal = cursor_hover;
+
+        if (nk_progress(console->ctx, data->value_size, data->max_size, nk_true)) {
+            nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
         }
-    }
 
-    // Display the widget
-    if (nk_progress(console->ctx, data->value_size, data->max_size, nk_true)) {
-        nk_console_trigger_event(console, NK_CONSOLE_EVENT_CHANGED);
+        console->ctx->style.progress.cursor_normal = cursor_normal;
+        console->ctx->style.progress.cursor_hover = cursor_hover;
+        console->ctx->style.progress.cursor_active = cursor_active;
     }
-
-    // Restore the styles
-    console->ctx->style.progress.cursor_normal = cursor_normal;
-    console->ctx->style.progress.cursor_hover = cursor_hover;
-    console->ctx->style.progress.cursor_active = cursor_active;
 
     if (console->disabled) {
         nk_widget_disable_end(console->ctx);

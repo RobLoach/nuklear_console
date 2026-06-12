@@ -403,6 +403,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_progress(progressbar, "Progress", &progressValue, 100);
             nk_console_progress(progressbar, "Progress (Disabled)", &progressValue, 100)
                 ->disabled = nk_true;
+            nk_console_progress_set_indeterminate(
+                nk_console_progress(progressbar, "Progress (Indeterminate)", &progressValue, 100),
+                nk_true);
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
