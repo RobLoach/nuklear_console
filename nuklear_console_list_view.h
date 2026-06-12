@@ -167,13 +167,9 @@ NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint ind
     if (index >= data->row_count) index = data->row_count - 1;
     data->selected = index;
 
-    // Scroll so the selected item is at the top of the visible area.
-    float row_height = nk_console_list_view_row_height(list_view);
-    float scroll_row_height = row_height + list_view->ctx->style.window.spacing.y;
-    nk_uint new_scroll = (nk_uint)((float)index * scroll_row_height);
-    data->_scroll_y = new_scroll;
-    if (data->view.scroll_pointer) {
-        *data->view.scroll_pointer = new_scroll;
+    nk_console* top = nk_console_get_top(list_view);
+    if (top != NULL && top->data != NULL) {
+        ((nk_console_top_data*)top->data)->scroll_to_widget = list_view;
     }
 }
 
