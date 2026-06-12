@@ -41,13 +41,8 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         nk_widget_disable_begin(widget->ctx);
     }
 
-    // Display the label, considering the alignment.
-    if (widget->alignment == NK_TEXT_LEFT) {
-        nk_label_wrap(widget->ctx, widget->label);
-    }
-    else {
-        nk_label(widget->ctx, widget->label, widget->alignment);
-    }
+    // Always wrap so long text isn't truncated. nk_label_wrap() only supports left alignment.
+    nk_label_wrap(widget->ctx, widget->label);
 
     // Release the disabled state if needed.
     if (widget->disabled || (widget->selectable && !selected)) {
