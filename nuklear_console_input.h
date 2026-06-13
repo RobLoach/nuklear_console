@@ -711,6 +711,7 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
     }
 
     data = (nk_console_input_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_input_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_input_data));
     data->gamepad_number = gamepad_number;
     data->out_gamepad_number = out_gamepad_number;

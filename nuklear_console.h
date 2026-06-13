@@ -304,6 +304,21 @@ NK_API void* nk_console_user_data(nk_console* console);
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
 
 /**
+ * Set whether the widget is disabled. A disabled widget is grayed out and cannot receive input.
+ *
+ * @param widget The widget to enable or disable.
+ * @param disabled nk_true to disable, nk_false to enable.
+ */
+NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled);
+
+/**
+ * Returns nk_true if the widget is currently disabled.
+ *
+ * @param widget The widget to query.
+ */
+NK_API nk_bool nk_console_is_disabled(nk_console* widget);
+
+/**
  * Navigate back from the given widget to its parent, triggering NK_CONSOLE_EVENT_BACK.
  *
  * The event is triggered after the new parent is selected.
@@ -1379,6 +1394,16 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data) {
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->user_data = user_data;
+}
+
+NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled) {
+    if (widget == NULL) return;
+    widget->disabled = disabled;
+}
+
+NK_API nk_bool nk_console_is_disabled(nk_console* widget) {
+    if (widget == NULL) return nk_false;
+    return widget->disabled;
 }
 
 NK_API void nk_console_free_children(nk_console* console) {

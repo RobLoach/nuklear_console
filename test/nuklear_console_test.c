@@ -74,6 +74,11 @@ int main() {
         snprintf(path, sizeof(path), "a\\b\\..\\c");
         nk_console_file_normalize_path(path, sizeof(path));
         assert(strcmp(path, "a/c") == 0);
+
+        // Mixed separators are normalized to forward slash.
+        snprintf(path, sizeof(path), "a\\b/c\\d");
+        nk_console_file_normalize_path(path, sizeof(path));
+        assert(strcmp(path, "a/b/c/d") == 0);
     }
 
     // Load Nuklear

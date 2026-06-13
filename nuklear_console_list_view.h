@@ -82,6 +82,14 @@ NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags
 NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint item_count);
 NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view);
 
+/**
+ * Programmatically select an item and scroll it into view.
+ *
+ * @param list_view The List View widget.
+ * @param index The zero-based index to select. Clamped to [0, row_count).
+ */
+NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint index);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -150,6 +158,23 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
     if (data->selected >= (nk_uint)data->row_count)
         return NULL;
     return data->get_label_callback(list_view, data->selected);
+}
+
+NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint index) {
+    if (!list_view || !list_view->data || list_view->type != NK_CONSOLE_LIST_VIEW) return;
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    if (data->row_count == 0) return;
+    if (index >= data->row_count) index = data->row_count - 1;
+    data->selected = index;
+
+    // Scroll so the selected item is at the top of the visible area.
+    float row_height = nk_console_list_view_row_height(list_view);
+    float scroll_row_height = row_height + list_view->ctx->style.window.spacing.y;
+    nk_uint new_scroll = (nk_uint)((float)index * scroll_row_height);
+    data->_scroll_y = new_scroll;
+    if (data->view.scroll_pointer) {
+        *data->view.scroll_pointer = new_scroll;
+    }
 }
 
 NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {

@@ -513,7 +513,7 @@ NK_API void nk_console_file_normalize_path(char* buf, int size) {
 }
 
 /**
- * Appends a path component to data->directory, inserting the platform separator.
+ * Appends a path component to data->directory, inserting a forward-slash separator.
  * Returns nk_false and shows an error if the result would overflow the buffer.
  *
  * @internal
@@ -534,12 +534,7 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
         data->directory[0] = '\0';
     }
     else if (len > 0) {
-// TODO: file: Make sure this is cross-platform.
-#if defined(_WIN32) || defined(WIN32)
-        data->directory[len] = '\\';
-#else
         data->directory[len] = '/';
-#endif
         data->directory[len + 1] = '\0';
         len++;
     }
@@ -1127,6 +1122,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
 
     // Create the widget data.
     nk_console_file_data* data = (nk_console_file_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_file_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_file_data));
 
     data->file_path_buffer = file_path_buffer;
