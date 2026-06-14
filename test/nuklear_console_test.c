@@ -509,6 +509,44 @@ int main() {
         assert(list_view != NULL);
     }
 
+    // nk_console_list_view_item_matches() - the search/filter predicate.
+    {
+        assert(nk_console_list_view_item_matches("Banana", "") == nk_true);       // empty filter matches everything
+        assert(nk_console_list_view_item_matches("Banana", NULL) == nk_true);
+        assert(nk_console_list_view_item_matches(NULL, "x") == nk_false);          // NULL label, non-empty filter
+        assert(nk_console_list_view_item_matches("Banana", "ana") == nk_true);     // substring
+        assert(nk_console_list_view_item_matches("Banana", "BANANA") == nk_true);  // case-insensitive
+        assert(nk_console_list_view_item_matches("Banana", "nana") == nk_true);    // match at the end
+        assert(nk_console_list_view_item_matches("Banana", "xyz") == nk_false);    // no match
+        assert(nk_console_list_view_item_matches("item42", "42") == nk_true);      // digits compare verbatim
+        assert(nk_console_list_view_item_matches("a[b", "{") == nk_false);         // ASCII fold only: '[' must not alias '{'
+    }
+
+    // nk_console_list_view_set_searchable() - inserts/removes the search field.
+    {
+        nk_console* lv = nk_console_list_view(console, "searchable_lv", 3, 5, list_view_get_label);
+        assert(lv != NULL);
+        nk_console_list_view_data* lv_data = (nk_console_list_view_data*)lv->data;
+
+        int before = (int)cvector_size(console->children);
+        nk_console_list_view_set_searchable(lv, nk_true);
+        assert(lv_data->search != NULL);
+        // The search field is inserted as a sibling, immediately before the list view.
+        assert((int)cvector_size(console->children) == before + 1);
+        assert(nk_console_get_widget_index(lv_data->search) == nk_console_get_widget_index(lv) - 1);
+
+        // Enabling again must not add a second field.
+        nk_console_list_view_set_searchable(lv, nk_true);
+        assert((int)cvector_size(console->children) == before + 1);
+
+        // Disabling removes the field and clears the filter.
+        snprintf(lv_data->search_buffer, sizeof(lv_data->search_buffer), "abc");
+        nk_console_list_view_set_searchable(lv, nk_false);
+        assert(lv_data->search == NULL);
+        assert(lv_data->search_buffer[0] == '\0');
+        assert((int)cvector_size(console->children) == before);
+    }
+
     // nk_console_color() - RGB and RGBA modes
     struct nk_colorf rgb_color = {1.0f, 0.0f, 0.0f, 1.0f};
     struct nk_colorf rgba_color = {0.0f, 1.0f, 0.0f, 0.5f};
@@ -540,6 +578,34 @@ int main() {
 
     // Save the output test image.
     pntr_save_image(screen, "nuklear_console_test.png");
+
+    // List view search/filter behavior, driven through a real render pass.
+    {
+        nk_console* lv = nk_console_list_view(console, "filter_lv", 3, 5, list_view_get_label);
+        assert(lv != NULL);
+        nk_console_list_view_data* lv_data = (nk_console_list_view_data*)lv->data;
+        nk_console_list_view_set_searchable(lv, nk_true);
+
+        // Filter down to a single match ("Banana"); selection snaps onto it even
+        // though it started on a now-hidden item.
+        snprintf(lv_data->search_buffer, sizeof(lv_data->search_buffer), "an");
+        lv_data->selected = 0; // Apple, which does not match.
+        nk_console_render_window(console, "filter_test_1", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
+        assert(lv_data->selected == 1); // Banana
+        assert(strcmp(nk_console_list_view_selected_label(lv), "Banana") == 0);
+
+        // A filter that matches nothing leaves the selection untouched and reports NULL.
+        snprintf(lv_data->search_buffer, sizeof(lv_data->search_buffer), "zzz");
+        lv_data->selected = 2; // Cherry
+        nk_console_render_window(console, "filter_test_2", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
+        assert(lv_data->selected == 2); // unchanged
+        assert(nk_console_list_view_selected_label(lv) == NULL);
+
+        // Clearing the filter restores normal selection reporting.
+        lv_data->search_buffer[0] = '\0';
+        nk_console_render_window(console, "filter_test_3", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
+        assert(strcmp(nk_console_list_view_selected_label(lv), "Cherry") == 0);
+    }
 
     // Unload
     nk_console_free(console);
