@@ -5,7 +5,9 @@
 extern "C" {
 #endif
 
+/** Add a non-interactive text label to @p parent. @return The new label widget. */
 NK_API nk_console* nk_console_label(nk_console* parent, const char* text);
+/** Render the label widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_label_render(nk_console* widget);
 
 #if defined(__cplusplus)
@@ -39,7 +41,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
         nk_widget_disable_begin(widget->ctx);
     }
 
-    // Display the label, considering the alignment.
+    // Display the label, considering the alignment. Note that wrap and truncation are not considered here, and is a known limitation.
     if (widget->alignment == NK_TEXT_LEFT) {
         nk_label_wrap(widget->ctx, widget->label);
     }

@@ -10,7 +10,11 @@ typedef struct nk_console_progress_data {
 extern "C" {
 #endif
 
+/** Add a progress bar widget displaying @p current out of @p max. @return The new widget. */
 NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_size* current, nk_size max);
+/** Update the value and label of an existing progress bar widget. */
+NK_API void nk_console_progress_update(nk_console* progress, const char* label, nk_size* current, nk_size max);
+/** Render the progress bar widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_progress_render(nk_console* console);
 
 #if defined(__cplusplus)
@@ -33,6 +37,7 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
 
     // Create the widget data.
     nk_console_progress_data* data = (nk_console_progress_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_progress_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_progress_data));
 
     nk_console* progress = nk_console_label(parent, text);
@@ -47,6 +52,21 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
         *current = max;
     }
     return progress;
+}
+
+NK_API void nk_console_progress_update(nk_console* progress, const char* label, nk_size* current, nk_size max) {
+    if (!progress || !progress->data) return;
+    nk_console_progress_data* data = (nk_console_progress_data*)progress->data;
+
+    progress->label = label;
+    progress->label_length = nk_strlen(label);
+    progress->columns = label != NULL ? 2 : 1;
+    data->value_size = current;
+    data->max_size = max;
+
+    if (current != NULL && *current > max) {
+        *current = max;
+    }
 }
 
 NK_API struct nk_rect nk_console_progress_render(nk_console* console) {

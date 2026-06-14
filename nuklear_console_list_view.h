@@ -101,6 +101,13 @@ NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view);
  */
 NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool searchable);
 
+/** Programmatically select an item and scroll it into view.
+ *
+ * @param list_view The List View widget.
+ * @param index The zero-based index to select. Clamped to [0, row_count).
+ */
+NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint index);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -211,6 +218,23 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
     return data->get_label_callback(list_view, data->selected);
 }
 
+NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint index) {
+    if (!list_view || !list_view->data || list_view->type != NK_CONSOLE_LIST_VIEW) return;
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    if (data->row_count == 0) return;
+    if (index >= data->row_count) index = data->row_count - 1;
+    data->selected = index;
+
+    // Scroll so the selected item is at the top of the visible area.
+    float row_height = nk_console_list_view_row_height(list_view);
+    float scroll_row_height = row_height + list_view->ctx->style.window.spacing.y;
+    nk_uint new_scroll = (nk_uint)((float)index * scroll_row_height);
+    data->_scroll_y = new_scroll;
+    if (data->view.scroll_pointer) {
+        *data->view.scroll_pointer = new_scroll;
+    }
+}
+
 NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     if (widget == NULL || widget->data == NULL || widget->type != NK_CONSOLE_LIST_VIEW) {
         return nk_rect(0, 0, 0, 0);
@@ -260,7 +284,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     // Handle keyboard/gamepad navigation.
     if (is_active && !top_data->input_processed) {
-        // Hold-to-accelerate timers — mirrors nk_console_check_up_down.
+        // Hold-to-accelerate timers - mirrors nk_console_check_up_down.
         nk_bool up_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_UP);
         nk_bool down_held = nk_console_button_down(top, NK_GAMEPAD_BUTTON_DOWN);
         nk_bool repeat_fire = nk_false;
@@ -431,8 +455,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
             const char* label = data->get_label_callback(widget, (nk_uint)real_i);
             if (label == NULL) {
-                // TODO: When the list view item doesn't have a label, figure out a way to continue without misaligning selected.
-                break;
+                label = "";
             }
 
             // Mouse Selection

@@ -3,6 +3,7 @@
 
 #include "../../vendor/Nuklear/demo/common/style.c"
 
+// To build without nuklear_gamepad, remove the following two lines:
 #define NK_GAMEPAD_IMPLEMENTATION
 #include "../../vendor/nuklear_gamepad/nuklear_gamepad.h"
 
@@ -66,6 +67,12 @@ static nk_bool checkbox6 = nk_true;
 
 // Messages
 static int message_count = 0;
+static nk_console_message_position message_positions[] = {
+    NK_CONSOLE_MESSAGE_POSITION_BOTTOM,
+    NK_CONSOLE_MESSAGE_POSITION_TOP,
+    NK_CONSOLE_MESSAGE_POSITION_LEFT,
+    NK_CONSOLE_MESSAGE_POSITION_RIGHT,
+};
 
 // File
 static char file_path_buffer[4096] = {0};
@@ -79,13 +86,28 @@ static int dir_buffer_size = 4096;
 static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 static char textedit_password_buffer[256] = "12345";
+static char textedit_action_buffer[256] = {0};
 
 // Input
 static int gamepad_number = 0;
 static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_key_binding = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_mouse_button = NK_BUTTON_LEFT;
 
-// Key
-static nk_rune key_binding = NK_KEY_ENTER;
+// Input: Combination (accepts gamepad, keyboard, and mouse)
+static int input_combo_gamepad_number = 0;
+static enum nk_gamepad_button input_combo_gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_combo_key = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_combo_mouse_button = NK_BUTTON_LEFT;
+
+// Input: Combination (gamepad button or keyboard key)
+static int input_gamepad_key_number = 0;
+static enum nk_gamepad_button input_gamepad_key_gamepad_button = NK_GAMEPAD_BUTTON_A;
+static nk_rune input_gamepad_key_key = NK_CONSOLE_KEY_ENTER;
+
+// Input: Combination (keyboard key or mouse button)
+static nk_rune input_keyboard_mouse_key = NK_CONSOLE_KEY_ENTER;
+static enum nk_buttons input_keyboard_mouse_button = NK_BUTTON_LEFT;
 
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
@@ -128,6 +150,17 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
     nk_console_show_message(button, message);
 }
 
+void nk_console_demo_show_marquee_message(struct nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_show_message(button, "This is a very long marquee message that scrolls across the screen because it is too wide to fit!");
+}
+
+void nk_console_demo_show_message_from(struct nk_console* button, void* user_data) {
+    // The desired edge is passed through as user_data.
+    nk_console_set_message_position(button, *(nk_console_message_position*)user_data);
+    nk_console_show_message(button, nk_console_get_label(button));
+}
+
 void nk_console_quit_button_focused(struct nk_console* widget, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(widget, "Are you sure you want to quit?");
@@ -138,6 +171,13 @@ void nk_console_file_action_changed(struct nk_console* widget, void* user_data) 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
     char message[NK_CONSOLE_FILE_PATH_MAX + 32];
     snprintf(message, sizeof(message), "Selected: %s", data->file_path_buffer);
+    nk_console_show_message(widget, message);
+}
+
+void nk_console_textedit_action_changed(struct nk_console* widget, void* user_data) {
+    const char* buffer = (const char*)user_data;
+    char message[288];
+    snprintf(message, sizeof(message), "Selected: %s", buffer);
     nk_console_show_message(widget, message);
 }
 
@@ -367,13 +407,31 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_button_onclick(progressbar, "Back", &nk_console_button_back);
         }
 
-        // Input: From any gamepad (-1)
-        nk_console* input_button = nk_console_input(widgets, "Input Button", -1, &gamepad_number, &gamepad_button);
-        nk_console_input_set_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
+        // Input
+        {
+            struct nk_console* input = nk_console_button(widgets, "Input");
 
-        // Key: Capture a keyboard key binding
-        nk_console* key_button = nk_console_key(widgets, "Key Binding", &key_binding);
-        nk_console_key_set_default(key_button, NK_KEY_NONE);
+            // Input: From any gamepad (-1)
+            nk_console* input_button = nk_console_input_gamepad(input, "Input Button", -1, &gamepad_number, &gamepad_button);
+            nk_console_input_set_gamepad_default(input_button, NK_GAMEPAD_BUTTON_INVALID);
+
+            // Input: keyboard binding (a typed character or special key, stored as nk_console_key)
+            nk_console_input_key(input, "Key Input", &input_key_binding);
+
+            // Input: mouse-only binding
+            nk_console_input_mouse(input, "Mouse Input", &input_mouse_button);
+
+            // Input: Combination — accepts any gamepad, keyboard, or mouse input
+            nk_console_input(input, "Combination", -1, &input_combo_gamepad_number, &input_combo_gamepad_button, &input_combo_key, &input_combo_mouse_button);
+
+            // Input: Combination — gamepad button or keyboard key
+            nk_console_input(input, "Gamepad or Key", -1, &input_gamepad_key_number, &input_gamepad_key_gamepad_button, &input_gamepad_key_key, NULL);
+
+            // Input: Combination — keyboard key or mouse button
+            nk_console_input(input, "Keyboard or Mouse", -1, NULL, NULL, &input_keyboard_mouse_key, &input_keyboard_mouse_button);
+
+            nk_console_button_onclick(input, "Back", &nk_console_button_back);
+        }
 
         // Combobox
         nk_console_combobox(widgets, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &weapon)
@@ -404,6 +462,8 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         nk_console_set_tooltip(textedit, "Enter your username!");
         struct nk_console* password = nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
         nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
+        struct nk_console* textedit_action = nk_console_textedit_action(widgets, "Enter Text", textedit_action_buffer, textedit_buffer_size);
+        nk_console_add_event_handler(textedit_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_textedit_action_changed, textedit_action_buffer, NULL);
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);
@@ -425,10 +485,38 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
 
             nk_console* dir_default = nk_console_dir(file_system, "Defaults to tmp", dir_buffer, dir_buffer_size);
             nk_console_file_set_directory(dir_default, "/tmp");
+
+            nk_console* file_filter = nk_console_file(file_system, "C Files Only", file_path_buffer, file_path_buffer_size);
+            nk_console_file_set_filter(file_filter, ".c;.h");
         }
 
         // Messages
-        nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
+        struct nk_console* messages = nk_console_button(widgets, "Messages");
+        {
+            nk_console_set_tooltip(messages, "Notification messages that slide in from a screen edge.");
+
+            // Demonstrate a message animating from each edge. The chosen edge
+            // persists, so the buttons below also use the most recent one.
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Bottom"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[0], NULL);
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Top"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[1], NULL);
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Left"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[2], NULL);
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Right"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[3], NULL);
+
+            nk_console_button_onclick(messages, "Show Message", &nk_console_demo_show_message);
+            nk_console_button_onclick(messages, "Show Marquee Message", &nk_console_demo_show_marquee_message);
+
+            nk_console_button_set_symbol(
+                nk_console_button_onclick(messages, "Back", &nk_console_button_back),
+                NK_SYMBOL_TRIANGLE_LEFT);
+        }
+
+        // Long tooltip
+        nk_console_button_onclick(widgets, "Long Tooltip Button", NULL)
+            ->tooltip = "This is a very long tooltip that will marquee scroll across the bottom of the screen because it is too wide to fit!";
 
         // Back Button
         nk_console_button_set_symbol(
@@ -489,6 +577,45 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         NK_SYMBOL_TRIANGLE_LEFT);
 
       calc->tooltip = "Demo rows and grids!";
+    }
+
+    // Button within a row that owns a bunch of children.
+    // Verifies navigate back skips the row container and lands correctly (#227).
+    struct nk_console* row_submenu = nk_console_button(console, "Row Submenu");
+    {
+        nk_console_label(row_submenu, "Each button in the row below has its own children.");
+        nk_console_label(row_submenu, "Open one, then press Back to return to the row.");
+
+        struct nk_console* row = nk_console_row_begin(row_submenu);
+
+        // First button in the row, with a bunch of children.
+        struct nk_console* tools = nk_console_button(row, "Tools");
+        {
+            nk_console_label(tools, "Tools (children of a button inside a row):");
+            nk_console_button(tools, "Hammer");
+            nk_console_button(tools, "Wrench");
+            nk_console_button(tools, "Screwdriver");
+            nk_console_button(tools, "Pliers");
+            nk_console_button(tools, "Saw");
+            nk_console_button_onclick(tools, "Back", &nk_console_button_back);
+        }
+
+        // Second button in the row, also with a bunch of children.
+        struct nk_console* colors = nk_console_button(row, "Colors");
+        {
+            nk_console_label(colors, "Colors (children of a button inside a row):");
+            nk_console_button(colors, "Red");
+            nk_console_button(colors, "Green");
+            nk_console_button(colors, "Blue");
+            nk_console_button(colors, "Yellow");
+            nk_console_button_onclick(colors, "Back", &nk_console_button_back);
+        }
+
+        nk_console_row_end(row);
+
+        nk_console_button_onclick(row_submenu, "Back", &nk_console_button_back);
+
+        row_submenu->tooltip = "A button within a row that has children (tests navigate back).";
     }
 
     // Open Path

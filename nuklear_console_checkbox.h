@@ -9,7 +9,9 @@ typedef struct nk_console_checkbox_data {
 extern "C" {
 #endif
 
+/** Add a checkbox widget bound to @p active. @return The new checkbox widget. */
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active);
+/** Render the checkbox widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_checkbox_render(nk_console* console);
 
 #if defined(__cplusplus)
@@ -116,6 +118,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active) {
     NK_ASSERT(active != NULL);
     nk_console_checkbox_data* data = (nk_console_checkbox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_checkbox_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_checkbox_data));
 
     nk_console* checkbox = nk_console_label(parent, text);

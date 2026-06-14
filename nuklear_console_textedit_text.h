@@ -90,7 +90,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
                 new_real_len = 0;
             }
             data->buffer[new_real_len] = '\0';
-            nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+            data->changed = nk_true;
         }
         else if (mask_strlen > buffer_strlen) { // Characters added
             int real_len = (int)nk_strlen(data->buffer);
@@ -98,13 +98,13 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
                 data->buffer[real_len] = mask[i];
             }
             data->buffer[real_len] = '\0';
-            nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+            data->changed = nk_true;
         }
     }
     else {
         nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
         if (buffer_strlen != (int)nk_strlen(data->buffer)) {
-            nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+            data->changed = nk_true;
         }
     }
 
@@ -123,9 +123,6 @@ NK_API nk_console* nk_console_textedit_text(nk_console* parent) {
     textedit_text->columns = 1;
     textedit_text->selectable = nk_true;
     textedit_text->render = nk_console_textedit_text_render;
-
-    // Register the back event to unload the keyboard.
-    nk_console_add_event(parent, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
     return textedit_text;
 }
 
