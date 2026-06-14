@@ -597,8 +597,8 @@ NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool s
                 int lv_idx = nk_console_get_widget_index(list_view);
                 int last = (int)cvector_size(list_view->parent->children) - 1;
                 if (lv_idx >= 0 && last > lv_idx) {
-                    cvector_erase(list_view->parent->children, last);
-                    cvector_insert(list_view->parent->children, lv_idx, search);
+                    cvector_erase(list_view->parent->children, (size_t)last);
+                    cvector_insert(list_view->parent->children, (size_t)lv_idx, search);
                 }
                 data->search = search;
             }
@@ -620,7 +620,7 @@ NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool s
             }
             int idx = nk_console_get_widget_index(search);
             if (idx >= 0) {
-                cvector_erase(parent->children, idx);
+                cvector_erase(parent->children, (size_t)idx);
             }
         }
         nk_console_free(search);
