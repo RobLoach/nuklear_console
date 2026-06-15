@@ -269,7 +269,12 @@ NK_API float nk_console_list_view_row_height(nk_console* list_view) {
     if (list_view == NULL) {
         return 0;
     }
-    return list_view->ctx->style.font->height + list_view->ctx->style.button.border * 2.0f + list_view->ctx->style.button.padding.y * 2.0f;
+    float height = list_view->ctx->style.font->height + list_view->ctx->style.button.border * 2.0f + list_view->ctx->style.button.padding.y * 2.0f;
+    // Round up to a whole pixel. nk_list_view_begin() casts the row height to int
+    // for its visible-row count, while the rows themselves are laid out at this
+    // (float) height; keeping it integral makes the two agree so the count, scroll
+    // math, and drawn rows stay in lockstep when the font height is fractional.
+    return (float)(int)(height + 0.9999f);
 }
 
 NK_API nk_uint nk_console_list_view_selected(nk_console* list_view) {
@@ -304,7 +309,9 @@ NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint ind
 
     // Scroll so the selected item is at the top of the visible area.
     float row_height = nk_console_list_view_row_height(list_view);
-    float scroll_row_height = row_height + list_view->ctx->style.window.spacing.y;
+    // Truncate spacing to int to mirror nk_list_view_begin's (int)item_spacing.y,
+    // so this stride matches Nuklear's scroll-to-row math exactly.
+    float scroll_row_height = row_height + (float)(int)list_view->ctx->style.window.spacing.y;
     nk_uint new_scroll = (nk_uint)((float)index * scroll_row_height);
     data->_scroll_y = new_scroll;
     if (data->view.scroll_pointer) {
@@ -352,20 +359,33 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     // Display index of the currently selected item (used for scroll math).
     nk_uint sel_disp = nk_console_list_view_display_index(widget, data, data->selected, filter);
 
-    // Layout the widget with the correct visible height so widget_bounds is accurate.
-    struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
+    // When calculating the height, consider the header height too.
+    float header_height = 0.0f;
+    if ((data->flags & (NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MINIMIZABLE)) &&
+            !(data->flags & NK_WINDOW_HIDDEN) && widget->label != NULL) {
+        header_height = top->ctx->style.font->height
+            + 2.0f * top->ctx->style.window.header.padding.y
+            + 2.0f * top->ctx->style.window.header.label_padding.y;
+    }
+
+    // Determine how many rows to show and the overall box height.
     nk_uint rows_visible = data->rows_visible;
     if (rows_visible == 0) {
+        // Calling nk_layout_widget_bounds() here, before this widget lays out its
+        // own row, reports the *previous* row (at_y only advances on the next
+        // nk_layout_row_* call), so this widget's real top is peek.y + peek.h.
+        struct nk_rect peek = nk_layout_widget_bounds(top->ctx);
+        float list_top = peek.y + peek.h;
         struct nk_rect content = nk_window_get_content_region(top->ctx);
         // Leave the same padding gap at the bottom that the window reserves at the
-        // top (top padding is already baked into widget_bounds.y via at_y).
-        float remaining = (content.y + content.h) - widget_bounds.y - top->ctx->style.window.padding.y;
+        // top, and reserve room for the header bar so rows still fit.
+        float remaining = (content.y + content.h) - list_top - top->ctx->style.window.padding.y - header_height;
         // Use a signed intermediate: casting a negative float to nk_uint is UB and
         // would slip past the < 1 clamp as a huge value.
         int fit = (int)(remaining / scroll_row_height);
-        rows_visible = fit < 1 ? (nk_uint)1 : (nk_uint)fit - 1;
+        rows_visible = fit < 1 ? (nk_uint)1 : (nk_uint)fit;
     }
-    widget_bounds.h = scroll_row_height * (float)rows_visible;
+    float box_height = scroll_row_height * (float)rows_visible + header_height;
 
     if (widget->disabled) {
         nk_widget_disable_begin(top->ctx);
@@ -465,8 +485,10 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         }
     }
 
-    // Display the visible rows.
-    nk_layout_row_dynamic(top->ctx, widget_bounds.h, 1);
+    // Display the visible rows. Lay out the row first, then read the real widget
+    // bounds (matches every other console widget and yields an accurate return rect).
+    nk_layout_row_dynamic(top->ctx, box_height, 1);
+    struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
     if (nk_list_view_begin(top->ctx, &data->view, widget->label, data->flags, (int)row_height, (int)display_count)) {
         // Cache the normal button style to restore it later on.
         struct nk_style_item saved_normal = top->ctx->style.button.normal;
