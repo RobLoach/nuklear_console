@@ -357,11 +357,15 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     nk_uint rows_visible = data->rows_visible;
     if (rows_visible == 0) {
         struct nk_rect content = nk_window_get_content_region(top->ctx);
-        float remaining = (content.y + content.h) - widget_bounds.y;
-        rows_visible = (nk_uint)(remaining / scroll_row_height);
-        if (rows_visible < 1) rows_visible = 1;
+        // Leave the same padding gap at the bottom that the window reserves at the
+        // top (top padding is already baked into widget_bounds.y via at_y).
+        float remaining = (content.y + content.h) - widget_bounds.y - top->ctx->style.window.padding.y;
+        // Use a signed intermediate: casting a negative float to nk_uint is UB and
+        // would slip past the < 1 clamp as a huge value.
+        int fit = (int)(remaining / scroll_row_height);
+        rows_visible = fit < 1 ? (nk_uint)1 : (nk_uint)fit - 1;
     }
-    widget_bounds.h = row_height * (float)rows_visible;
+    widget_bounds.h = scroll_row_height * (float)rows_visible;
 
     if (widget->disabled) {
         nk_widget_disable_begin(top->ctx);
