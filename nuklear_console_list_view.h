@@ -42,7 +42,7 @@ extern "C" {
  *
  * @param parent Where the element should be placed.
  * @param id A unique identifier for the list view.
- * @param rows_visible The number of rows to be shown at any given time.
+ * @param rows_visible The number of rows to be shown at any given time. Pass 0 to fill the remaining window height.
  * @param item_count The number of items in the data set.
  * @param get_label_callback The callback that will be used to retrieve individual labels.
  *
@@ -354,7 +354,14 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 
     // Layout the widget with the correct visible height so widget_bounds is accurate.
     struct nk_rect widget_bounds = nk_layout_widget_bounds(top->ctx);
-    widget_bounds.h = row_height * (float)data->rows_visible;
+    nk_uint rows_visible = data->rows_visible;
+    if (rows_visible == 0) {
+        struct nk_rect content = nk_window_get_content_region(top->ctx);
+        float remaining = (content.y + content.h) - widget_bounds.y;
+        rows_visible = (nk_uint)(remaining / scroll_row_height);
+        if (rows_visible < 1) rows_visible = 1;
+    }
+    widget_bounds.h = row_height * (float)rows_visible;
 
     if (widget->disabled) {
         nk_widget_disable_begin(top->ctx);
@@ -385,7 +392,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_UP)) {
             // Page up: jump selection up by rows_visible items (in display space).
             if (sel_disp > 0) {
-                nk_uint new_disp = (nk_uint)NK_MAX(0, (int)sel_disp - (int)data->rows_visible);
+                nk_uint new_disp = (nk_uint)NK_MAX(0, (int)sel_disp - (int)rows_visible);
                 data->selected = nk_console_list_view_nth_match(widget, data, new_disp, filter);
                 sel_disp = new_disp;
                 nk_console_list_view_apply_scroll(data, sel_disp * (nk_uint)scroll_row_height);
@@ -395,7 +402,7 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB) || nk_input_is_key_pressed(&top->ctx->input, NK_KEY_SCROLL_DOWN)) {
             // Page down: jump selection down by rows_visible items (in display space).
             if (display_count > 0 && sel_disp < display_count - 1) {
-                nk_uint new_disp = NK_MIN(display_count - 1, sel_disp + data->rows_visible);
+                nk_uint new_disp = NK_MIN(display_count - 1, sel_disp + rows_visible);
                 data->selected = nk_console_list_view_nth_match(widget, data, new_disp, filter);
                 sel_disp = new_disp;
                 nk_console_list_view_scroll_into_view_down(data, sel_disp, display_count, scroll_row_height);
@@ -561,7 +568,7 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
     }
     nk_zero(data, sizeof(nk_console_list_view_data));
     data->row_count = item_count;
-    data->rows_visible = rows_visible <= 0 ? (nk_uint)10 : (nk_uint)rows_visible;
+    data->rows_visible = rows_visible < 0 ? (nk_uint)10 : (nk_uint)rows_visible;
     data->get_label_callback = get_label_callback;
     data->flags = NK_WINDOW_BORDER;
 
