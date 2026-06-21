@@ -10,8 +10,12 @@
 #endif // NK_CONSOLE_FILE_PATH_MAX
 
 /**
- * NK_CONSOLE_FILE_SDL_NATIVE_DIALOG: When abled in SDL3, will enable file widgets to use the native file dialogs.
+ * NK_CONSOLE_FILE_SDL_NATIVE_DIALOG: When enabled in SDL3, will enable file widgets to use the native file dialogs.
+ * Auto-enabled when SDL3 is detected. Define NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG to disable.
  */
+#if !defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && !defined(NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG) && defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION >= 3
+#define NK_CONSOLE_FILE_SDL_NATIVE_DIALOG
+#endif
 
 /**
  * A single file or directory entry stored for the file widget's list view.
@@ -939,17 +943,18 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
 static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filter, int* out_count) {
     *out_count = 0;
     if (filter == NULL || filter[0] == '\0') return NULL;
-    /* Count semicolons to determine number of extensions. Wrap them all into one filter entry. */
-    /* SDL_DialogFileFilter has { name, pattern } where pattern is semicolon-separated. */
-    SDL_DialogFileFilter* filters = (SDL_DialogFileFilter*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(SDL_DialogFileFilter));
+    int filter_len = nk_strlen(filter);
+    /* Allocate the filter struct and pattern string in one block. */
+    SDL_DialogFileFilter* filters = (SDL_DialogFileFilter*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(SDL_DialogFileFilter) + (nk_size)(filter_len + 1));
     if (filters == NULL) return NULL;
+    /* Pattern string lives right after the struct. */
+    char* sdl_pattern = (char*)(filters + 1);
     /* Strip leading dots for the SDL pattern (SDL uses "png;jpg" not ".png;.jpg"). */
-    static char sdl_pattern[512];
     int p = 0;
     const char* src = filter;
-    while (*src && p < (int)sizeof(sdl_pattern) - 1) {
-        if (*src == '.') { src++; continue; } /* skip dot */
-        sdl_pattern[p++] = (*src == ';') ? ';' : *src;
+    while (*src) {
+        if (*src == '.') { src++; continue; }
+        sdl_pattern[p++] = *src;
         src++;
     }
     sdl_pattern[p] = '\0';
