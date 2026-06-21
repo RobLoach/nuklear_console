@@ -93,11 +93,9 @@ int main() {
 
     // Gamepad
     #ifndef NK_CONSOLE_NO_GAMEPAD
-    {
-        struct nk_gamepads gamepads;
-        assert(nk_gamepad_init(&gamepads, ctx, NULL) == nk_true);
-        nk_console_set_gamepads(console, &gamepads);
-    }
+    struct nk_gamepads gamepads;
+    assert(nk_gamepad_init(&gamepads, ctx, NULL) == nk_true);
+    nk_console_set_gamepads(console, &gamepads);
     #endif
 
     // nk_console_label()
@@ -114,7 +112,7 @@ int main() {
 
     // nk_console_checkbox()
     {
-        nk_bool checkbox_value = nk_true;
+        static nk_bool checkbox_value = nk_true;
         nk_console* checkbox = nk_console_checkbox(console, "Checkbox", &checkbox_value);
         assert(checkbox != NULL);
     }
@@ -128,15 +126,15 @@ int main() {
 
     // nk_console_progress()
     {
-        nk_size process_value = 20;
+        static nk_size process_value = 20;
         nk_console* progress = nk_console_progress(console, "Progress Bar", &process_value, 100);
         assert(progress != NULL);
     }
 
     // nk_console_input_gamepad()
     {
-        int gamepad_number = 0;
-        enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
+        static int gamepad_number = 0;
+        static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
         nk_console* input = nk_console_input_gamepad(console, "Input Button", -1, &gamepad_number, &gamepad_button);
         assert(input != NULL);
         assert(nk_console_input_is_gamepad(input) == nk_true);
@@ -145,13 +143,13 @@ int main() {
 
         // A keyboard key (typed character or special key) is stored in an
         // nk_rune as an NK_CONSOLE_KEY_* value.
-        nk_rune out_key = NK_CONSOLE_KEY_ENTER;
+        static nk_rune out_key = NK_CONSOLE_KEY_ENTER;
         nk_console* input_key = nk_console_input_key(console, "Key Input", &out_key);
         assert(input_key != NULL);
         assert(nk_console_input_is_key(input_key) == nk_true);
 
         // A mouse button binding.
-        enum nk_buttons out_mouse = NK_BUTTON_LEFT;
+        static enum nk_buttons out_mouse = NK_BUTTON_LEFT;
         nk_console* input_mouse = nk_console_input_mouse(console, "Mouse Input", &out_mouse);
         assert(input_mouse != NULL);
         assert(nk_console_input_is_mouse(input_mouse) == nk_true);
@@ -228,15 +226,15 @@ int main() {
 
     // nk_console_combobox()
     {
-        int value_combobox = 3;
+        static int value_combobox = 3;
         nk_console* combobox = nk_console_combobox(console, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &value_combobox);
         assert(combobox != NULL);
     }
 
     // nk_console_property_int/float()
     {
-        int property_int_test = 10;
-        float property_float_test = 0.5f;
+        static int property_int_test = 10;
+        static float property_float_test = 0.5f;
         nk_console* property_int = nk_console_property_int(console, "Property Int", 10, &property_int_test, 30, 1, 1);
         nk_console* property_float = nk_console_property_float(console, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
         assert(property_int != NULL);
@@ -245,8 +243,8 @@ int main() {
 
     // nk_console_slider_float/int()
     {
-        float slider_float_test = 1.0f;
-        int slider_int_test = 15;
+        static float slider_float_test = 1.0f;
+        static int slider_int_test = 15;
         nk_console* slider_float = nk_console_slider_float(console, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f);
         nk_console* slider_int = nk_console_slider_int(console, "Slider Int", 0, &slider_int_test, 20, 1);
         assert(slider_float != NULL);
@@ -263,7 +261,7 @@ int main() {
 
     // nk_console_color()
     {
-        struct nk_colorf color_value = {0.31f, 1.0f, 0.48f, 1.0f};
+        static struct nk_colorf color_value = {0.31f, 1.0f, 0.48f, 1.0f};
         nk_console* color = nk_console_color(console, "Color", &color_value, NK_RGBA);
         assert(color != NULL);
     }
@@ -406,13 +404,12 @@ int main() {
     nk_end(ctx);
 
     // nk_console_image()
+    pntr_image* image_value = pntr_load_image("resources/image.png");
+    assert(image_value != NULL);
     {
-        pntr_image* image_value = pntr_load_image("resources/image.png");
-        assert(image_value != NULL);
         nk_console* image = nk_console_image(console, pntr_image_nk(image_value));
         nk_console_set_height(image, image_value->height);
         assert(image != NULL);
-        pntr_unload_image(image_value);
     }
 
     // nk_console_show_message()
@@ -469,17 +466,17 @@ int main() {
 
     // nk_console_knob_int/float()
     {
-        int knob_int_val = 5;
+        static int knob_int_val = 5;
         nk_console* knob_int = nk_console_knob_int(console, "Knob Int", 0, &knob_int_val, 10, 1, 1.0f);
         assert(knob_int != NULL);
-        float knob_float_val = 0.5f;
+        static float knob_float_val = 0.5f;
         nk_console* knob_float = nk_console_knob_float(console, "Knob Float", 0.0f, &knob_float_val, 1.0f, 0.1f, 1.0f);
         assert(knob_float != NULL);
     }
 
     // nk_console_radio()
     {
-        int radio_selected = 1;
+        static int radio_selected = 1;
         nk_console* radio1 = nk_console_radio(console, "Option A", &radio_selected);
         nk_console* radio2 = nk_console_radio(console, "Option B", &radio_selected);
         nk_console* radio3 = nk_console_radio(console, "Option C", &radio_selected);
@@ -490,7 +487,7 @@ int main() {
 
     // nk_console_rule_horizontal()
     {
-        struct nk_color rule_color = {200, 200, 200, 255};
+        static struct nk_color rule_color = {200, 200, 200, 255};
         nk_console* rule = nk_console_rule_horizontal(console, rule_color, nk_false);
         assert(rule != NULL);
     }
@@ -609,6 +606,10 @@ int main() {
 
     // Unload
     nk_console_free(console);
+    #ifndef NK_CONSOLE_NO_GAMEPAD
+    nk_gamepad_free(&gamepads);
+    #endif
+    pntr_unload_image(image_value);
     pntr_unload_nuklear(ctx);
     pntr_unload_image(screen);
     pntr_unload_font(font);
