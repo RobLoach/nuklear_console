@@ -538,7 +538,7 @@ static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size cou
     const unsigned char* s = (const unsigned char*)src;
     if (d == s || count == 0) return dest;
     if (d < s) {
-        NK_MEMCPY(dest, src, count);
+        while (count--) *d++ = *s++;
     } else {
         d += count; s += count;
         while (count--) *--d = *--s;
