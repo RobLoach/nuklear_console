@@ -433,6 +433,20 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
             }
             top_data->input_processed = nk_true;
         }
+        else if (nk_input_is_key_pressed(&top->ctx->input, NK_KEY_TEXT_START)) {
+            data->selected = nk_console_list_view_nth_match(widget, data, 0, filter);
+            sel_disp = 0;
+            nk_console_list_view_apply_scroll(data, 0);
+            top_data->input_processed = nk_true;
+        }
+        else if (nk_input_is_key_pressed(&top->ctx->input, NK_KEY_TEXT_END)) {
+            if (display_count > 0) {
+                sel_disp = display_count - 1;
+                data->selected = nk_console_list_view_nth_match(widget, data, sel_disp, filter);
+                nk_console_list_view_scroll_into_view_down(data, sel_disp, display_count, scroll_row_height);
+            }
+            top_data->input_processed = nk_true;
+        }
         else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_UP) || (up_held && repeat_fire)) {
             if (sel_disp > 0) {
                 // Find the previous matching item.
