@@ -58,6 +58,16 @@ NK_API void nk_console_set_message_position(nk_console* console, nk_console_mess
  */
 NK_API nk_console_message_position nk_console_get_message_position(nk_console* console);
 
+/**
+ * Render a single message notification.
+ */
+NK_API void nk_console_message_render(nk_console* console, nk_console_message* message);
+
+/**
+ * Render all active messages for the console.
+ */
+NK_API void nk_console_render_message(nk_console* console);
+
 #if defined(__cplusplus)
 }
 #endif
