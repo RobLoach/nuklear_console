@@ -126,7 +126,8 @@ static struct nk_rect nk_console_tree_render(nk_console* tree) {
                 nk_console_tree_apply_expanded(tree, nk_true);
                 nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
                 top_data->input_processed = nk_true;
-            } else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && nk_console_tree_expanded(tree)) {
+            }
+            else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LEFT) && nk_console_tree_expanded(tree)) {
                 nk_console_tree_apply_expanded(tree, nk_false);
                 nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
                 top_data->input_processed = nk_true;

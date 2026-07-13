@@ -177,10 +177,7 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     float tooltip_width = bounds.w - ctx->style.window.border;
     int text_len = nk_strlen(message->text);
     float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, message->text, text_len);
-    nk_console_marquee_tooltip_render(ctx, message->text, text_len, full_text_width,
-        tooltip_width, text_height,
-        NK_CONSOLE_MESSAGE_SCROLL_SPEED, NK_CONSOLE_MESSAGE_SCROLL_PAUSE,
-        &message->scroll_x);
+    nk_console_marquee_tooltip_render(ctx, message->text, text_len, full_text_width, tooltip_width, text_height, NK_CONSOLE_MESSAGE_SCROLL_SPEED, NK_CONSOLE_MESSAGE_SCROLL_PAUSE, &message->scroll_x);
 
     // Restore the mouse x/y positions.
     ctx->input.mouse.pos = mouse_pos;

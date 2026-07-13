@@ -499,20 +499,20 @@ static void* nk_console_cvector_realloc(void* old_ptr, nk_size new_size) {
     }
     return new_ptr;
 }
-#define cvector_clib_malloc(size)       nk_console_cvector_malloc(size)
-#define cvector_clib_free(ptr)          nk_console_cvector_free(ptr)
+#define cvector_clib_malloc(size) nk_console_cvector_malloc(size)
+#define cvector_clib_free(ptr) nk_console_cvector_free(ptr)
 #define cvector_clib_realloc(ptr, size) nk_console_cvector_realloc(ptr, size)
 #else
-    #ifndef cvector_clib_free
-    #define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
-    #endif
-    #ifndef cvector_clib_malloc
-    #define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
-    #endif
-    #ifndef cvector_clib_realloc
-    #include <stdlib.h>
-    #define cvector_clib_realloc(ptr, size) realloc(ptr, size)
-    #endif
+#ifndef cvector_clib_free
+#define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
+#endif
+#ifndef cvector_clib_malloc
+#define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
+#endif
+#ifndef cvector_clib_realloc
+#include <stdlib.h>
+#define cvector_clib_realloc(ptr, size) realloc(ptr, size)
+#endif
 #endif
 #ifndef cvector_clib_calloc
 #define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
@@ -539,8 +539,10 @@ static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size cou
     if (d == s || count == 0) return dest;
     if (d < s) {
         while (count--) *d++ = *s++;
-    } else {
-        d += count; s += count;
+    }
+    else {
+        d += count;
+        s += count;
         while (count--) *--d = *--s;
     }
     return dest;
@@ -562,8 +564,8 @@ extern "C" {
 #include "nuklear_console_color.h"
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_file.h"
-#include "nuklear_console_gamepad_stub.h"
 #include "nuklear_console_file_system.h"
+#include "nuklear_console_gamepad_stub.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
 #include "nuklear_console_knob.h"
@@ -967,10 +969,7 @@ static void nk_console_tooltip_display(nk_console* console, const char* text) {
 
     int text_len = nk_strlen(text);
     float full_text_width = style->font->width(style->font->userdata, style->font->height, text, text_len);
-    nk_console_marquee_tooltip_render(ctx, text, text_len, full_text_width,
-        windowbounds.w - style->window.border, text_height,
-        NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE,
-        &data->tooltip_scroll_x);
+    nk_console_marquee_tooltip_render(ctx, text, text_len, full_text_width, windowbounds.w - style->window.border, text_height, NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE, &data->tooltip_scroll_x);
 
     ctx->input.mouse.pos.x = x;
     ctx->input.mouse.pos.y = y;
@@ -1136,7 +1135,7 @@ static void nk_console_process_post_render_events(nk_console* console) {
     if (count == 0) {
         return;
     }
-    for (size_t i = count; i-- > 0; ) {
+    for (size_t i = count; i-- > 0;) {
         if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
             if (console->events[i].callback != NULL) {
                 console->events[i].callback((nk_console*)console->events[i].user_data, NULL);

@@ -142,7 +142,7 @@ static nk_bool nk_console_list_view_item_matches(const char* label, const char* 
         int j = 0;
         while (filter[j] != '\0' && label[i + j] != '\0' &&
                nk_console_list_view_tolower((unsigned char)label[i + j]) ==
-               nk_console_list_view_tolower((unsigned char)filter[j])) {
+                   nk_console_list_view_tolower((unsigned char)filter[j])) {
             j++;
         }
         if (filter[j] == '\0') return nk_true;
@@ -294,7 +294,7 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
     // When a filter is active and the selected item doesn't pass it (i.e. there
     // are no matches), there is no meaningful visible selection.
     if (data->searchable && data->search_buffer[0] != '\0' &&
-            !nk_console_list_view_item_matches(label, data->search_buffer)) {
+        !nk_console_list_view_item_matches(label, data->search_buffer)) {
         return NULL;
     }
     return label;
@@ -362,10 +362,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     // When calculating the height, consider the header height too.
     float header_height = 0.0f;
     if ((data->flags & (NK_WINDOW_TITLE | NK_WINDOW_CLOSABLE | NK_WINDOW_MINIMIZABLE)) &&
-            !(data->flags & NK_WINDOW_HIDDEN) && widget->label != NULL) {
-        header_height = top->ctx->style.font->height
-            + 2.0f * top->ctx->style.window.header.padding.y
-            + 2.0f * top->ctx->style.window.header.label_padding.y;
+        !(data->flags & NK_WINDOW_HIDDEN) && widget->label != NULL) {
+        header_height = top->ctx->style.font->height + 2.0f * top->ctx->style.window.header.padding.y + 2.0f * top->ctx->style.window.header.label_padding.y;
     }
 
     // Determine how many rows to show and the overall box height.

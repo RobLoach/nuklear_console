@@ -25,21 +25,33 @@ typedef struct nk_gamepads {
 } nk_gamepads;
 
 enum nk_gamepad_button {
-    NK_GAMEPAD_BUTTON_INVALID = -1, NK_GAMEPAD_BUTTON_FIRST = 0,
-    NK_GAMEPAD_BUTTON_UP = 0, NK_GAMEPAD_BUTTON_DOWN = 1,
-    NK_GAMEPAD_BUTTON_LEFT = 2, NK_GAMEPAD_BUTTON_RIGHT = 3,
-    NK_GAMEPAD_BUTTON_A = 4, NK_GAMEPAD_BUTTON_B = 5,
-    NK_GAMEPAD_BUTTON_X = 6, NK_GAMEPAD_BUTTON_Y = 7,
-    NK_GAMEPAD_BUTTON_LB = 8, NK_GAMEPAD_BUTTON_RB = 9,
-    NK_GAMEPAD_BUTTON_BACK = 10, NK_GAMEPAD_BUTTON_START = 11,
-    NK_GAMEPAD_BUTTON_GUIDE = 12, NK_GAMEPAD_BUTTON_LAST = 13
+    NK_GAMEPAD_BUTTON_INVALID = -1,
+    NK_GAMEPAD_BUTTON_FIRST = 0,
+    NK_GAMEPAD_BUTTON_UP = 0,
+    NK_GAMEPAD_BUTTON_DOWN = 1,
+    NK_GAMEPAD_BUTTON_LEFT = 2,
+    NK_GAMEPAD_BUTTON_RIGHT = 3,
+    NK_GAMEPAD_BUTTON_A = 4,
+    NK_GAMEPAD_BUTTON_B = 5,
+    NK_GAMEPAD_BUTTON_X = 6,
+    NK_GAMEPAD_BUTTON_Y = 7,
+    NK_GAMEPAD_BUTTON_LB = 8,
+    NK_GAMEPAD_BUTTON_RB = 9,
+    NK_GAMEPAD_BUTTON_BACK = 10,
+    NK_GAMEPAD_BUTTON_START = 11,
+    NK_GAMEPAD_BUTTON_GUIDE = 12,
+    NK_GAMEPAD_BUTTON_LAST = 13
 };
 
 enum nk_gamepad_axis {
-    NK_GAMEPAD_AXIS_INVALID = -1, NK_GAMEPAD_AXIS_FIRST = 0,
-    NK_GAMEPAD_AXIS_LEFT_X = 0, NK_GAMEPAD_AXIS_LEFT_Y = 1,
-    NK_GAMEPAD_AXIS_RIGHT_X = 2, NK_GAMEPAD_AXIS_RIGHT_Y = 3,
-    NK_GAMEPAD_AXIS_LEFT_TRIGGER = 4, NK_GAMEPAD_AXIS_RIGHT_TRIGGER = 5,
+    NK_GAMEPAD_AXIS_INVALID = -1,
+    NK_GAMEPAD_AXIS_FIRST = 0,
+    NK_GAMEPAD_AXIS_LEFT_X = 0,
+    NK_GAMEPAD_AXIS_LEFT_Y = 1,
+    NK_GAMEPAD_AXIS_RIGHT_X = 2,
+    NK_GAMEPAD_AXIS_RIGHT_Y = 3,
+    NK_GAMEPAD_AXIS_LEFT_TRIGGER = 4,
+    NK_GAMEPAD_AXIS_RIGHT_TRIGGER = 5,
     NK_GAMEPAD_AXIS_LAST = 6
 };
 
@@ -55,19 +67,31 @@ extern "C" {
 #endif
 
 static float nk_gamepad_get_axis(struct nk_gamepads* g, int n, enum nk_gamepad_axis a) {
-    NK_UNUSED(g); NK_UNUSED(n); NK_UNUSED(a); return 0.0f;
+    NK_UNUSED(g);
+    NK_UNUSED(n);
+    NK_UNUSED(a);
+    return 0.0f;
 }
 
 static nk_bool nk_gamepad_is_button_released(struct nk_gamepads* g, int n, enum nk_gamepad_button b) {
-    NK_UNUSED(g); NK_UNUSED(n); NK_UNUSED(b); return nk_false;
+    NK_UNUSED(g);
+    NK_UNUSED(n);
+    NK_UNUSED(b);
+    return nk_false;
 }
 
 static nk_bool nk_gamepad_is_button_down(struct nk_gamepads* g, int n, enum nk_gamepad_button b) {
-    NK_UNUSED(g); NK_UNUSED(n); NK_UNUSED(b); return nk_false;
+    NK_UNUSED(g);
+    NK_UNUSED(n);
+    NK_UNUSED(b);
+    return nk_false;
 }
 
 static nk_bool nk_gamepad_init(struct nk_gamepads* gamepads, struct nk_context* ctx, void* user_data) {
-    NK_UNUSED(gamepads); NK_UNUSED(ctx); NK_UNUSED(user_data); return nk_true;
+    NK_UNUSED(gamepads);
+    NK_UNUSED(ctx);
+    NK_UNUSED(user_data);
+    return nk_true;
 }
 
 static void nk_gamepad_free(struct nk_gamepads* gamepads) {

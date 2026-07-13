@@ -32,9 +32,7 @@ NK_API void nk_console_sdl_update_text_input(nk_console* console, SDL_Window* wi
     nk_console* top = nk_console_get_top(console);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_console* active_parent = top_data->active_parent;
-    nk_console* active = (active_parent != NULL) ?
-            active_parent->activeWidget :
-            NULL;
+    nk_console* active = (active_parent != NULL) ? active_parent->activeWidget : NULL;
 
     // Text input must be active for SDL3 to deliver SDL_EVENT_TEXT_INPUT, which
     // is how printable characters reach Nuklear. Two console states need it:

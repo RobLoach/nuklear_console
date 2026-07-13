@@ -484,7 +484,8 @@ NK_API void nk_console_file_normalize_path(char* buf, int size) {
             if (seg_count > 0) {
                 seg_count--;
                 tmp_len = seg_ends[seg_count];
-            } else if (!absolute) {
+            }
+            else if (!absolute) {
                 int restore_len = tmp_len;
                 if (restore_len > 0 && tmp[restore_len - 1] != '/') {
                     if (tmp_len < size - 1) tmp[tmp_len++] = '/';
@@ -953,7 +954,10 @@ static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filte
     int p = 0;
     const char* src = filter;
     while (*src) {
-        if (*src == '.') { src++; continue; }
+        if (*src == '.') {
+            src++;
+            continue;
+        }
         sdl_pattern[p++] = *src;
         src++;
     }
@@ -995,7 +999,8 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
         const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
         if (data->select_directory) {
             SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, starting, false);
-        } else {
+        }
+        else {
             SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, sdl_filters, filter_count, starting, false);
         }
         if (sdl_filters) NK_CONSOLE_FREE(nk_handle_id(0), sdl_filters);

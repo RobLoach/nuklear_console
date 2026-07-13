@@ -21,12 +21,15 @@
  */
 static const char* nk_console_marquee_slice(
     struct nk_context* ctx,
-    const char* text, int text_len,
-    float full_text_width, float avail_width,
-    float speed, float pause,
+    const char* text,
+    int text_len,
+    float full_text_width,
+    float avail_width,
+    float speed,
+    float pause,
     float* scroll_x,
-    char* buf, int buf_size)
-{
+    char* buf,
+    int buf_size) {
     if (full_text_width <= avail_width || ctx->delta_time_seconds <= 0) {
         return text;
     }
@@ -43,8 +46,13 @@ static const char* nk_console_marquee_slice(
     int start = 0;
     for (int i = 1; i <= text_len; i++) {
         float w = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, i);
-        if (w >= offset) { start = i - 1; break; }
-        if (i == text_len) { start = text_len; }
+        if (w >= offset) {
+            start = i - 1;
+            break;
+        }
+        if (i == text_len) {
+            start = text_len;
+        }
     }
     int copy_len = text_len - start;
     if (copy_len >= buf_size) {
@@ -60,16 +68,17 @@ static const char* nk_console_marquee_slice(
  */
 static void nk_console_marquee_tooltip_render(
     struct nk_context* ctx,
-    const char* text, int text_len,
+    const char* text,
+    int text_len,
     float full_text_width,
-    float tooltip_width, float text_height,
-    float speed, float pause,
-    float* scroll_x)
-{
+    float tooltip_width,
+    float text_height,
+    float speed,
+    float pause,
+    float* scroll_x) {
     float avail_width = tooltip_width - ctx->style.window.padding.x * 2.0f;
     char display_buf[256];
-    const char* display_text = nk_console_marquee_slice(ctx, text, text_len,
-        full_text_width, avail_width, speed, pause, scroll_x, display_buf, (int)sizeof(display_buf));
+    const char* display_text = nk_console_marquee_slice(ctx, text, text_len, full_text_width, avail_width, speed, pause, scroll_x, display_buf, (int)sizeof(display_buf));
     struct nk_vec2 zero;
     nk_zero_struct(zero);
     if (nk_tooltip_begin_offset(ctx, tooltip_width, NK_TOP_LEFT, zero)) {
