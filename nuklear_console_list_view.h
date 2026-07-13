@@ -111,6 +111,14 @@ NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool s
  */
 NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint index);
 
+/**
+ * Render a list view widget.
+ *
+ * @param widget The List View widget to render.
+ * @return The bounding rectangle used for layout.
+ */
+NK_API struct nk_rect nk_console_list_view_render(nk_console* widget);
+
 #if defined(__cplusplus)
 }
 #endif
