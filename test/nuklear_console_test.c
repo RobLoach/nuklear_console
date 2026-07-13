@@ -604,6 +604,63 @@ int main() {
         assert(strcmp(nk_console_list_view_selected_label(lv), "Cherry") == 0);
     }
 
+    // nk_console_marquee_slice()
+    {
+        const char* text = "Hello, Marquee!";
+        int text_len = (int)strlen(text);
+        float full_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, text_len);
+        float speed = 60.0f;
+        float pause = 1.5f;
+        float scroll_x;
+        char buf[256];
+
+        // Text fits in available width: returned unchanged.
+        scroll_x = 0.0f;
+        const char* result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width + 10.0f, speed, pause, &scroll_x, buf, sizeof(buf));
+        assert(result == text);
+        assert(scroll_x == 0.0f);
+
+        // Zero delta time: returned unchanged.
+        float saved_dt = ctx->delta_time_seconds;
+        ctx->delta_time_seconds = 0.0f;
+        scroll_x = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width * 0.5f, speed, pause, &scroll_x, buf, sizeof(buf));
+        assert(result == text);
+        ctx->delta_time_seconds = saved_dt;
+
+        // Pause window: scroll advances but offset is still negative, full text returned.
+        float avail = full_width * 0.5f;
+        ctx->delta_time_seconds = 0.1f;
+        scroll_x = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf));
+        assert(scroll_x > 0.0f);
+        assert(result == text);
+
+        // After enough time, text starts scrolling (returned slice differs from text).
+        scroll_x = 0.0f;
+        ctx->delta_time_seconds = pause + 0.5f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf));
+        assert(result == buf);
+        assert(strlen(result) > 0);
+
+        // Wrap-around: scroll_x exceeding total_cycle gets wrapped.
+        float pause_pixels = pause * speed;
+        float total_cycle = full_width + pause_pixels;
+        scroll_x = total_cycle - 1.0f;
+        ctx->delta_time_seconds = 2.0f / speed;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf));
+        assert(scroll_x < total_cycle);
+
+        // Small buffer: output is truncated safely.
+        char tiny_buf[4];
+        scroll_x = pause_pixels + 1.0f;
+        ctx->delta_time_seconds = 0.01f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, tiny_buf, sizeof(tiny_buf));
+        assert(strlen(result) <= 3);
+
+        ctx->delta_time_seconds = saved_dt;
+    }
+
     // Unload
     nk_console_free(console);
     #ifndef NK_CONSOLE_NO_GAMEPAD
