@@ -26,6 +26,26 @@ NK_API nk_console* nk_console_knob_int(nk_console* parent, const char* label, in
  */
 NK_API nk_console* nk_console_knob_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
 
+/**
+ * Gets the zero direction of a Knob widget.
+ */
+NK_API enum nk_heading nk_console_knob_get_zero_direction(nk_console* knob);
+
+/**
+ * Sets the zero direction of a Knob widget.
+ */
+NK_API void nk_console_knob_set_zero_direction(nk_console* knob, enum nk_heading zero_direction);
+
+/**
+ * Gets the dead zone degrees of a Knob widget.
+ */
+NK_API float nk_console_knob_get_dead_zone_degrees(nk_console* knob);
+
+/**
+ * Sets the dead zone degrees of a Knob widget.
+ */
+NK_API void nk_console_knob_set_dead_zone_degrees(nk_console* knob, float dead_zone_degrees);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -92,6 +112,38 @@ NK_API nk_console* nk_console_knob_float(nk_console* parent, const char* label, 
     }
 
     return widget;
+}
+
+NK_API enum nk_heading nk_console_knob_get_zero_direction(nk_console* knob) {
+    if (knob == NULL || knob->data == NULL) {
+        return NK_DOWN;
+    }
+    nk_console_knob_data* data = (nk_console_knob_data*)knob->data;
+    return data->zero_direction;
+}
+
+NK_API void nk_console_knob_set_zero_direction(nk_console* knob, enum nk_heading zero_direction) {
+    if (knob == NULL || knob->data == NULL) {
+        return;
+    }
+    nk_console_knob_data* data = (nk_console_knob_data*)knob->data;
+    data->zero_direction = zero_direction;
+}
+
+NK_API float nk_console_knob_get_dead_zone_degrees(nk_console* knob) {
+    if (knob == NULL || knob->data == NULL) {
+        return 60.0f;
+    }
+    nk_console_knob_data* data = (nk_console_knob_data*)knob->data;
+    return data->dead_zone_degrees;
+}
+
+NK_API void nk_console_knob_set_dead_zone_degrees(nk_console* knob, float dead_zone_degrees) {
+    if (knob == NULL || knob->data == NULL) {
+        return;
+    }
+    nk_console_knob_data* data = (nk_console_knob_data*)knob->data;
+    data->dead_zone_degrees = dead_zone_degrees;
 }
 
 #if defined(__cplusplus)

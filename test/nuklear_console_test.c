@@ -472,6 +472,22 @@ int main() {
         static float knob_float_val = 0.5f;
         nk_console* knob_float = nk_console_knob_float(console, "Knob Float", 0.0f, &knob_float_val, 1.0f, 0.1f, 1.0f);
         assert(knob_float != NULL);
+
+        // Knob accessor defaults
+        assert(nk_console_knob_get_zero_direction(knob_int) == NK_DOWN);
+        assert(nk_console_knob_get_dead_zone_degrees(knob_int) == 60.0f);
+
+        // Knob accessor set/get round-trip
+        nk_console_knob_set_zero_direction(knob_int, NK_UP);
+        assert(nk_console_knob_get_zero_direction(knob_int) == NK_UP);
+        nk_console_knob_set_dead_zone_degrees(knob_float, 45.0f);
+        assert(nk_console_knob_get_dead_zone_degrees(knob_float) == 45.0f);
+
+        // NULL safety
+        nk_console_knob_set_zero_direction(NULL, NK_LEFT);
+        nk_console_knob_set_dead_zone_degrees(NULL, 90.0f);
+        assert(nk_console_knob_get_zero_direction(NULL) == NK_DOWN);
+        assert(nk_console_knob_get_dead_zone_degrees(NULL) == 60.0f);
     }
 
     // nk_console_radio()
