@@ -12,6 +12,16 @@ on:
   workflow_dispatch:
 
 jobs:
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check formatting
+      run: |
+        clang-format --version
+        clang-format --dry-run --Werror *.h
+
   build:
     name: ${{ matrix.platform.os }} ${{ matrix.config.name }} ${{ matrix.type.name }}
     runs-on: ${{ matrix.platform.os }}

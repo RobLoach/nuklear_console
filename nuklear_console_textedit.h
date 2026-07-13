@@ -20,8 +20,8 @@
  * A row is a NULL-terminated array of these; the last entry has normal == NULL.
  */
 typedef struct nk_console_textedit_key {
-    const char* normal;   /**< Label when shift is off; NULL terminates a row. */
-    const char* shifted;  /**< Label when shift is on; NULL means same as normal. */
+    const char* normal; /**< Label when shift is off; NULL terminates a row. */
+    const char* shifted; /**< Label when shift is on; NULL means same as normal. */
 } nk_console_textedit_key;
 
 typedef struct nk_console_textedit_data {
@@ -87,32 +87,57 @@ extern "C" {
 
 /* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
 static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
-    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","%"},
-    {"6","^"}, {"7","&"}, {"8","*"}, {"9","("}, {"0",")"},
-    {NULL, NULL}
-};
+    {"1", "!"},
+    {"2", "@"},
+    {"3", "#"},
+    {"4", "$"},
+    {"5", "%"},
+    {"6", "^"},
+    {"7", "&"},
+    {"8", "*"},
+    {"9", "("},
+    {"0", ")"},
+    {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
-    {"q","Q"}, {"w","W"}, {"e","E"}, {"r","R"}, {"t","T"},
-    {"y","Y"}, {"u","U"}, {"i","I"}, {"o","O"}, {"p","P"},
-    {NULL, NULL}
-};
+    {"q", "Q"},
+    {"w", "W"},
+    {"e", "E"},
+    {"r", "R"},
+    {"t", "T"},
+    {"y", "Y"},
+    {"u", "U"},
+    {"i", "I"},
+    {"o", "O"},
+    {"p", "P"},
+    {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
-    {"a","A"}, {"s","S"}, {"d","D"}, {"f","F"}, {"g","G"},
-    {"h","H"}, {"j","J"}, {"k","K"}, {"l","L"}, {".",">"},
-    {NULL, NULL}
-};
+    {"a", "A"},
+    {"s", "S"},
+    {"d", "D"},
+    {"f", "F"},
+    {"g", "G"},
+    {"h", "H"},
+    {"j", "J"},
+    {"k", "K"},
+    {"l", "L"},
+    {".", ">"},
+    {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
-    {"z","Z"}, {"x","X"}, {"c","C"}, {"v","V"}, {"b","B"},
-    {"n","N"}, {"m","M"}, {",","<"},
-    {NULL, NULL}
-};
+    {"z", "Z"},
+    {"x", "X"},
+    {"c", "C"},
+    {"v", "V"},
+    {"b", "B"},
+    {"n", "N"},
+    {"m", "M"},
+    {",", "<"},
+    {NULL, NULL}};
 static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
     nk_console_textedit_ascii_row0,
     nk_console_textedit_ascii_row1,
     nk_console_textedit_ascii_row2,
     nk_console_textedit_ascii_row3,
-    NULL
-};
+    NULL};
 
 /**
  * Frees all the children for the given textedit as an event.
