@@ -108,6 +108,15 @@ int main() {
     {
         nk_console* button = nk_console_button(console, "Button");
         assert(button != NULL);
+
+        // nk_image_id() must set has_image so the render path draws it.
+        nk_console_button_set_image(button, nk_image_id(1));
+        nk_console_button_data* btn_data = (nk_console_button_data*)button->data;
+        assert(btn_data->has_image == nk_true);
+        struct nk_image btn_img = nk_console_button_get_image(button);
+        assert(btn_img.handle.id == 1);
+        // Reset so the render pass doesn't try to draw an invalid texture.
+        btn_data->has_image = nk_false;
     }
 
     // nk_console_checkbox()
