@@ -443,7 +443,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_property_int(properties, "Property Int", 10, &property_int_test, 30, 1, 1);
             nk_console_property_float(properties, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
             nk_console_knob_int(properties, "Knob Int", 0, &knob_int_test, 30, 1, 1);
-            nk_console_knob_float(properties, "Knob Float", 0.0f, &knob_float_test, 2.0f, 0.1f, 1);
+            nk_console* knob_float = nk_console_knob_float(properties, "Knob Float", 0.0f, &knob_float_test, 2.0f, 0.1f, 1);
+            nk_console_knob_set_zero_direction(knob_float, NK_UP);
+            nk_console_knob_set_dead_zone_degrees(knob_float, 45.0f);
             nk_console_button_onclick(properties, "Back", &nk_console_button_back);
         }
 
