@@ -43,6 +43,7 @@ NK_API struct nk_rect nk_console_rule_horizontal_render(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) {
         return nk_rect(0, 0, 0, 0);
     }
+    nk_console_layout_widget(widget);
     nk_console_rule_horizontal_data* data = (nk_console_rule_horizontal_data*)widget->data;
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
     nk_rule_horizontal(widget->ctx, data->color, data->rounding);
