@@ -78,6 +78,7 @@ typedef enum {
     NK_CONSOLE_RULE_HORIZONTAL,
     NK_CONSOLE_TREE,
     NK_CONSOLE_LIST_VIEW,
+    NK_CONSOLE_CHART,
 } nk_console_widget_type;
 
 #ifndef NK_CONSOLE_MESSAGE_MAX_LENGTH
@@ -363,6 +364,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 
 #define NK_CONSOLE_HEADER_ONLY
 #include "nuklear_console_button.h"
+#include "nuklear_console_chart.h"
 #include "nuklear_console_checkbox.h"
 #include "nuklear_console_color.h"
 #include "nuklear_console_combobox.h"
@@ -560,6 +562,7 @@ extern "C" {
 #endif
 
 #include "nuklear_console_button.h"
+#include "nuklear_console_chart.h"
 #include "nuklear_console_checkbox.h"
 #include "nuklear_console_color.h"
 #include "nuklear_console_combobox.h"
