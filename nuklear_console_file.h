@@ -950,14 +950,18 @@ static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filte
     if (filters == NULL) return NULL;
     /* Pattern string lives right after the struct. */
     char* sdl_pattern = (char*)(filters + 1);
-    /* Strip leading dots for the SDL pattern (SDL uses "png;jpg" not ".png;.jpg"). */
+    /* Strip the leading dot of each entry for the SDL pattern (SDL uses "png;jpg" not ".png;.jpg").
+     * Dots within an extension are kept, so ".tar.gz" becomes "tar.gz". */
     int p = 0;
     const char* src = filter;
+    nk_bool entry_start = nk_true;
     while (*src) {
-        if (*src == '.') {
+        if (entry_start && *src == '.') {
+            entry_start = nk_false;
             src++;
             continue;
         }
+        entry_start = (*src == ';') ? nk_true : nk_false;
         sdl_pattern[p++] = *src;
         src++;
     }
