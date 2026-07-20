@@ -929,7 +929,12 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
     nk_console* file = (nk_console*)userdata;
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (data == NULL) return;
-    if (filelist == NULL || filelist[0] == NULL) return; /* dialog cancelled */
+    if (filelist == NULL) {
+        /* An error occurred while showing the dialog. */
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "nk_console: file dialog failed: %s", SDL_GetError());
+        return;
+    }
+    if (filelist[0] == NULL) return; /* dialog cancelled */
     int len = nk_strlen(filelist[0]);
     if (len >= data->file_path_buffer_size) return;
     NK_MEMCPY(data->file_path_buffer, filelist[0], (nk_size)(len + 1));
