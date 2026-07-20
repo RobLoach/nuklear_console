@@ -41,6 +41,7 @@ typedef struct nk_console_file_data {
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
     char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
+    void* sdl_filters; /** SDL_DialogFileFilter array for the SDL native dialog. Kept alive until the next dialog opens or the widget is destroyed. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -413,6 +414,12 @@ static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
     if (data->filter != NULL) {
         nk_console_mfree(nk_handle_id(0), data->filter);
         data->filter = NULL;
+    }
+
+    // Free any SDL dialog filters.
+    if (data->sdl_filters != NULL) {
+        nk_console_mfree(nk_handle_id(0), data->sdl_filters);
+        data->sdl_filters = NULL;
     }
 
     // Clear all the file entries.
@@ -938,7 +945,9 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
 
 /**
  * Build a heap-allocated array of SDL_DialogFileFilter from the semicolon-separated filter string.
- * Returns NULL if filter is NULL or empty. Caller must free with nk_console_mfree.
+ * Returns NULL if filter is NULL or empty. SDL requires the array to remain valid at least until
+ * the dialog callback is invoked, so the caller stores it in data->sdl_filters, where it is freed
+ * on the next dialog open, or when the widget is destroyed.
  * @internal
  */
 static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filter, int* out_count) {
@@ -994,8 +1003,17 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
             sdl_window = (SDL_Window*)data->file_user_data;
         }
 
+        // Free the filters from any previous dialog; its callback has already run.
+        if (data->sdl_filters != NULL) {
+            NK_CONSOLE_FREE(nk_handle_id(0), data->sdl_filters);
+            data->sdl_filters = NULL;
+        }
+
+        // SDL requires the filters to stay valid until the dialog callback is invoked,
+        // so keep them alive in the widget data rather than freeing them here.
         int filter_count = 0;
         SDL_DialogFileFilter* sdl_filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
+        data->sdl_filters = sdl_filters;
         const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
         if (data->select_directory) {
             SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, starting, false);
@@ -1003,7 +1021,6 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
         else {
             SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, sdl_filters, filter_count, starting, false);
         }
-        if (sdl_filters) NK_CONSOLE_FREE(nk_handle_id(0), sdl_filters);
         return;
     }
 #endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
