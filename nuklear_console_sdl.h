@@ -1,6 +1,10 @@
 #ifndef NK_CONSOLE_SDL_H__
 #define NK_CONSOLE_SDL_H__
 
+#ifndef SDL_MAJOR_VERSION
+#error "nuklear_console_sdl.h requires SDL.h to be included first"
+#endif
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
@@ -48,23 +52,29 @@ NK_API void nk_console_sdl_update_text_input(nk_console* console, SDL_Window* wi
         }
     }
 
-    // Check if we need text input enabled for the active widget.
-    if (wants_text_input) {
+    // Only start or stop text input on state transitions. In SDL3,
+    // SDL_StartTextInput() re-runs property setup and the on-screen keyboard
+    // check on every call, even when text input is already active.
 #if SDL_MAJOR_VERSION >= 3
-        SDL_StartTextInput(window);
-#else
-        (void)window;
-        SDL_StartTextInput();
-#endif
+    if (wants_text_input != SDL_TextInputActive(window)) {
+        if (wants_text_input) {
+            SDL_StartTextInput(window);
+        }
+        else {
+            SDL_StopTextInput(window);
+        }
     }
-    else {
-#if SDL_MAJOR_VERSION >= 3
-        SDL_StopTextInput(window);
 #else
-        (void)window;
-        SDL_StopTextInput();
-#endif
+    (void)window;
+    if (wants_text_input != (SDL_IsTextInputActive() == SDL_TRUE)) {
+        if (wants_text_input) {
+            SDL_StartTextInput();
+        }
+        else {
+            SDL_StopTextInput();
+        }
     }
+#endif
 }
 
 #if defined(__cplusplus)
