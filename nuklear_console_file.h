@@ -928,7 +928,40 @@ static void nk_console_file_event_back(nk_console* file, void* user_data) {
  */
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
 /**
+ * Result of a native file/folder picker, staged for the main thread.
+ * @internal
+ */
+typedef struct nk_console_file_sdl_dialog_result {
+    nk_console* file; /** The file widget the dialog was opened for. */
+    char* path; /** The selected path, SDL_strdup'd. */
+} nk_console_file_sdl_dialog_result;
+
+/**
+ * SDL_MainThreadCallback that applies a staged dialog result to the file widget.
+ * @internal
+ */
+static void nk_console_file_sdl_dialog_apply(void* userdata) {
+    nk_console_file_sdl_dialog_result* result = (nk_console_file_sdl_dialog_result*)userdata;
+    nk_console* file = result->file;
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data != NULL) {
+        int len = nk_strlen(result->path);
+        if (len < data->file_path_buffer_size) {
+            NK_MEMCPY(data->file_path_buffer, result->path, (nk_size)(len + 1));
+            nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+        }
+    }
+    SDL_free(result->path);
+    SDL_free(result);
+}
+
+/**
  * SDL_DialogFileCallback fired when the native file/folder picker closes.
+ *
+ * SDL may invoke this from a different thread than the one that opened the
+ * dialog, so it only stages the selected path and defers the console state
+ * changes to the main thread via SDL_RunOnMainThread().
+ *
  * @internal
  */
 static void nk_console_file_sdl_dialog_callback(void* userdata, const char* const* filelist, int filter) {
@@ -942,10 +975,20 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
         return;
     }
     if (filelist[0] == NULL) return; /* dialog cancelled */
-    int len = nk_strlen(filelist[0]);
-    if (len >= data->file_path_buffer_size) return;
-    NK_MEMCPY(data->file_path_buffer, filelist[0], (nk_size)(len + 1));
-    nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+
+    nk_console_file_sdl_dialog_result* result = (nk_console_file_sdl_dialog_result*)SDL_malloc(sizeof(nk_console_file_sdl_dialog_result));
+    if (result == NULL) return;
+    result->file = file;
+    result->path = SDL_strdup(filelist[0]);
+    if (result->path == NULL) {
+        SDL_free(result);
+        return;
+    }
+
+    if (!SDL_RunOnMainThread(nk_console_file_sdl_dialog_apply, result, false)) {
+        SDL_free(result->path);
+        SDL_free(result);
+    }
 }
 
 /**
