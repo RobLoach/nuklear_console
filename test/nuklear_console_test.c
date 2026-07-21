@@ -435,6 +435,44 @@ int main() {
         assert(nk_strlen(last_msg->text) == NK_CONSOLE_MESSAGE_MAX_LENGTH);
     }
 
+    // nk_console_message_slide_fraction() (#301)
+    {
+        nk_console_top_data* top_data = (nk_console_top_data*)(nk_console_get_top(console)->data);
+        nk_console_message msg;
+        memset(&msg, 0, sizeof(msg));
+
+        // Without observed timing, messages rest on screen at any duration.
+        nk_bool saved_observed = top_data->message_time_observed;
+        top_data->message_time_observed = nk_false;
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f);
+        msg.duration = 0.5f;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f);
+
+        // With timing, the fraction is a pure function of the duration, so a
+        // zero-delta frame keeps the same offset instead of snapping to rest.
+        top_data->message_time_observed = nk_true;
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 1.0f);
+        float mid_in = nk_console_message_slide_fraction(top_data, &msg);
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION - 0.5f;
+        float half_in = nk_console_message_slide_fraction(top_data, &msg);
+        assert(half_in > 0.0f && half_in < mid_in);
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION * 0.5f;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f); // Resting.
+        msg.duration = 0.5f;
+        float half_out = nk_console_message_slide_fraction(top_data, &msg);
+        assert(half_out > 0.0f && half_out < 1.0f);
+        msg.duration = 0.0f;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 1.0f);
+
+        // NULL safety.
+        assert(nk_console_message_slide_fraction(NULL, &msg) == 0.0f);
+        assert(nk_console_message_slide_fraction(top_data, NULL) == 0.0f);
+
+        top_data->message_time_observed = saved_observed;
+    }
+
     // nk_console_set_message_position() / nk_console_get_message_position()
     {
         assert(nk_console_get_message_position(console) == NK_CONSOLE_MESSAGE_POSITION_BOTTOM);

@@ -156,6 +156,15 @@ typedef struct nk_console_top_data {
     nk_console_message_position message_position;
 
     /**
+     * True once a positive delta time has been observed, meaning the backend
+     * provides timing and messages can animate. Keeps message positioning
+     * stable on frames that report a zero delta (e.g. SDL's millisecond tick
+     * resolution at high frame rates), and disables the slide animation
+     * entirely on backends without timing.
+     */
+    nk_bool message_time_observed;
+
+    /**
      * The gamepad system to use for gamepad input.
      *
      * @see nk_console_get_gamepads()
