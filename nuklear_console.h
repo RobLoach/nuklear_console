@@ -281,6 +281,8 @@ NK_API void nk_console_set_height(nk_console* widget, int height);
 NK_API int nk_console_height(nk_console* widget);
 /** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
+/** Return a human-readable name for @p type (e.g. "button"), or "unknown" for unrecognized values. */
+NK_API const char* nk_console_widget_type_name(nk_console_widget_type type);
 
 /** Fire all handlers registered for @p type on @p widget. @return nk_true if any handler ran. */
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type);
@@ -942,6 +944,45 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
     }
 
     return widget->selectable && widget->visible && !widget->disabled;
+}
+
+/**
+ * Get a human-readable name for the given widget type.
+ *
+ * @param type The widget type to name.
+ *
+ * @return A static string naming the type (e.g. "button"), or "unknown" for unrecognized values.
+ */
+NK_API const char* nk_console_widget_type_name(nk_console_widget_type type) {
+    switch (type) {
+        case NK_CONSOLE_UNKNOWN: return "unknown";
+        case NK_CONSOLE_PARENT: return "parent";
+        case NK_CONSOLE_LABEL: return "label";
+        case NK_CONSOLE_BUTTON: return "button";
+        case NK_CONSOLE_CHECKBOX: return "checkbox";
+        case NK_CONSOLE_PROGRESS: return "progress";
+        case NK_CONSOLE_COMBOBOX: return "combobox";
+        case NK_CONSOLE_PROPERTY_INT: return "property_int";
+        case NK_CONSOLE_PROPERTY_FLOAT: return "property_float";
+        case NK_CONSOLE_SLIDER_INT: return "slider_int";
+        case NK_CONSOLE_SLIDER_FLOAT: return "slider_float";
+        case NK_CONSOLE_ROW: return "row";
+        case NK_CONSOLE_TEXTEDIT: return "textedit";
+        case NK_CONSOLE_TEXTEDIT_TEXT: return "textedit_text";
+        case NK_CONSOLE_FILE: return "file";
+        case NK_CONSOLE_IMAGE: return "image";
+        case NK_CONSOLE_SPACING: return "spacing";
+        case NK_CONSOLE_COLOR: return "color";
+        case NK_CONSOLE_INPUT: return "input";
+        case NK_CONSOLE_INPUT_ACTIVE: return "input_active";
+        case NK_CONSOLE_RADIO: return "radio";
+        case NK_CONSOLE_KNOB_INT: return "knob_int";
+        case NK_CONSOLE_KNOB_FLOAT: return "knob_float";
+        case NK_CONSOLE_RULE_HORIZONTAL: return "rule_horizontal";
+        case NK_CONSOLE_TREE: return "tree";
+        case NK_CONSOLE_LIST_VIEW: return "list_view";
+        default: return "unknown";
+    }
 }
 
 #ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED

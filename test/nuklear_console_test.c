@@ -708,6 +708,22 @@ int main() {
         ctx->delta_time_seconds = saved_dt;
     }
 
+    // nk_console_widget_type_name()
+    {
+        // Known values map to their lowercase names.
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_BUTTON), "button") == 0);
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_LABEL), "label") == 0);
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_UNKNOWN), "unknown") == 0);
+
+        // Out-of-range values fall back to "unknown".
+        assert(strcmp(nk_console_widget_type_name((nk_console_widget_type)(NK_CONSOLE_LIST_VIEW + 1)), "unknown") == 0);
+
+        // Every widget type has a non-NULL name.
+        for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_LIST_VIEW; type++) {
+            assert(nk_console_widget_type_name((nk_console_widget_type)type) != NULL);
+        }
+    }
+
     // Unload
     nk_console_free(console);
     #ifndef NK_CONSOLE_NO_GAMEPAD
