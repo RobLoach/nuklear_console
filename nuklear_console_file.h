@@ -42,6 +42,7 @@ typedef struct nk_console_file_data {
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
     char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
     void* sdl_filters; /** SDL_DialogFileFilter array for the SDL native dialog. Kept alive until the next dialog opens or the widget is destroyed. */
+    char* sdl_pending_path; /** Path selected in the SDL native dialog, SDL_strdup'd off-thread and applied on the main thread. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -421,6 +422,14 @@ static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
         nk_console_mfree(nk_handle_id(0), data->sdl_filters);
         data->sdl_filters = NULL;
     }
+
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+    // Free any staged dialog path that was never applied.
+    if (data->sdl_pending_path != NULL) {
+        SDL_free(data->sdl_pending_path);
+        data->sdl_pending_path = NULL;
+    }
+#endif
 
     // Clear all the file entries.
     nk_console_file_entries_clear(data);
@@ -928,7 +937,33 @@ static void nk_console_file_event_back(nk_console* file, void* user_data) {
  */
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
 /**
+ * SDL_MainThreadCallback that applies the staged dialog path to the file widget.
+ * @internal
+ */
+static void nk_console_file_sdl_dialog_apply(void* userdata) {
+    nk_console* file = (nk_console*)userdata;
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data == NULL || data->sdl_pending_path == NULL) {
+        return;
+    }
+    int len = nk_strlen(data->sdl_pending_path);
+    if (len < data->file_path_buffer_size) {
+        NK_MEMCPY(data->file_path_buffer, data->sdl_pending_path, (nk_size)(len + 1));
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+    }
+    SDL_free(data->sdl_pending_path);
+    data->sdl_pending_path = NULL;
+}
+
+/**
  * SDL_DialogFileCallback fired when the native file/folder picker closes.
+ *
+ * SDL may invoke this from a different thread than the one that opened the
+ * dialog, so it only stages the selected path in the widget data and defers
+ * the console state changes to the main thread via SDL_RunOnMainThread().
+ * No mutex is needed: only one dialog is open per widget at a time, and
+ * SDL_RunOnMainThread() orders the staged write before the main-thread read.
+ *
  * @internal
  */
 static void nk_console_file_sdl_dialog_callback(void* userdata, const char* const* filelist, int filter) {
@@ -942,10 +977,18 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
         return;
     }
     if (filelist[0] == NULL) return; /* dialog cancelled */
-    int len = nk_strlen(filelist[0]);
-    if (len >= data->file_path_buffer_size) return;
-    NK_MEMCPY(data->file_path_buffer, filelist[0], (nk_size)(len + 1));
-    nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+
+    char* path = SDL_strdup(filelist[0]);
+    if (path == NULL) return;
+    if (data->sdl_pending_path != NULL) {
+        SDL_free(data->sdl_pending_path);
+    }
+    data->sdl_pending_path = path;
+
+    if (!SDL_RunOnMainThread(nk_console_file_sdl_dialog_apply, file, false)) {
+        SDL_free(data->sdl_pending_path);
+        data->sdl_pending_path = NULL;
+    }
 }
 
 /**
