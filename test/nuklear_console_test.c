@@ -412,6 +412,24 @@ int main() {
     }
     nk_end(ctx);
 
+    // Navigation outside a frame: nk_console_set_active_parent() skips the
+    // window-scroll reset when no window is current, so navigating between
+    // frames doesn't assert inside nk_window_set_scroll().
+    {
+        nk_console* nav = nk_console_init(ctx);
+        assert(nav != NULL);
+        nk_console* submenu = nk_console_button(nav, "Submenu");
+        nk_console* leaf = nk_console_button(submenu, "Leaf");
+        assert(leaf != NULL);
+
+        assert(nk_console_navigate_to_path(nav, "Submenu") == nk_true);
+        assert(nk_console_active_parent(nav) == submenu);
+        assert(nk_console_navigate_to_path(nav, "Submenu/Leaf") == nk_true);
+        assert(nk_console_get_active_widget(leaf) == leaf);
+
+        nk_console_free(nav);
+    }
+
     // nk_console_image()
     pntr_image* image_value = pntr_load_image("resources/image.png");
     assert(image_value != NULL);

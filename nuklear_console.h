@@ -740,9 +740,13 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
         return;
     }
 
-    // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
+    // When switching parents, bring the window scroll to the top so that the window doesn't appear empty.
+    // Skipped when no window is current (outside a frame), where nk_window_set_scroll() would assert;
+    // the render pass re-centers the scroll on the active widget anyway.
     // TODO: Fix the scroll on the new window, since it may not be centered on the active widget.
-    nk_window_set_scroll(top->ctx, 0, 0);
+    if (top->ctx != NULL && top->ctx->current != NULL) {
+        nk_window_set_scroll(top->ctx, 0, 0);
+    }
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->active_parent = new_parent;
