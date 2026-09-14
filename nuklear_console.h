@@ -92,6 +92,11 @@ typedef struct nk_console_message {
     char text[NK_CONSOLE_MESSAGE_MAX_LENGTH + 1];
     float duration;
     float scroll_x;
+    /**
+     * Whether this message slides in and out. Decided once, when the message is
+     * queued, so that it can never switch mid-flight and teleport across the screen.
+     */
+    nk_bool animate;
 } nk_console_message;
 
 /**

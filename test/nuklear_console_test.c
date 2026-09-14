@@ -441,17 +441,17 @@ int main() {
         nk_console_message msg;
         memset(&msg, 0, sizeof(msg));
 
-        // Without observed timing, messages rest on screen at any duration.
+        // A non-animated message rests on screen at any duration.
         nk_bool saved_observed = top_data->message_time_observed;
-        top_data->message_time_observed = nk_false;
+        msg.animate = nk_false;
         msg.duration = NK_CONSOLE_MESSAGE_DURATION;
         assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f);
         msg.duration = 0.5f;
         assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f);
 
-        // With timing, the fraction is a pure function of the duration, so a
+        // When animated, the fraction is a pure function of the duration, so a
         // zero-delta frame keeps the same offset instead of snapping to rest.
-        top_data->message_time_observed = nk_true;
+        msg.animate = nk_true;
         msg.duration = NK_CONSOLE_MESSAGE_DURATION;
         assert(nk_console_message_slide_fraction(top_data, &msg) == 1.0f);
         float mid_in = nk_console_message_slide_fraction(top_data, &msg);
@@ -469,6 +469,15 @@ int main() {
         // NULL safety.
         assert(nk_console_message_slide_fraction(NULL, &msg) == 0.0f);
         assert(nk_console_message_slide_fraction(top_data, NULL) == 0.0f);
+
+        // Whether a message animates is decided when it is queued, so it can never
+        // flip mid-flight and teleport from its resting spot to off screen (#301).
+        top_data->message_time_observed = nk_false;
+        nk_console_show_message(console, "Queued before any timing");
+        assert(top_data->messages[cvector_size(top_data->messages) - 1].animate == nk_false);
+        top_data->message_time_observed = nk_true;
+        nk_console_show_message(console, "Queued once timing is available");
+        assert(top_data->messages[cvector_size(top_data->messages) - 1].animate == nk_true);
 
         top_data->message_time_observed = saved_observed;
     }
@@ -659,51 +668,80 @@ int main() {
         float speed = 60.0f;
         float pause = 1.5f;
         float scroll_x;
+        float shift;
         char buf[256];
 
         // Text fits in available width: returned unchanged.
         scroll_x = 0.0f;
-        const char* result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width + 10.0f, speed, pause, &scroll_x, buf, sizeof(buf));
+        const char* result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width + 10.0f, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
         assert(result == text);
         assert(scroll_x == 0.0f);
+        assert(shift == 0.0f);
 
-        // Zero delta time: returned unchanged.
+        // Zero delta time with no scroll accumulated yet: returned unchanged.
         float saved_dt = ctx->delta_time_seconds;
         ctx->delta_time_seconds = 0.0f;
         scroll_x = 0.0f;
-        result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width * 0.5f, speed, pause, &scroll_x, buf, sizeof(buf));
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width * 0.5f, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
         assert(result == text);
+        assert(scroll_x == 0.0f);
         ctx->delta_time_seconds = saved_dt;
 
         // Pause window: scroll advances but offset is still negative, full text returned.
         float avail = full_width * 0.5f;
         ctx->delta_time_seconds = 0.1f;
         scroll_x = 0.0f;
-        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf));
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
         assert(scroll_x > 0.0f);
         assert(result == text);
 
         // After enough time, text starts scrolling (returned slice differs from text).
         scroll_x = 0.0f;
         ctx->delta_time_seconds = pause + 0.5f;
-        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf));
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
         assert(result == buf);
         assert(strlen(result) > 0);
+
+        // A zero delta frame keeps the scrolled slice instead of snapping back to
+        // the start of the text, so high frame rates don't strobe the marquee.
+        float scrolled_x = scroll_x;
+        float scrolled_shift = shift;
+        char scrolled[256];
+        strcpy(scrolled, result);
+        ctx->delta_time_seconds = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == buf);
+        assert(strcmp(result, scrolled) == 0);
+        assert(scroll_x == scrolled_x);
+        assert(shift == scrolled_shift);
 
         // Wrap-around: scroll_x exceeding total_cycle gets wrapped.
         float pause_pixels = pause * speed;
         float total_cycle = full_width + pause_pixels;
         scroll_x = total_cycle - 1.0f;
         ctx->delta_time_seconds = 2.0f / speed;
-        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf));
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
         assert(scroll_x < total_cycle);
+
+        // The reported shift is the sub-character remainder of the scroll offset.
+        scroll_x = pause_pixels + 1.0f;
+        ctx->delta_time_seconds = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == buf);
+        assert(shift >= 0.0f);
+        assert(shift <= 1.0f); // First glyph hasn't fully scrolled off yet.
 
         // Small buffer: output is truncated safely.
         char tiny_buf[4];
         scroll_x = pause_pixels + 1.0f;
         ctx->delta_time_seconds = 0.01f;
-        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, tiny_buf, sizeof(tiny_buf));
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, tiny_buf, sizeof(tiny_buf), &shift);
         assert(strlen(result) <= 3);
+
+        // A NULL shift pointer is allowed.
+        scroll_x = pause_pixels + 1.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), NULL);
+        assert(result == buf);
 
         ctx->delta_time_seconds = saved_dt;
     }
