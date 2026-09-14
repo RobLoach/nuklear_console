@@ -112,9 +112,12 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         len = NK_CONSOLE_MESSAGE_MAX_LENGTH;
     }
 
-    // Create the new message.
+    // Create the new message. Messages queued before the backend has reported any
+    // timing simply rest on screen; deciding here means a message never flips from
+    // resting to animating partway through and jumps to the other end of its slide.
     nk_console_message message = {0};
     message.duration = NK_CONSOLE_MESSAGE_DURATION;
+    message.animate = data->message_time_observed;
     NK_MEMCPY(message.text, text, (nk_size)len);
     message.text[len] = '\0';
 
@@ -135,11 +138,14 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
  * The fraction is a pure function of the message's remaining duration, so
  * frames that report a zero delta time (e.g. SDL's millisecond tick
  * resolution at high frame rates) keep the same offset instead of snapping
- * the message to its resting position (#301). Backends without timing never
- * observe a delta, and their messages simply rest on screen.
+ * the message to its resting position (#301).
+ *
+ * Whether a message animates at all is fixed when it is queued, so a message
+ * that started out resting (because the backend had not reported any timing
+ * yet) never jumps off screen once time starts flowing.
  */
 static float nk_console_message_slide_fraction(nk_console_top_data* data, nk_console_message* message) {
-    if (data == NULL || message == NULL || data->message_time_observed == nk_false) {
+    if (data == NULL || message == NULL || message->animate == nk_false) {
         return 0.0f;
     }
     float t = 0.0f;
