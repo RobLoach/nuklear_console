@@ -56,7 +56,7 @@ nk_console* nk_console_init(struct nk_context* context);
 void nk_console_free(nk_console* console);
 void nk_console_free_children(nk_console* console);
 void nk_console_render(nk_console* console);
-void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
+struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
 // Widgets
 nk_console* nk_console_button(nk_console* parent, const char* text);
@@ -93,7 +93,7 @@ nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buf
 nk_console* nk_console_tree(nk_console* parent, const char* label, nk_bool expanded);
 
 // Utilities
-void nk_console_button_back(nk_console* button);
+void nk_console_button_back(nk_console* button, void* user_data);
 nk_console* nk_console_get_top(nk_console* widget);
 int nk_console_get_widget_index(nk_console* widget);
 int nk_console_height(nk_console* widget);

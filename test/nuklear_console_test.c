@@ -93,11 +93,9 @@ int main() {
 
     // Gamepad
     #ifndef NK_CONSOLE_NO_GAMEPAD
-    {
-        struct nk_gamepads gamepads;
-        assert(nk_gamepad_init(&gamepads, ctx, NULL) == nk_true);
-        nk_console_set_gamepads(console, &gamepads);
-    }
+    struct nk_gamepads gamepads;
+    assert(nk_gamepad_init(&gamepads, ctx, NULL) == nk_true);
+    nk_console_set_gamepads(console, &gamepads);
     #endif
 
     // nk_console_label()
@@ -110,11 +108,20 @@ int main() {
     {
         nk_console* button = nk_console_button(console, "Button");
         assert(button != NULL);
+
+        // nk_image_id() must set has_image so the render path draws it.
+        nk_console_button_set_image(button, nk_image_id(1));
+        nk_console_button_data* btn_data = (nk_console_button_data*)button->data;
+        assert(btn_data->has_image == nk_true);
+        struct nk_image btn_img = nk_console_button_get_image(button);
+        assert(btn_img.handle.id == 1);
+        // Reset so the render pass doesn't try to draw an invalid texture.
+        btn_data->has_image = nk_false;
     }
 
     // nk_console_checkbox()
     {
-        nk_bool checkbox_value = nk_true;
+        static nk_bool checkbox_value = nk_true;
         nk_console* checkbox = nk_console_checkbox(console, "Checkbox", &checkbox_value);
         assert(checkbox != NULL);
     }
@@ -128,15 +135,15 @@ int main() {
 
     // nk_console_progress()
     {
-        nk_size process_value = 20;
+        static nk_size process_value = 20;
         nk_console* progress = nk_console_progress(console, "Progress Bar", &process_value, 100);
         assert(progress != NULL);
     }
 
     // nk_console_input_gamepad()
     {
-        int gamepad_number = 0;
-        enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
+        static int gamepad_number = 0;
+        static enum nk_gamepad_button gamepad_button = NK_GAMEPAD_BUTTON_LB;
         nk_console* input = nk_console_input_gamepad(console, "Input Button", -1, &gamepad_number, &gamepad_button);
         assert(input != NULL);
         assert(nk_console_input_is_gamepad(input) == nk_true);
@@ -145,13 +152,13 @@ int main() {
 
         // A keyboard key (typed character or special key) is stored in an
         // nk_rune as an NK_CONSOLE_KEY_* value.
-        nk_rune out_key = NK_CONSOLE_KEY_ENTER;
+        static nk_rune out_key = NK_CONSOLE_KEY_ENTER;
         nk_console* input_key = nk_console_input_key(console, "Key Input", &out_key);
         assert(input_key != NULL);
         assert(nk_console_input_is_key(input_key) == nk_true);
 
         // A mouse button binding.
-        enum nk_buttons out_mouse = NK_BUTTON_LEFT;
+        static enum nk_buttons out_mouse = NK_BUTTON_LEFT;
         nk_console* input_mouse = nk_console_input_mouse(console, "Mouse Input", &out_mouse);
         assert(input_mouse != NULL);
         assert(nk_console_input_is_mouse(input_mouse) == nk_true);
@@ -228,15 +235,15 @@ int main() {
 
     // nk_console_combobox()
     {
-        int value_combobox = 3;
+        static int value_combobox = 3;
         nk_console* combobox = nk_console_combobox(console, "ComboBox", "Fists;Chainsaw;Pistol;Shotgun;Chaingun", ';', &value_combobox);
         assert(combobox != NULL);
     }
 
     // nk_console_property_int/float()
     {
-        int property_int_test = 10;
-        float property_float_test = 0.5f;
+        static int property_int_test = 10;
+        static float property_float_test = 0.5f;
         nk_console* property_int = nk_console_property_int(console, "Property Int", 10, &property_int_test, 30, 1, 1);
         nk_console* property_float = nk_console_property_float(console, "Property Float", 0.0f, &property_float_test, 2.0f, 0.1f, 1);
         assert(property_int != NULL);
@@ -245,8 +252,8 @@ int main() {
 
     // nk_console_slider_float/int()
     {
-        float slider_float_test = 1.0f;
-        int slider_int_test = 15;
+        static float slider_float_test = 1.0f;
+        static int slider_int_test = 15;
         nk_console* slider_float = nk_console_slider_float(console, "Slider Float", 0.0f, &slider_float_test, 2.0f, 0.1f);
         nk_console* slider_int = nk_console_slider_int(console, "Slider Int", 0, &slider_int_test, 20, 1);
         assert(slider_float != NULL);
@@ -263,7 +270,7 @@ int main() {
 
     // nk_console_color()
     {
-        struct nk_colorf color_value = {0.31f, 1.0f, 0.48f, 1.0f};
+        static struct nk_colorf color_value = {0.31f, 1.0f, 0.48f, 1.0f};
         nk_console* color = nk_console_color(console, "Color", &color_value, NK_RGBA);
         assert(color != NULL);
     }
@@ -405,14 +412,31 @@ int main() {
     }
     nk_end(ctx);
 
-    // nk_console_image()
+    // Navigation outside a frame: nk_console_set_active_parent() skips the
+    // window-scroll reset when no window is current, so navigating between
+    // frames doesn't assert inside nk_window_set_scroll().
     {
-        pntr_image* image_value = pntr_load_image("resources/image.png");
-        assert(image_value != NULL);
+        nk_console* nav = nk_console_init(ctx);
+        assert(nav != NULL);
+        nk_console* submenu = nk_console_button(nav, "Submenu");
+        nk_console* leaf = nk_console_button(submenu, "Leaf");
+        assert(leaf != NULL);
+
+        assert(nk_console_navigate_to_path(nav, "Submenu") == nk_true);
+        assert(nk_console_active_parent(nav) == submenu);
+        assert(nk_console_navigate_to_path(nav, "Submenu/Leaf") == nk_true);
+        assert(nk_console_get_active_widget(leaf) == leaf);
+
+        nk_console_free(nav);
+    }
+
+    // nk_console_image()
+    pntr_image* image_value = pntr_load_image("resources/image.png");
+    assert(image_value != NULL);
+    {
         nk_console* image = nk_console_image(console, pntr_image_nk(image_value));
         nk_console_set_height(image, image_value->height);
         assert(image != NULL);
-        pntr_unload_image(image_value);
     }
 
     // nk_console_show_message()
@@ -427,6 +451,53 @@ int main() {
         nk_console_top_data* top_data = (nk_console_top_data*)(nk_console_get_top(console)->data);
         nk_console_message* last_msg = &top_data->messages[cvector_size(top_data->messages) - 1];
         assert(nk_strlen(last_msg->text) == NK_CONSOLE_MESSAGE_MAX_LENGTH);
+    }
+
+    // nk_console_message_slide_fraction() (#301)
+    {
+        nk_console_top_data* top_data = (nk_console_top_data*)(nk_console_get_top(console)->data);
+        nk_console_message msg;
+        memset(&msg, 0, sizeof(msg));
+
+        // A non-animated message rests on screen at any duration.
+        nk_bool saved_observed = top_data->message_time_observed;
+        msg.animate = nk_false;
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f);
+        msg.duration = 0.5f;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f);
+
+        // When animated, the fraction is a pure function of the duration, so a
+        // zero-delta frame keeps the same offset instead of snapping to rest.
+        msg.animate = nk_true;
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 1.0f);
+        float mid_in = nk_console_message_slide_fraction(top_data, &msg);
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION - 0.5f;
+        float half_in = nk_console_message_slide_fraction(top_data, &msg);
+        assert(half_in > 0.0f && half_in < mid_in);
+        msg.duration = NK_CONSOLE_MESSAGE_DURATION * 0.5f;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 0.0f); // Resting.
+        msg.duration = 0.5f;
+        float half_out = nk_console_message_slide_fraction(top_data, &msg);
+        assert(half_out > 0.0f && half_out < 1.0f);
+        msg.duration = 0.0f;
+        assert(nk_console_message_slide_fraction(top_data, &msg) == 1.0f);
+
+        // NULL safety.
+        assert(nk_console_message_slide_fraction(NULL, &msg) == 0.0f);
+        assert(nk_console_message_slide_fraction(top_data, NULL) == 0.0f);
+
+        // Whether a message animates is decided when it is queued, so it can never
+        // flip mid-flight and teleport from its resting spot to off screen (#301).
+        top_data->message_time_observed = nk_false;
+        nk_console_show_message(console, "Queued before any timing");
+        assert(top_data->messages[cvector_size(top_data->messages) - 1].animate == nk_false);
+        top_data->message_time_observed = nk_true;
+        nk_console_show_message(console, "Queued once timing is available");
+        assert(top_data->messages[cvector_size(top_data->messages) - 1].animate == nk_true);
+
+        top_data->message_time_observed = saved_observed;
     }
 
     // nk_console_set_message_position() / nk_console_get_message_position()
@@ -469,17 +540,17 @@ int main() {
 
     // nk_console_knob_int/float()
     {
-        int knob_int_val = 5;
+        static int knob_int_val = 5;
         nk_console* knob_int = nk_console_knob_int(console, "Knob Int", 0, &knob_int_val, 10, 1, 1.0f);
         assert(knob_int != NULL);
-        float knob_float_val = 0.5f;
+        static float knob_float_val = 0.5f;
         nk_console* knob_float = nk_console_knob_float(console, "Knob Float", 0.0f, &knob_float_val, 1.0f, 0.1f, 1.0f);
         assert(knob_float != NULL);
     }
 
     // nk_console_radio()
     {
-        int radio_selected = 1;
+        static int radio_selected = 1;
         nk_console* radio1 = nk_console_radio(console, "Option A", &radio_selected);
         nk_console* radio2 = nk_console_radio(console, "Option B", &radio_selected);
         nk_console* radio3 = nk_console_radio(console, "Option C", &radio_selected);
@@ -490,7 +561,7 @@ int main() {
 
     // nk_console_rule_horizontal()
     {
-        struct nk_color rule_color = {200, 200, 200, 255};
+        static struct nk_color rule_color = {200, 200, 200, 255};
         nk_console* rule = nk_console_rule_horizontal(console, rule_color, nk_false);
         assert(rule != NULL);
     }
@@ -607,8 +678,114 @@ int main() {
         assert(strcmp(nk_console_list_view_selected_label(lv), "Cherry") == 0);
     }
 
+    // nk_console_marquee_slice()
+    {
+        const char* text = "Hello, Marquee!";
+        int text_len = (int)strlen(text);
+        float full_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, text, text_len);
+        float speed = 60.0f;
+        float pause = 1.5f;
+        float scroll_x;
+        float shift;
+        char buf[256];
+
+        // Text fits in available width: returned unchanged.
+        scroll_x = 0.0f;
+        const char* result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width + 10.0f, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == text);
+        assert(scroll_x == 0.0f);
+        assert(shift == 0.0f);
+
+        // Zero delta time with no scroll accumulated yet: returned unchanged.
+        float saved_dt = ctx->delta_time_seconds;
+        ctx->delta_time_seconds = 0.0f;
+        scroll_x = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, full_width * 0.5f, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == text);
+        assert(scroll_x == 0.0f);
+        ctx->delta_time_seconds = saved_dt;
+
+        // Pause window: scroll advances but offset is still negative, full text returned.
+        float avail = full_width * 0.5f;
+        ctx->delta_time_seconds = 0.1f;
+        scroll_x = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(scroll_x > 0.0f);
+        assert(result == text);
+
+        // After enough time, text starts scrolling (returned slice differs from text).
+        scroll_x = 0.0f;
+        ctx->delta_time_seconds = pause + 0.5f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == buf);
+        assert(strlen(result) > 0);
+
+        // A zero delta frame keeps the scrolled slice instead of snapping back to
+        // the start of the text, so high frame rates don't strobe the marquee.
+        float scrolled_x = scroll_x;
+        float scrolled_shift = shift;
+        char scrolled[256];
+        strcpy(scrolled, result);
+        ctx->delta_time_seconds = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == buf);
+        assert(strcmp(result, scrolled) == 0);
+        assert(scroll_x == scrolled_x);
+        assert(shift == scrolled_shift);
+
+        // Wrap-around: scroll_x exceeding total_cycle gets wrapped.
+        float pause_pixels = pause * speed;
+        float total_cycle = full_width + pause_pixels;
+        scroll_x = total_cycle - 1.0f;
+        ctx->delta_time_seconds = 2.0f / speed;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(scroll_x < total_cycle);
+
+        // The reported shift is the sub-character remainder of the scroll offset.
+        scroll_x = pause_pixels + 1.0f;
+        ctx->delta_time_seconds = 0.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), &shift);
+        assert(result == buf);
+        assert(shift >= 0.0f);
+        assert(shift <= 1.0f); // First glyph hasn't fully scrolled off yet.
+
+        // Small buffer: output is truncated safely.
+        char tiny_buf[4];
+        scroll_x = pause_pixels + 1.0f;
+        ctx->delta_time_seconds = 0.01f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, tiny_buf, sizeof(tiny_buf), &shift);
+        assert(strlen(result) <= 3);
+
+        // A NULL shift pointer is allowed.
+        scroll_x = pause_pixels + 1.0f;
+        result = nk_console_marquee_slice(ctx, text, text_len, full_width, avail, speed, pause, &scroll_x, buf, sizeof(buf), NULL);
+        assert(result == buf);
+
+        ctx->delta_time_seconds = saved_dt;
+    }
+
+    // nk_console_widget_type_name()
+    {
+        // Known values map to their lowercase names.
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_BUTTON), "button") == 0);
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_LABEL), "label") == 0);
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_UNKNOWN), "unknown") == 0);
+
+        // Out-of-range values fall back to "unknown".
+        assert(strcmp(nk_console_widget_type_name((nk_console_widget_type)(NK_CONSOLE_LIST_VIEW + 1)), "unknown") == 0);
+
+        // Every widget type has a non-NULL name.
+        for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_LIST_VIEW; type++) {
+            assert(nk_console_widget_type_name((nk_console_widget_type)type) != NULL);
+        }
+    }
+
     // Unload
     nk_console_free(console);
+    #ifndef NK_CONSOLE_NO_GAMEPAD
+    nk_gamepad_free(&gamepads);
+    #endif
+    pntr_unload_image(image_value);
     pntr_unload_nuklear(ctx);
     pntr_unload_image(screen);
     pntr_unload_font(font);

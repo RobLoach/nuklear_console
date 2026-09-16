@@ -4,6 +4,7 @@
 typedef struct nk_console_button_data {
     enum nk_symbol_type symbol;
     struct nk_image image;
+    nk_bool has_image;
 } nk_console_button_data;
 
 #if defined(__cplusplus)
@@ -67,9 +68,7 @@ NK_API void nk_console_button_set_image(nk_console* button, struct nk_image imag
     }
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     data->image = image;
-
-    // While automatically setting the height to the button height is an option here, we will opt out of doing that.
-    // button->height = (int)image.h;
+    data->has_image = nk_true;
 }
 
 NK_API struct nk_image nk_console_button_get_image(nk_console* button) {
@@ -119,8 +118,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     }
 
     // Display the button.
-    if (data->image.region[3] == 0) {
-        // No image
+    if (!data->has_image) {
         if (console->label_length <= 0) {
             // Check if there is a Label
             if (console->label != NULL && nk_strlen(console->label) > 0) {

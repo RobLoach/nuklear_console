@@ -58,6 +58,16 @@ NK_API void nk_console_set_message_position(nk_console* console, nk_console_mess
  */
 NK_API nk_console_message_position nk_console_get_message_position(nk_console* console);
 
+/**
+ * Render a single message notification.
+ */
+NK_API void nk_console_message_render(nk_console* console, nk_console_message* message);
+
+/**
+ * Render all active messages for the console.
+ */
+NK_API void nk_console_render_message(nk_console* console);
+
 #if defined(__cplusplus)
 }
 #endif
@@ -102,9 +112,12 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
         len = NK_CONSOLE_MESSAGE_MAX_LENGTH;
     }
 
-    // Create the new message.
+    // Create the new message. Messages queued before the backend has reported any
+    // timing simply rest on screen; deciding here means a message never flips from
+    // resting to animating partway through and jumps to the other end of its slide.
     nk_console_message message = {0};
     message.duration = NK_CONSOLE_MESSAGE_DURATION;
+    message.animate = data->message_time_observed;
     NK_MEMCPY(message.text, text, (nk_size)len);
     message.text[len] = '\0';
 
@@ -117,6 +130,39 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
 #ifndef NK_CONSOLE_MESSAGE_SCROLL_PAUSE
 #define NK_CONSOLE_MESSAGE_SCROLL_PAUSE NK_CONSOLE_MARQUEE_SCROLL_PAUSE
 #endif
+
+/**
+ * The eased slide fraction (0..1) of a message's in/out animation: 1 fully
+ * off its edge, 0 resting on screen.
+ *
+ * The fraction is a pure function of the message's remaining duration, so
+ * frames that report a zero delta time (e.g. SDL's millisecond tick
+ * resolution at high frame rates) keep the same offset instead of snapping
+ * the message to its resting position (#301).
+ *
+ * Whether a message animates at all is fixed when it is queued, so a message
+ * that started out resting (because the backend had not reported any timing
+ * yet) never jumps off screen once time starts flowing.
+ */
+static float nk_console_message_slide_fraction(nk_console_top_data* data, nk_console_message* message) {
+    if (data == NULL || message == NULL || message->animate == nk_false) {
+        return 0.0f;
+    }
+    float t = 0.0f;
+    if (message->duration <= 1.0f) {
+        // Slide out: t goes 0->1 as duration drops from 1->0.
+        t = 1.0f - message->duration;
+    }
+    else if (message->duration >= NK_CONSOLE_MESSAGE_DURATION - 1.0f) {
+        // Slide in: t goes 1->0 as duration drops from DURATION->DURATION-1.
+        t = message->duration - NK_CONSOLE_MESSAGE_DURATION + 1.0f;
+    }
+    if (t <= 0.0f) {
+        return 0.0f;
+    }
+    // Smoothstep easing: t*t*(3-2t)
+    return t * t * (3.0f - 2.0f * t);
+}
 
 NK_API void nk_console_message_render(nk_console* console, nk_console_message* message) {
     if (message == NULL || console->data == NULL) {
@@ -143,44 +189,29 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
     ctx->input.mouse.pos.y = (position == NK_CONSOLE_MESSAGE_POSITION_BOTTOM) ? bounds.y + bounds.h - slide_h : bounds.y;
 
     // Slide the message off its anchored edge as it animates in and out.
-    if (ctx->delta_time_seconds > 0) {
-        float t = 0.0f;
-        if (message->duration <= 1.0f) {
-            // Slide out: t goes 0->1 as duration drops from 1->0.
-            t = 1.0f - message->duration;
-        }
-        else if (message->duration >= NK_CONSOLE_MESSAGE_DURATION - 1.0f) {
-            // Slide in: t goes 1->0 as duration drops from DURATION->DURATION-1.
-            t = message->duration - NK_CONSOLE_MESSAGE_DURATION + 1.0f;
-        }
-        if (t > 0.0f) {
-            // Smoothstep easing: t_s = t*t*(3-2t)
-            float t_s = t * t * (3.0f - 2.0f * t);
-            switch (position) {
-                case NK_CONSOLE_MESSAGE_POSITION_TOP:
-                    ctx->input.mouse.pos.y -= (int)(t_s * slide_h);
-                    break;
-                case NK_CONSOLE_MESSAGE_POSITION_LEFT:
-                    ctx->input.mouse.pos.x -= (int)(t_s * bounds.w);
-                    break;
-                case NK_CONSOLE_MESSAGE_POSITION_RIGHT:
-                    ctx->input.mouse.pos.x += (int)(t_s * bounds.w);
-                    break;
-                case NK_CONSOLE_MESSAGE_POSITION_BOTTOM:
-                default:
-                    ctx->input.mouse.pos.y += (int)(t_s * slide_h);
-                    break;
-            }
+    float t_s = nk_console_message_slide_fraction(data, message);
+    if (t_s > 0.0f) {
+        switch (position) {
+            case NK_CONSOLE_MESSAGE_POSITION_TOP:
+                ctx->input.mouse.pos.y -= (int)(t_s * slide_h);
+                break;
+            case NK_CONSOLE_MESSAGE_POSITION_LEFT:
+                ctx->input.mouse.pos.x -= (int)(t_s * bounds.w);
+                break;
+            case NK_CONSOLE_MESSAGE_POSITION_RIGHT:
+                ctx->input.mouse.pos.x += (int)(t_s * bounds.w);
+                break;
+            case NK_CONSOLE_MESSAGE_POSITION_BOTTOM:
+            default:
+                ctx->input.mouse.pos.y += (int)(t_s * slide_h);
+                break;
         }
     }
 
     float tooltip_width = bounds.w - ctx->style.window.border;
     int text_len = nk_strlen(message->text);
     float full_text_width = ctx->style.font->width(ctx->style.font->userdata, ctx->style.font->height, message->text, text_len);
-    nk_console_marquee_tooltip_render(ctx, message->text, text_len, full_text_width,
-        tooltip_width, text_height,
-        NK_CONSOLE_MESSAGE_SCROLL_SPEED, NK_CONSOLE_MESSAGE_SCROLL_PAUSE,
-        &message->scroll_x);
+    nk_console_marquee_tooltip_render(ctx, message->text, text_len, full_text_width, tooltip_width, text_height, NK_CONSOLE_MESSAGE_SCROLL_SPEED, NK_CONSOLE_MESSAGE_SCROLL_PAUSE, &message->scroll_x);
 
     // Restore the mouse x/y positions.
     ctx->input.mouse.pos = mouse_pos;
@@ -188,6 +219,13 @@ NK_API void nk_console_message_render(nk_console* console, nk_console_message* m
 
 NK_API void nk_console_render_message(nk_console* console) {
     nk_console_top_data* data = (nk_console_top_data*)console->data;
+
+    // Remember that the backend provides timing, so message positioning stays
+    // animated even on frames that report a zero delta.
+    if (console->ctx->delta_time_seconds > 0) {
+        data->message_time_observed = nk_true;
+    }
+
     if (data->messages == NULL || cvector_empty(data->messages)) {
         return;
     }

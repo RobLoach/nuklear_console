@@ -163,21 +163,17 @@ SDL_AppResult SDL_AppIterate(void *appstate) {
     float lw = (float)w / SDL_GetWindowDisplayScale(app->window);
     float lh = (float)h / SDL_GetWindowDisplayScale(app->window);
 
+    nk_bool quit = nk_false;
     int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
     if (nk_begin(ctx, "nuklear_console", nk_rect(0, 0, (float)lw, (float)lh), flags)) {
-        if (nuklear_console_demo_render()) {
-            SDL_DestroyTexture(app->texture);
-            app->texture = NULL;
-            nuklear_console_demo_free();
-            nk_sdl_shutdown(ctx);
-            SDL_DestroyRenderer(app->renderer);
-            SDL_DestroyWindow(app->window);
-            SDL_free(app);
-            SDL_Quit();
-            exit(0);
-        }
+        quit = nuklear_console_demo_render();
     }
     nk_end(ctx);
+
+    // Let SDL_AppQuit() handle the cleanup.
+    if (quit) {
+        return SDL_APP_SUCCESS;
+    }
 
     SDL_SetRenderDrawColor(app->renderer, 0, 0, 0, 255);
     SDL_RenderClear(app->renderer);
