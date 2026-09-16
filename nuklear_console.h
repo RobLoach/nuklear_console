@@ -140,7 +140,7 @@ typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
     nk_bool input_processed; /** Whether or not user input has been processed. */
     nk_bool scrollbar_required; /** True when the scrollbar is needed to be rendered. @see nk_console_render_window() */
-    nk_console* scroll_to_widget; /** When set by nk_console_navigate_back, the render loop scrolls the window to this widget's bounds. */
+    nk_console* scroll_to_widget; /** When set, the render loop scrolls the window to this widget's bounds. @see nk_console_set_active_parent() */
 
     /**
      * Message queue that is to be shown.
@@ -1265,7 +1265,7 @@ NK_API void nk_console_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
-    // When nk_console_navigate_back targeted this widget, scroll the window to show it.
+    // When navigation targeted this widget, scroll the window to show it.
     if (top_data->scroll_to_widget == console) {
         struct nk_rect content_region = nk_window_get_content_region(console->ctx);
         nk_uint offsetx, offsety;
@@ -1402,6 +1402,15 @@ NK_API void nk_console_free(nk_console* console) {
         return;
     }
     nk_handle handle = {0};
+
+    // Make sure the top doesn't keep a dangling scroll target to this widget.
+    nk_console* top = nk_console_get_top(console);
+    if (top != console && top->data != NULL) {
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (top_data->scroll_to_widget == console) {
+            top_data->scroll_to_widget = NULL;
+        }
+    }
 
     // Clean up the events
     if (console->events != NULL) {
@@ -1667,10 +1676,11 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
         nk_console_set_active_parent(target);
     }
     else {
+        // Focus the target before switching parents, so that the parent switch scrolls to it.
+        nk_console_set_active_widget(target);
         if (target->parent != NULL) {
             nk_console_set_active_parent(target->parent);
         }
-        nk_console_set_active_widget(target);
     }
     return nk_true;
 }
