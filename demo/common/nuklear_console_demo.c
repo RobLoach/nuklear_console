@@ -112,6 +112,10 @@ static enum nk_buttons input_keyboard_mouse_button = NK_BUTTON_LEFT;
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
+// Fonts: scaled copies of the backend's font, shared across widgets by pointer.
+static struct nk_user_font font_large;
+static struct nk_user_font font_small;
+
 void button_clicked(struct nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (strcmp(nk_console_get_label(button), "Quit Game") == 0) {
@@ -336,6 +340,33 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_row_end(row);
 
             nk_console_button_onclick(spacing, "Back", &nk_console_button_back);
+        }
+
+        // Fonts
+        if (ctx->style.font != NULL) {
+            struct nk_console* fonts = nk_console_button(widgets, "Fonts");
+            // Derive larger and smaller fonts from the backend's font. Since glyphs are
+            // scaled from the same baked font, no extra font assets are needed.
+            font_large = *ctx->style.font;
+            font_large.height *= 2.0f;
+            font_small = *ctx->style.font;
+            font_small.height *= 0.75f;
+
+            nk_console_label(fonts, "A label with the default font.");
+            nk_console_set_font(nk_console_label(fonts, "A large font!"), &font_large);
+            nk_console_set_font(nk_console_label(fonts, "A small font."), &font_small);
+            nk_console_set_font(nk_console_button(fonts, "Large Button"), &font_large);
+
+            // Children inherit their parent's font, unless they set their own.
+            struct nk_console* inherit = nk_console_button(fonts, "Inherited Fonts");
+            nk_console_set_font(inherit, &font_large);
+            {
+                nk_console_label(inherit, "Children inherit the parent's font.");
+                nk_console_set_font(nk_console_label(inherit, "Unless they set their own."), &font_small);
+                nk_console_button_onclick(inherit, "Back", &nk_console_button_back);
+            }
+
+            nk_console_button_onclick(fonts, "Back", &nk_console_button_back);
         }
 
         // Horizontal Rule
