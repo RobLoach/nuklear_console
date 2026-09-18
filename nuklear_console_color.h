@@ -114,6 +114,7 @@ NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struc
 
     // Create the widget data.
     nk_console_color_data* data = (nk_console_color_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_color_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_color_data));
     data->color = color;
 

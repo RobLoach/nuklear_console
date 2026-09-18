@@ -71,6 +71,12 @@ static const float chart_col_values[] = {0.6f, 0.3f, 0.8f, 0.1f, 0.5f, 0.9f, 0.4
 
 // Messages
 static int message_count = 0;
+static nk_console_message_position message_positions[] = {
+    NK_CONSOLE_MESSAGE_POSITION_BOTTOM,
+    NK_CONSOLE_MESSAGE_POSITION_TOP,
+    NK_CONSOLE_MESSAGE_POSITION_LEFT,
+    NK_CONSOLE_MESSAGE_POSITION_RIGHT,
+};
 
 // File
 static char file_path_buffer[4096] = {0};
@@ -151,6 +157,12 @@ void nk_console_demo_show_message(struct nk_console* button, void* user_data) {
 void nk_console_demo_show_marquee_message(struct nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     nk_console_show_message(button, "This is a very long marquee message that scrolls across the screen because it is too wide to fit!");
+}
+
+void nk_console_demo_show_message_from(struct nk_console* button, void* user_data) {
+    // The desired edge is passed through as user_data.
+    nk_console_set_message_position(button, *(nk_console_message_position*)user_data);
+    nk_console_show_message(button, nk_console_get_label(button));
 }
 
 void nk_console_quit_button_focused(struct nk_console* widget, void* user_data) {
@@ -392,11 +404,12 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             }
 
             // Add the List View
-            struct nk_console* list_view = nk_console_list_view(list_view_button, "The List View", 10, NK_CONSOLE_DEMO_LIST_VIEW_COUNT, &list_view_event_get_label);
+            struct nk_console* list_view = nk_console_list_view(list_view_button, "The List View", 0, NK_CONSOLE_DEMO_LIST_VIEW_COUNT, &list_view_event_get_label);
             nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_list_view_item_clicked);
+            nk_console_list_view_set_searchable(list_view, nk_true);
 
             // Back button
-            nk_console_button_onclick(list_view_button, "Back", &nk_console_button_back);
+            //nk_console_button_onclick(list_view_button, "Back", &nk_console_button_back);
         }
 
         // Progress Bar
@@ -492,8 +505,28 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         }
 
         // Messages
-        nk_console_button_onclick(widgets, "Show Message", &nk_console_demo_show_message);
-        nk_console_button_onclick(widgets, "Show Marquee Message", &nk_console_demo_show_marquee_message);
+        struct nk_console* messages = nk_console_button(widgets, "Messages");
+        {
+            nk_console_set_tooltip(messages, "Notification messages that slide in from a screen edge.");
+
+            // Demonstrate a message animating from each edge. The chosen edge
+            // persists, so the buttons below also use the most recent one.
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Bottom"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[0], NULL);
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Top"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[1], NULL);
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Left"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[2], NULL);
+            nk_console_add_event_handler(nk_console_button(messages, "Slide from Right"),
+                NK_CONSOLE_EVENT_CLICKED, &nk_console_demo_show_message_from, &message_positions[3], NULL);
+
+            nk_console_button_onclick(messages, "Show Message", &nk_console_demo_show_message);
+            nk_console_button_onclick(messages, "Show Marquee Message", &nk_console_demo_show_marquee_message);
+
+            nk_console_button_set_symbol(
+                nk_console_button_onclick(messages, "Back", &nk_console_button_back),
+                NK_SYMBOL_TRIANGLE_LEFT);
+        }
 
         // Long tooltip
         nk_console_button_onclick(widgets, "Long Tooltip Button", NULL)
@@ -558,6 +591,45 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         NK_SYMBOL_TRIANGLE_LEFT);
 
       calc->tooltip = "Demo rows and grids!";
+    }
+
+    // Button within a row that owns a bunch of children.
+    // Verifies navigate back skips the row container and lands correctly (#227).
+    struct nk_console* row_submenu = nk_console_button(console, "Row Submenu");
+    {
+        nk_console_label(row_submenu, "Each button in the row below has its own children.");
+        nk_console_label(row_submenu, "Open one, then press Back to return to the row.");
+
+        struct nk_console* row = nk_console_row_begin(row_submenu);
+
+        // First button in the row, with a bunch of children.
+        struct nk_console* tools = nk_console_button(row, "Tools");
+        {
+            nk_console_label(tools, "Tools (children of a button inside a row):");
+            nk_console_button(tools, "Hammer");
+            nk_console_button(tools, "Wrench");
+            nk_console_button(tools, "Screwdriver");
+            nk_console_button(tools, "Pliers");
+            nk_console_button(tools, "Saw");
+            nk_console_button_onclick(tools, "Back", &nk_console_button_back);
+        }
+
+        // Second button in the row, also with a bunch of children.
+        struct nk_console* colors = nk_console_button(row, "Colors");
+        {
+            nk_console_label(colors, "Colors (children of a button inside a row):");
+            nk_console_button(colors, "Red");
+            nk_console_button(colors, "Green");
+            nk_console_button(colors, "Blue");
+            nk_console_button(colors, "Yellow");
+            nk_console_button_onclick(colors, "Back", &nk_console_button_back);
+        }
+
+        nk_console_row_end(row);
+
+        nk_console_button_onclick(row_submenu, "Back", &nk_console_button_back);
+
+        row_submenu->tooltip = "A button within a row that has children (tests navigate back).";
     }
 
     // Open Path

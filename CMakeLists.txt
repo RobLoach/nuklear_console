@@ -7,10 +7,16 @@ project(nuklear_console
 )
 
 option(NUKLEAR_CONSOLE_GAMEPAD "Enable nuklear_gamepad gamepad input support" ON)
+option(NUKLEAR_CONSOLE_ENABLE_TINYDIR "Enable tinydir file-system backend" OFF)
 
 # nuklear_console
 add_library(nuklear_console INTERFACE)
 target_include_directories(nuklear_console INTERFACE ${CMAKE_CURRENT_SOURCE_DIR})
+
+if (NUKLEAR_CONSOLE_ENABLE_TINYDIR)
+    target_compile_definitions(nuklear_console INTERFACE NK_CONSOLE_ENABLE_TINYDIR)
+    target_include_directories(nuklear_console INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/vendor/tinydir)
+endif()
 
 if (NUKLEAR_CONSOLE_GAMEPAD)
     find_package(nuklear_gamepad QUIET)

@@ -13,55 +13,55 @@
  * @see nk_console_input_key()
  */
 
-#define NK_CONSOLE_KEY_NONE        0u /* Nothing */
-#define NK_CONSOLE_KEY_BACKSPACE   8u /* ASCII BS  */
-#define NK_CONSOLE_KEY_TAB         9u /* ASCII HT  */
-#define NK_CONSOLE_KEY_ENTER       13u /* ASCII CR  */
-#define NK_CONSOLE_KEY_ESCAPE      27u /* ASCII ESC */
-#define NK_CONSOLE_KEY_SPACE       32u /* ASCII SP  */
-#define NK_CONSOLE_KEY_DELETE      127u /* ASCII DEL */
+#define NK_CONSOLE_KEY_NONE 0u /* Nothing */
+#define NK_CONSOLE_KEY_BACKSPACE 8u /* ASCII BS  */
+#define NK_CONSOLE_KEY_TAB 9u /* ASCII HT  */
+#define NK_CONSOLE_KEY_ENTER 13u /* ASCII CR  */
+#define NK_CONSOLE_KEY_ESCAPE 27u /* ASCII ESC */
+#define NK_CONSOLE_KEY_SPACE 32u /* ASCII SP  */
+#define NK_CONSOLE_KEY_DELETE 127u /* ASCII DEL */
 
 /* Printable characters occupy 32 .. 0x10FFFF (stored as their codepoint). */
 
 /* Keys with no ASCII equivalent live one past Unicode's last codepoint. */
-#define NK_CONSOLE_KEY_SPECIAL     0x110000u
-#define NK_CONSOLE_KEY_UP          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_UP)
-#define NK_CONSOLE_KEY_DOWN        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_DOWN)
-#define NK_CONSOLE_KEY_LEFT        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_LEFT)
-#define NK_CONSOLE_KEY_RIGHT       (NK_CONSOLE_KEY_SPECIAL + NK_KEY_RIGHT)
-#define NK_CONSOLE_KEY_SHIFT       (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SHIFT)
-#define NK_CONSOLE_KEY_CTRL        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_CTRL)
-#define NK_CONSOLE_KEY_ALT         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_ALT)
-#define NK_CONSOLE_KEY_COPY        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_COPY)
-#define NK_CONSOLE_KEY_CUT         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_CUT)
-#define NK_CONSOLE_KEY_PASTE       (NK_CONSOLE_KEY_SPECIAL + NK_KEY_PASTE)
-#define NK_CONSOLE_KEY_INSERT      (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_INSERT_MODE)
-#define NK_CONSOLE_KEY_REPLACE     (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_REPLACE_MODE)
-#define NK_CONSOLE_KEY_HOME        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_LINE_START)
-#define NK_CONSOLE_KEY_END         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_LINE_END)
-#define NK_CONSOLE_KEY_TEXT_START  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_START)
-#define NK_CONSOLE_KEY_TEXT_END    (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_END)
-#define NK_CONSOLE_KEY_UNDO        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_UNDO)
-#define NK_CONSOLE_KEY_REDO        (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_REDO)
-#define NK_CONSOLE_KEY_SELECT_ALL  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_SELECT_ALL)
-#define NK_CONSOLE_KEY_WORD_LEFT   (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_WORD_LEFT)
-#define NK_CONSOLE_KEY_WORD_RIGHT  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_WORD_RIGHT)
+#define NK_CONSOLE_KEY_SPECIAL 0x110000u
+#define NK_CONSOLE_KEY_UP (NK_CONSOLE_KEY_SPECIAL + NK_KEY_UP)
+#define NK_CONSOLE_KEY_DOWN (NK_CONSOLE_KEY_SPECIAL + NK_KEY_DOWN)
+#define NK_CONSOLE_KEY_LEFT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_LEFT)
+#define NK_CONSOLE_KEY_RIGHT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_RIGHT)
+#define NK_CONSOLE_KEY_SHIFT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SHIFT)
+#define NK_CONSOLE_KEY_CTRL (NK_CONSOLE_KEY_SPECIAL + NK_KEY_CTRL)
+#define NK_CONSOLE_KEY_ALT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_ALT)
+#define NK_CONSOLE_KEY_COPY (NK_CONSOLE_KEY_SPECIAL + NK_KEY_COPY)
+#define NK_CONSOLE_KEY_CUT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_CUT)
+#define NK_CONSOLE_KEY_PASTE (NK_CONSOLE_KEY_SPECIAL + NK_KEY_PASTE)
+#define NK_CONSOLE_KEY_INSERT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_INSERT_MODE)
+#define NK_CONSOLE_KEY_REPLACE (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_REPLACE_MODE)
+#define NK_CONSOLE_KEY_HOME (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_LINE_START)
+#define NK_CONSOLE_KEY_END (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_LINE_END)
+#define NK_CONSOLE_KEY_TEXT_START (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_START)
+#define NK_CONSOLE_KEY_TEXT_END (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_END)
+#define NK_CONSOLE_KEY_UNDO (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_UNDO)
+#define NK_CONSOLE_KEY_REDO (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_REDO)
+#define NK_CONSOLE_KEY_SELECT_ALL (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_SELECT_ALL)
+#define NK_CONSOLE_KEY_WORD_LEFT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_WORD_LEFT)
+#define NK_CONSOLE_KEY_WORD_RIGHT (NK_CONSOLE_KEY_SPECIAL + NK_KEY_TEXT_WORD_RIGHT)
 #define NK_CONSOLE_KEY_SCROLL_START (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_START)
-#define NK_CONSOLE_KEY_SCROLL_END  (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_END)
+#define NK_CONSOLE_KEY_SCROLL_END (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_END)
 #define NK_CONSOLE_KEY_SCROLL_DOWN (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_DOWN)
-#define NK_CONSOLE_KEY_SCROLL_UP   (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_UP)
-#define NK_CONSOLE_KEY_F1          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F1)
-#define NK_CONSOLE_KEY_F2          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F2)
-#define NK_CONSOLE_KEY_F3          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F3)
-#define NK_CONSOLE_KEY_F4          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F4)
-#define NK_CONSOLE_KEY_F5          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F5)
-#define NK_CONSOLE_KEY_F6          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F6)
-#define NK_CONSOLE_KEY_F7          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F7)
-#define NK_CONSOLE_KEY_F8          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F8)
-#define NK_CONSOLE_KEY_F9          (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F9)
-#define NK_CONSOLE_KEY_F10         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F10)
-#define NK_CONSOLE_KEY_F11         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F11)
-#define NK_CONSOLE_KEY_F12         (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F12)
+#define NK_CONSOLE_KEY_SCROLL_UP (NK_CONSOLE_KEY_SPECIAL + NK_KEY_SCROLL_UP)
+#define NK_CONSOLE_KEY_F1 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F1)
+#define NK_CONSOLE_KEY_F2 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F2)
+#define NK_CONSOLE_KEY_F3 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F3)
+#define NK_CONSOLE_KEY_F4 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F4)
+#define NK_CONSOLE_KEY_F5 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F5)
+#define NK_CONSOLE_KEY_F6 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F6)
+#define NK_CONSOLE_KEY_F7 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F7)
+#define NK_CONSOLE_KEY_F8 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F8)
+#define NK_CONSOLE_KEY_F9 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F9)
+#define NK_CONSOLE_KEY_F10 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F10)
+#define NK_CONSOLE_KEY_F11 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F11)
+#define NK_CONSOLE_KEY_F12 (NK_CONSOLE_KEY_SPECIAL + NK_KEY_F12)
 
 /**
  * Flags that control which input sources are accepted by an input widget.
@@ -70,8 +70,8 @@
  */
 typedef enum nk_console_input_flags {
     NK_CONSOLE_INPUT_FLAG_GAMEPAD = NK_FLAG(0), /** Accept a gamepad button. @see out_gamepad_button */
-    NK_CONSOLE_INPUT_FLAG_KEY     = NK_FLAG(1), /** Accept a keyboard key (typed character or special key). @see out_key */
-    NK_CONSOLE_INPUT_FLAG_MOUSE   = NK_FLAG(2), /** Accept a mouse button. @see out_mouse_button */
+    NK_CONSOLE_INPUT_FLAG_KEY = NK_FLAG(1), /** Accept a keyboard key (typed character or special key). @see out_key */
+    NK_CONSOLE_INPUT_FLAG_MOUSE = NK_FLAG(2), /** Accept a mouse button. @see out_mouse_button */
 } nk_console_input_flags;
 
 /**
@@ -237,13 +237,28 @@ extern "C" {
 static const char* nk_gamepad_button_name(struct nk_gamepads* g, enum nk_gamepad_button b) {
     (void)g;
     static const char* names[] = {
-        "Up","Down","Left","Right","A","B","X","Y","LB","RB","Back","Start","Guide"
-    };
+        "Up",
+        "Down",
+        "Left",
+        "Right",
+        "A",
+        "B",
+        "X",
+        "Y",
+        "LB",
+        "RB",
+        "Back",
+        "Start",
+        "Guide"};
     if (b >= 0 && b < NK_GAMEPAD_BUTTON_LAST) return names[(int)b];
     return NULL;
 }
 static nk_bool nk_gamepad_any_button_released(struct nk_gamepads* g, int n, int* on, enum nk_gamepad_button* ob) {
-    (void)g; (void)n; (void)on; (void)ob; return nk_false;
+    (void)g;
+    (void)n;
+    (void)on;
+    (void)ob;
+    return nk_false;
 }
 #endif /* !NK_CONSOLE_GAMEPAD */
 
@@ -260,7 +275,7 @@ static nk_uint nk_console_input_active_source(const nk_console_input_data* data)
         return 0;
     if (data->out_key != NULL && *data->out_key != NK_CONSOLE_KEY_NONE)
         return NK_CONSOLE_INPUT_FLAG_KEY;
-    if (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX)
+    if (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX && *data->out_mouse_button != NK_BUTTON_DOUBLE)
         return NK_CONSOLE_INPUT_FLAG_MOUSE;
     if (data->out_gamepad_button != NULL && *data->out_gamepad_button != NK_GAMEPAD_BUTTON_INVALID)
         return NK_CONSOLE_INPUT_FLAG_GAMEPAD;
@@ -304,16 +319,18 @@ NK_API struct nk_rect nk_console_input_render(nk_console* console) {
     nk_console_button_set_symbol(console, NK_SYMBOL_NONE);
     if (active == NK_CONSOLE_INPUT_FLAG_KEY) {
         display_label = nk_console_input_key_name(*data->out_key);
-    } else if (active == NK_CONSOLE_INPUT_FLAG_MOUSE) {
+    }
+    else if (active == NK_CONSOLE_INPUT_FLAG_MOUSE) {
         switch (*data->out_mouse_button) {
-            case NK_BUTTON_LEFT: display_label = "Left Mouse";   break;
+            case NK_BUTTON_LEFT: display_label = "Left Mouse"; break;
             case NK_BUTTON_MIDDLE: display_label = "Middle Mouse"; break;
-            case NK_BUTTON_RIGHT: display_label = "Right Mouse";  break;
+            case NK_BUTTON_RIGHT: display_label = "Right Mouse"; break;
             case NK_BUTTON_X1: display_label = "Mouse X1"; break;
             case NK_BUTTON_X2: display_label = "Mouse X2"; break;
             default: display_label = "Mouse Button"; break;
         }
-    } else if (active == NK_CONSOLE_INPUT_FLAG_GAMEPAD) {
+    }
+    else if (active == NK_CONSOLE_INPUT_FLAG_GAMEPAD) {
         // Display the mocked button symbol
         switch (*data->out_gamepad_button) {
             case NK_GAMEPAD_BUTTON_UP:
@@ -403,11 +420,13 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
             *data->out_gamepad_button = data->default_gamepad_button;
             if (data->out_key != NULL) *data->out_key = NK_CONSOLE_KEY_NONE;
             if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
-        } else if (source == NK_CONSOLE_INPUT_FLAG_KEY) {
+        }
+        else if (source == NK_CONSOLE_INPUT_FLAG_KEY) {
             *data->out_key = data->default_key;
             if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
             if (data->out_mouse_button != NULL) *data->out_mouse_button = -1;
-        } else if (source == NK_CONSOLE_INPUT_FLAG_MOUSE) {
+        }
+        else if (source == NK_CONSOLE_INPUT_FLAG_MOUSE) {
             *data->out_mouse_button = data->default_mouse_button;
             if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
             if (data->out_key != NULL) *data->out_key = NK_CONSOLE_KEY_NONE;
@@ -426,17 +445,17 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         nk_uint source_flags = 0;
         const char* prompt;
         if (data->out_gamepad_button != NULL) source_flags |= NK_CONSOLE_INPUT_FLAG_GAMEPAD;
-        if (data->out_key != NULL)            source_flags |= NK_CONSOLE_INPUT_FLAG_KEY;
-        if (data->out_mouse_button != NULL)   source_flags |= NK_CONSOLE_INPUT_FLAG_MOUSE;
+        if (data->out_key != NULL) source_flags |= NK_CONSOLE_INPUT_FLAG_KEY;
+        if (data->out_mouse_button != NULL) source_flags |= NK_CONSOLE_INPUT_FLAG_MOUSE;
         switch (source_flags) {
-            case NK_CONSOLE_INPUT_FLAG_GAMEPAD:                                          prompt = "Press a Button";                      break;
-            case NK_CONSOLE_INPUT_FLAG_KEY:                                              prompt = "Press a Key";                         break;
-            case NK_CONSOLE_INPUT_FLAG_MOUSE:                                            prompt = "Press a Mouse Button";                break;
-            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY:              prompt = "Press a Button or Key";               break;
-            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_MOUSE:            prompt = "Press a Button or Mouse Button";      break;
-            case NK_CONSOLE_INPUT_FLAG_KEY     | NK_CONSOLE_INPUT_FLAG_MOUSE:            prompt = "Press a Key or Mouse Button";         break;
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD: prompt = "Press a Button"; break;
+            case NK_CONSOLE_INPUT_FLAG_KEY: prompt = "Press a Key"; break;
+            case NK_CONSOLE_INPUT_FLAG_MOUSE: prompt = "Press a Mouse Button"; break;
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY: prompt = "Press a Button or Key"; break;
+            case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_MOUSE: prompt = "Press a Button or Mouse Button"; break;
+            case NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE: prompt = "Press a Key or Mouse Button"; break;
             case NK_CONSOLE_INPUT_FLAG_GAMEPAD | NK_CONSOLE_INPUT_FLAG_KEY | NK_CONSOLE_INPUT_FLAG_MOUSE: prompt = "Press a Button, Key, or Mouse Button"; break;
-            default:                                                                     prompt = "Press a Button";                      break;
+            default: prompt = "Press a Button"; break;
         }
         nk_label(console->ctx, prompt, NK_TEXT_CENTERED);
     }
@@ -483,6 +502,7 @@ static struct nk_rect nk_console_input_active_render(nk_console* console) {
         // Mouse button released.
         if (!finished && data->out_mouse_button != NULL) {
             for (int mi = NK_BUTTON_LEFT; mi < NK_BUTTON_MAX; mi++) {
+                if (mi == NK_BUTTON_DOUBLE) continue;
                 if (nk_input_is_mouse_released(&console->ctx->input, (enum nk_buttons)mi)) {
                     *data->out_mouse_button = (enum nk_buttons)mi;
                     if (data->out_gamepad_button != NULL) *data->out_gamepad_button = NK_GAMEPAD_BUTTON_INVALID;
@@ -595,7 +615,7 @@ NK_API nk_bool nk_console_input_is_key(nk_console* widget) {
 NK_API nk_bool nk_console_input_is_mouse(nk_console* widget) {
     if (widget == NULL || widget->data == NULL) return nk_false;
     nk_console_input_data* data = (nk_console_input_data*)widget->data;
-    return (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX) ? nk_true : nk_false;
+    return (data->out_mouse_button != NULL && *data->out_mouse_button >= 0 && *data->out_mouse_button < NK_BUTTON_MAX && *data->out_mouse_button != NK_BUTTON_DOUBLE) ? nk_true : nk_false;
 }
 
 NK_API enum nk_gamepad_button nk_console_input_get_gamepad(nk_console* widget) {
@@ -710,6 +730,7 @@ NK_API nk_console* nk_console_input(nk_console* parent, const char* label, int g
     }
 
     data = (nk_console_input_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_input_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_input_data));
     data->gamepad_number = gamepad_number;
     data->out_gamepad_number = out_gamepad_number;

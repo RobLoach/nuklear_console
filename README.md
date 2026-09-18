@@ -56,7 +56,7 @@ nk_console* nk_console_init(struct nk_context* context);
 void nk_console_free(nk_console* console);
 void nk_console_free_children(nk_console* console);
 void nk_console_render(nk_console* console);
-void nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
+struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
 // Widgets
 nk_console* nk_console_button(nk_console* parent, const char* text);
@@ -93,7 +93,7 @@ nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buf
 nk_console* nk_console_tree(nk_console* parent, const char* label, nk_bool expanded);
 
 // Utilities
-void nk_console_button_back(nk_console* button);
+void nk_console_button_back(nk_console* button, void* user_data);
 nk_console* nk_console_get_top(nk_console* widget);
 int nk_console_get_widget_index(nk_console* widget);
 int nk_console_height(nk_console* widget);
@@ -126,28 +126,28 @@ void nk_console_check_up_down(nk_console* widget);
 
 ## Configuration
 
-Define | Default | Description
------- | ------- | -----------
-`NK_BUTTON_TRIGGER_ON_RELEASE` | *(unset)* | Required in order to ensure events are triggered in the correct order
-`NK_CONSOLE_KEY_BACK` | `NK_KEY_TEXT_RESET_MODE` | The `nk_keys` enumeration that will be used to go back in the menu hierarchy. Defaults to ESC.
-`NK_CONSOLE_DRAG_THRESHOLD` | `8.0f` | The amount of threshold mouse movement needed to consider it a scroll
-`NK_CONSOLE_AXIS_DEADZONE` | `0.22f` | The amount of movement the gamepad axis needs prior to moving the cursor
-`NK_CONSOLE_AXIS_REPEAT_INTERVAL` | `0.5f` | When using the gamepad axis to move, how frequently the cursor will move
-`NK_CONSOLE_MALLOC` | `nk_malloc` | Memory allocation function used internally
-`NK_CONSOLE_FREE` | `nk_mfree` | Memory free function used internally
-`NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE` | *(unset)* | Define to suppress the `NK_BUTTON_TRIGGER_ON_RELEASE` warning
-`NK_CONSOLE_FILE_PATH_MAX` | `PATH_MAX` / `4096` | Maximum file path length used by the file widget
-`NK_CONSOLE_FILE_ADD_FILES` | *(auto-detected)* | The function callback used to enumerate files; see `nk_console_file_add_files_tinydir()`
-`NK_CONSOLE_ENABLE_TINYDIR` | *(unset)* | Define to use tinydir for file enumeration
-`NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H` | `"vendor/tinydir/tinydir.h"` | Path to the tinydir header when using the tinydir file backend
-`NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP` | *(unset)* | Define to skip the tinydir header include (provide your own include before)
-`NK_CONSOLE_INPUT_TIMER` | `6.0f` | Seconds to wait for input before timing out in the input widget
-`NK_CONSOLE_TEXTEDIT_MASKED_LENGTH` | `8` | Number of `*` characters shown when the text-edit widget is in masked/password mode
-`NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH` | `10` | Maximum preview character count shown in a collapsed text-edit widget
-`NK_CONSOLE_MESSAGE_DURATION` | `4.0f` | Seconds a message widget is displayed before auto-dismissal
-`NK_CONSOLE_MESSAGE_SCROLL_SPEED` | `60.0f` | Pixels per second at which a long message scrolls horizontally
-`NK_CONSOLE_MESSAGE_SCROLL_PAUSE` | `1.5f` | Seconds to pause at the start and end of a scrolling message
-`NK_CONSOLE_FILE_SDL_NATIVE_DIALOG` | *(unset)* | In SDL3, will enable file widgets to use native file dialogs
+- `NK_BUTTON_TRIGGER_ON_RELEASE`: Required in order to ensure Nuklear events are triggered in the correct order
+- `NK_CONSOLE_KEY_BACK`: The `nk_keys` enumeration that will be used to go back in the menu hierarchy. Defaults to ESC.
+- `NK_CONSOLE_DRAG_THRESHOLD`: The amount of threshold mouse movement needed to consider it a scroll
+- `NK_CONSOLE_AXIS_DEADZONE`: The amount of movement the gamepad axis needs prior to moving the cursor
+- `NK_CONSOLE_AXIS_REPEAT_INTERVAL`: When using the gamepad axis to move, how frequently the cursor will move
+- `NK_CONSOLE_MALLOC`: Memory allocation function used internally
+- `NK_CONSOLE_FREE`: Memory free function used internally
+- `NK_CONSOLE_IGNORE_BUTTON_TRIGGER_ON_RELEASE`: Define to suppress the `NK_BUTTON_TRIGGER_ON_RELEASE` warning
+- `NK_CONSOLE_FILE_PATH_MAX`: Maximum file path length used by the file widget
+- `NK_CONSOLE_FILE_ADD_FILES`: The function callback used to enumerate files; see `nk_console_file_add_files_tinydir()`
+- `NK_CONSOLE_ENABLE_TINYDIR`: Define to use tinydir for file enumeration; corresponds to CMake option `NUKLEAR_CONSOLE_ENABLE_TINYDIR=ON` (default: OFF)
+- `NK_CONSOLE_FILE_ADD_FILES_TINYDIR_H`: Path to the tinydir header when using the tinydir file backend
+- `NK_CONSOLE_FILE_ADD_FILES_TINYDIR_SKIP`: Define to skip the tinydir header include (provide your own include before)
+- `NK_CONSOLE_INPUT_TIMER`: Seconds to wait for input before timing out in the input widget
+- `NK_CONSOLE_TEXTEDIT_MASKED_LENGTH`: Number of `*` characters shown when the text-edit widget is in masked/password mode
+- `NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH`: Maximum preview character count shown in a collapsed text-edit widget
+- `NK_CONSOLE_MESSAGE_DURATION`: Seconds a message widget is displayed before auto-dismissal
+- `NK_CONSOLE_MESSAGE_SCROLL_SPEED`: Pixels per second at which a long message scrolls horizontally
+- `NK_CONSOLE_MESSAGE_SCROLL_PAUSE`: Seconds to pause at the start and end of a scrolling message
+- `NK_CONSOLE_FILE_SDL_NATIVE_DIALOG`: In SDL3, will enable file widgets to use native file dialogs
+- `NK_CONSOLE_GAMEPAD`: Defined automatically when [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad) is included before nuklear_console; enables gamepad input support
+- `NK_CONSOLE_NO_GAMEPAD`: Define to force-disable gamepad support even when nuklear_gamepad is present; corresponds to CMake option `NUKLEAR_CONSOLE_GAMEPAD=OFF`
 
 ## Development
 
