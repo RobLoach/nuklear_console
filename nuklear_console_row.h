@@ -185,13 +185,22 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
+    // The row is as tall as its tallest child, taking each child's font into account.
+    int numChildren = (int)cvector_size(console->children);
+    float row_height = nk_console_layout_height(console);
+    for (int i = 0; i < numChildren; ++i) {
+        float child_height = nk_console_layout_height(console->children[i]);
+        if (child_height > row_height) {
+            row_height = child_height;
+        }
+    }
+
     // Rows use the advanced layout system to render their children.
-    nk_layout_row_begin(console->ctx, NK_DYNAMIC, (float)console->height, console->columns);
+    nk_layout_row_begin(console->ctx, NK_DYNAMIC, row_height, console->columns);
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(console->ctx);
 
     // Consume mouse movement before children have a chance to.
-    int numChildren = (int)cvector_size(console->children);
     struct nk_input* input = &console->ctx->input;
     if (console->selectable && top_data->input_processed == nk_false &&
         widget_bounds.w > 0 && nk_input_is_mouse_moved(input) &&
