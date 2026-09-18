@@ -134,6 +134,9 @@ typedef struct nk_console {
     // Events
     nk_console_event_handler* events; /** Events handled for the widget. */
     nk_console_render_event render; /** Render the widget. */
+
+    // Styles
+    const struct nk_user_font* font; /** When set, the font used to render this widget and its children. NULL inherits the parent/global font. @see nk_console_set_font() */
 } nk_console;
 
 typedef struct nk_console_top_data {
@@ -284,6 +287,29 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 /** Return the row height of @p widget in pixels. */
 NK_API int nk_console_height(nk_console* widget);
+/**
+ * Set the font used to render @p widget and its children.
+ *
+ * Fonts are shared by pointer, so a single font can be assigned to any number of widgets.
+ * The caller keeps ownership of @p font, and it must outlive the widget.
+ *
+ * @param widget The widget to style.
+ * @param font The font to use, or NULL to inherit the parent/global font.
+ */
+NK_API void nk_console_set_font(nk_console* widget, const struct nk_user_font* font);
+/**
+ * Get the font that @p widget will render with: its own font, or the closest ancestor's.
+ *
+ * @return The effective font, or NULL when the global Nuklear font is used.
+ */
+NK_API const struct nk_user_font* nk_console_get_font(nk_console* widget);
+/**
+ * Determine the row height that @p widget is laid out with, in pixels.
+ *
+ * The explicit height when one is set, otherwise the minimum row height for the
+ * widget's effective font. 0 means the window's default minimum row height is used.
+ */
+NK_API float nk_console_layout_height(nk_console* widget);
 /** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
 /** Return a human-readable name for @p type (e.g. "button"), or "unknown" for unrecognized values. */
@@ -781,6 +807,41 @@ NK_API int nk_console_height(nk_console* widget) {
     return widget->height;
 }
 
+NK_API void nk_console_set_font(nk_console* widget, const struct nk_user_font* font) {
+    if (widget == NULL) {
+        return;
+    }
+    widget->font = font;
+}
+
+NK_API const struct nk_user_font* nk_console_get_font(nk_console* widget) {
+    while (widget != NULL) {
+        if (widget->font != NULL) {
+            return widget->font;
+        }
+        widget = widget->parent;
+    }
+    return NULL;
+}
+
+NK_API float nk_console_layout_height(nk_console* widget) {
+    if (widget == NULL) {
+        return 0.0f;
+    }
+
+    if (widget->height > 0) {
+        return (float)widget->height;
+    }
+
+    const struct nk_user_font* font = nk_console_get_font(widget);
+    if (font == NULL || widget->ctx == NULL) {
+        return 0.0f;
+    }
+
+    // Match Nuklear's minimum row height, but for the widget's own font.
+    return font->height + widget->ctx->style.text.padding.y * 2.0f + widget->ctx->style.window.min_row_height_padding * 2.0f;
+}
+
 /**
  * Get the given widget's index from it's parent's children.
  *
@@ -1250,12 +1311,31 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
+    // Push any styles. Skip the push when the effective font is already active.
+    const struct nk_user_font* font = nk_console_get_font(console);
+    nk_bool font_pushed = nk_false;
+    if (font != NULL && font != console->ctx->style.font) {
+        nk_style_push_font(console->ctx, font);
+        font_pushed = nk_true;
+    }
+
     if (console->parent == NULL) {
         nk_console_render_top(console);
+
+        // Finish the styles.
+        if (font_pushed) {
+            nk_style_pop_font(console->ctx);
+        }
         return;
     }
 
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
+
+    // Finish the styles.
+    if (font_pushed) {
+        nk_style_pop_font(console->ctx);
+    }
+
     if (widget_bounds.w <= 0 || widget_bounds.h <= 0) {
         return;
     }
@@ -1508,7 +1588,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     }
 
     // Since we're not within a row, the widget owns the whole row.
-    nk_layout_row_dynamic(widget->ctx, (float)widget->height, widget->columns);
+    nk_layout_row_dynamic(widget->ctx, nk_console_layout_height(widget), widget->columns);
 }
 
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads) {

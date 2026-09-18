@@ -98,6 +98,8 @@ nk_console* nk_console_get_top(nk_console* widget);
 int nk_console_get_widget_index(nk_console* widget);
 int nk_console_height(nk_console* widget);
 void nk_console_set_height(nk_console* widget, int height);
+const struct nk_user_font* nk_console_get_font(nk_console* widget);
+void nk_console_set_font(nk_console* widget, const struct nk_user_font* font);
 nk_bool nk_console_is_active_widget(nk_console* widget);
 nk_bool nk_console_selectable(nk_console* widget);
 void nk_console_set_active_parent(nk_console* new_parent);

@@ -626,6 +626,61 @@ int main() {
     nk_console* color_rgba = nk_console_color(console, "Color RGBA", &rgba_color, NK_RGBA);
     assert(color_rgba != NULL);
 
+    // nk_console_set_font() / nk_console_get_font() / nk_console_layout_height()
+    {
+        static struct nk_user_font big_font;
+        static struct nk_user_font small_font;
+
+        // NULL widgets are safe no-ops.
+        nk_console_set_font(NULL, NULL);
+        assert(nk_console_get_font(NULL) == NULL);
+        assert(nk_console_layout_height(NULL) == 0.0f);
+
+        // By default, no font is set: the global Nuklear font is used.
+        nk_console* font_parent = nk_console_button(console, "Fonts");
+        nk_console* font_child = nk_console_label(font_parent, "Font Label");
+        assert(font_parent->font == NULL);
+        assert(nk_console_get_font(font_parent) == NULL);
+        assert(nk_console_get_font(font_child) == NULL);
+
+        // Setting a font makes it the widget's effective font.
+        big_font = *ctx->style.font;
+        big_font.height *= 2.0f;
+        nk_console_set_font(font_parent, &big_font);
+        assert(font_parent->font == &big_font);
+        assert(nk_console_get_font(font_parent) == &big_font);
+
+        // Children inherit the closest ancestor's font...
+        assert(nk_console_get_font(font_child) == &big_font);
+
+        // ...unless they set their own.
+        small_font = *ctx->style.font;
+        small_font.height *= 0.5f;
+        nk_console_set_font(font_child, &small_font);
+        assert(nk_console_get_font(font_child) == &small_font);
+
+        // Clearing a font restores inheritance.
+        nk_console_set_font(font_child, NULL);
+        assert(font_child->font == NULL);
+        assert(nk_console_get_font(font_child) == &big_font);
+
+        // nk_console_layout_height(): an explicit height wins.
+        nk_console_set_height(font_child, 100);
+        assert(nk_console_layout_height(font_child) == 100.0f);
+
+        // Otherwise the row height is derived from the effective font.
+        nk_console_set_height(font_child, 0);
+        float expected = big_font.height + ctx->style.text.padding.y * 2.0f + ctx->style.window.min_row_height_padding * 2.0f;
+        assert(nk_console_layout_height(font_child) == expected);
+
+        // With no font and no height, 0 defers to the window's minimum row height.
+        nk_console_set_font(font_parent, NULL);
+        assert(nk_console_layout_height(font_child) == 0.0f);
+
+        // Leave the font set so the render passes below exercise the push/pop path.
+        nk_console_set_font(font_parent, &big_font);
+    }
+
     // Create the screen buffer
     pntr_image* screen = pntr_new_image(300, 800);
     assert(screen != NULL);
