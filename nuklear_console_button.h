@@ -1,25 +1,35 @@
 #ifndef NK_CONSOLE_BUTTON_H__
 #define NK_CONSOLE_BUTTON_H__
 
+typedef struct nk_console_button_data {
+    enum nk_symbol_type symbol;
+    struct nk_image image;
+    nk_bool has_image;
+} nk_console_button_data;
+
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-typedef struct nk_console_button_data {
-    enum nk_symbol_type symbol;
-    struct nk_image image;
-} nk_console_button_data;
-
+/** Add a button widget to @p parent. @return The new button widget. */
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text);
+/** Render the button widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_button_render(nk_console* console);
+/** Navigate back to the parent menu; suitable as an NK_CONSOLE_EVENT_CLICKED callback. */
 NK_API void nk_console_button_back(nk_console* button, void* user_data);
+/** Add a button that fires @p onclick when clicked. @return The new button widget. */
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick);
+/** Add a button with a full event handler (user data + destructor). @return The new button widget. */
 NK_API nk_console* nk_console_button_onclick_handler(nk_console* parent, const char* text, nk_console_event callback, void* data, nk_console_event destructor);
 
+/** Return the symbol type shown on the left side of @p button. */
 NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button);
+/** Set the symbol shown on the left side of @p button. */
 NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol);
 
+/** Set an image to display on the left side of @p button. */
 NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image);
+/** Return the image displayed on the left side of @p button. */
 NK_API struct nk_image nk_console_button_get_image(nk_console* button);
 
 #if defined(__cplusplus)
@@ -58,9 +68,7 @@ NK_API void nk_console_button_set_image(nk_console* button, struct nk_image imag
     }
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     data->image = image;
-
-    // While automatically setting the height to the button height is an option here, we will opt out of doing that.
-    // button->height = (int)image.h;
+    data->has_image = nk_true;
 }
 
 NK_API struct nk_image nk_console_button_get_image(nk_console* button) {
@@ -97,18 +105,20 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Apply the style.
     struct nk_style_item buttonStyle = console->ctx->style.button.normal;
+    struct nk_color textColor = console->ctx->style.button.text_normal;
     if (nk_console_is_active_widget(console)) {
         if (selected) {
             console->ctx->style.button.normal = console->ctx->style.button.active;
+            console->ctx->style.button.text_normal = console->ctx->style.button.text_active;
         }
         else {
             console->ctx->style.button.normal = console->ctx->style.button.hover;
+            console->ctx->style.button.text_normal = console->ctx->style.button.text_hover;
         }
     }
 
     // Display the button.
-    if (data->image.region[3] == 0) {
-        // No image
+    if (!data->has_image) {
         if (console->label_length <= 0) {
             // Check if there is a Label
             if (console->label != NULL && nk_strlen(console->label) > 0) {
@@ -148,6 +158,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Restore the styles
     console->ctx->style.button.normal = buttonStyle;
+    console->ctx->style.button.text_normal = textColor;
 
     // Act on the button
     if (selected) {
@@ -167,7 +178,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
-        nk_console_check_up_down(console, widget_bounds);
+        nk_console_check_up_down(console);
         nk_console_check_tooltip(console);
     }
 
@@ -180,6 +191,7 @@ NK_API struct nk_rect nk_console_button_render(nk_console* console) {
 NK_API nk_console* nk_console_button(nk_console* parent, const char* text) {
     // Create the widget data.
     nk_console_button_data* data = (nk_console_button_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_button_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_button_data));
 
     nk_console* button = nk_console_label(parent, text);
@@ -199,20 +211,7 @@ NK_API void nk_console_button_back(nk_console* button, void* user_data) {
     if (button == NULL) {
         return;
     }
-
-    nk_console* top = nk_console_get_top(button);
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
-
-    nk_console* parent = button->parent;
-    if (parent != NULL) {
-        parent = parent->parent;
-    }
-    if (parent != NULL) {
-        nk_console_set_active_parent(parent);
-    }
-    else {
-        data->active_parent = top;
-    }
+    nk_console_navigate_back(button->parent);
 }
 
 NK_API nk_console* nk_console_button_onclick(nk_console* parent, const char* text, nk_console_event onclick) {

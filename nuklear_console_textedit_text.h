@@ -51,7 +51,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         }
         // Allow changing up/down only if they're not pressing backspace
         else if (!nk_input_is_key_pressed(&widget->ctx->input, NK_KEY_BACKSPACE)) {
-            nk_console_check_up_down(widget, widget_bounds);
+            nk_console_check_up_down(widget);
         }
 
         // Display the tooltip for the textedit.
@@ -71,11 +71,41 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
     }
 
     // TODO: textedit_text: Add an option to change the filter.
-    // TODO: textedit_text: Trigger the onchange event when the text changes.
     int buffer_strlen = data->buffer != NULL ? (int)nk_strlen(data->buffer) : 0;
-    nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
-    if (buffer_strlen != (int)nk_strlen(data->buffer)) {
-        nk_console_trigger_event(textedit, NK_CONSOLE_EVENT_CHANGED);
+
+    // Allow for masking the textedit.
+    if (data->masked) {
+        char mask[1024];
+        int mask_max = data->buffer_size < (int)sizeof(mask) ? data->buffer_size : (int)sizeof(mask);
+        for (int i = 0; i < buffer_strlen && i < mask_max - 1; i++) {
+            mask[i] = '*';
+        }
+        mask[buffer_strlen < mask_max ? buffer_strlen : mask_max - 1] = '\0';
+        nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, mask, mask_max, nk_filter_ascii);
+        int mask_strlen = (int)nk_strlen(mask);
+        if (mask_strlen < buffer_strlen) { // Characters deleted
+            int real_len = (int)nk_strlen(data->buffer);
+            int new_real_len = real_len - (buffer_strlen - mask_strlen);
+            if (new_real_len < 0) {
+                new_real_len = 0;
+            }
+            data->buffer[new_real_len] = '\0';
+            data->changed = nk_true;
+        }
+        else if (mask_strlen > buffer_strlen) { // Characters added
+            int real_len = (int)nk_strlen(data->buffer);
+            for (int i = buffer_strlen; i < mask_strlen && real_len < data->buffer_size - 1; i++, real_len++) {
+                data->buffer[real_len] = mask[i];
+            }
+            data->buffer[real_len] = '\0';
+            data->changed = nk_true;
+        }
+    }
+    else {
+        nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
+        if (buffer_strlen != (int)nk_strlen(data->buffer)) {
+            data->changed = nk_true;
+        }
     }
 
     if (widget->disabled) {

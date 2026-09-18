@@ -1,14 +1,14 @@
 #ifndef NK_CONSOLE_ROW_H__
 #define NK_CONSOLE_ROW_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_row_data {
     int activeChild;
     nk_bool widgets_added; /** Indicates if all the row's widgets have been added. */
 } nk_console_row_data;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif
 
 /**
  * Begin a new row in the console.
@@ -107,6 +107,7 @@ static nk_bool nk_console_row_pick_nearest_selectable_child(nk_console* row) {
 NK_API nk_console* nk_console_row_begin(nk_console* parent) {
     // Create the row data.
     nk_console_row_data* data = (nk_console_row_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_row_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_row_data));
 
     // Create the row.
@@ -224,7 +225,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     // Consume directional input before children have a chance to.
     if (nk_console_is_active_widget(console)) {
         nk_console_row_check_left_right(console, top);
-        nk_console_check_up_down(console, widget_bounds);
+        nk_console_check_up_down(console);
         nk_console* active = nk_console_get_active_widget(console);
 
         // Attempt to accurately move vertically if the new widget is also a row.

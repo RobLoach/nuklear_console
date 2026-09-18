@@ -27,6 +27,10 @@ if (RAYLIB)
         ${SOURCES}
     )
 
+    # Debug
+    target_compile_options(${project_name_raylib} PUBLIC -g)
+    set_target_properties(${project_name_raylib} PROPERTIES COMPILE_FLAGS "-g" LINK_FLAGS "-g")
+
     target_link_libraries(${project_name_raylib} PUBLIC
         raylib_static
         ${LIBRARIES}

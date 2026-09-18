@@ -7,6 +7,7 @@
 #define RAYLIB_NUKLEAR_IMPLEMENTATION
 #define RAYLIB_NUKLEAR_INCLUDE_DEFAULT_FONT
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
+#define NK_BUTTON_TRIGGER_ON_RELEASE // Fixes some usage of touch and drag
 #include "raylib-nuklear.h"
 
 #include "../common/nuklear_console_demo.c"
@@ -18,17 +19,18 @@ nk_bool closeWindow = nk_false;
 
 int main() {
     SetConfigFlags(FLAG_WINDOW_RESIZABLE);
-    InitWindow(800, 600, "nuklear_console_demo");
+    InitWindow(800, 450, "nuklear_console_demo");
+    SetExitKey(KEY_NULL);
     SetWindowMinSize(200, 200);
 
     // Create the Nuklear Context
-    int fontSize = 13 * 3;
+    int fontSize = 13 * 2;
     Font font = LoadFontFromNuklear(fontSize);
     GenTextureMipmaps(&font.texture);
     ctx = InitNuklearEx(font, fontSize);
     Texture texture = LoadTexture("resources/image.png");
 
-    console = nuklear_console_demo_init(ctx, NULL, TextureToNuklear(texture));
+    console = nuklear_console_demo_init(ctx, NULL, TextureToNuklearImage(texture));
 
     #if defined(PLATFORM_WEB)
         emscripten_set_main_loop(UpdateDrawFrame, 0, 1);
@@ -58,16 +60,8 @@ void UpdateDrawFrame(void) {
 
     nk_gamepad_update(nk_console_get_gamepads(console));
 
-    int flags = NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE;
-    int padding = 0;
-
     // Nuklear GUI Code
-    if (nk_begin(ctx, "nuklear_console", nk_rect(padding, padding, GetScreenWidth() - padding * 2, GetScreenHeight() - padding * 2), flags)) {
-        if (nuklear_console_demo_render()) {
-            closeWindow = nk_true;
-        }
-    }
-    nk_end(ctx);
+    nk_console_render_window(console, "nuklear_console", nk_rect(0, 0, (float)GetScreenWidth(), (float)GetScreenHeight()), NK_WINDOW_SCROLL_AUTO_HIDE | NK_WINDOW_TITLE);
 
     // Render
     BeginDrawing();
@@ -81,6 +75,10 @@ void UpdateDrawFrame(void) {
     #ifdef PLATFORM_WEB
         if (shouldClose) {
             emscripten_cancel_main_loop();
+        }
+    #else
+        if (nuklear_console_demo_should_close()) {
+            closeWindow = nk_true;
         }
     #endif
 }

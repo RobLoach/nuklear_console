@@ -1,0 +1,10 @@
+{
+    "private": true,
+    "scripts": {
+        "prebuild": "mkdir build && cd build",
+        "build": "emcmake cmake .. -DPLATFORM=Web -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXECUTABLE_SUFFIX=.html",
+        "postbuild": "emmake make",
+        "prepublish": "rm -rf build/_deps build/CMakeFiles build/*.cmake build/Makefile",
+        "publish": "npx gh-pages -d build"
+    }
+}

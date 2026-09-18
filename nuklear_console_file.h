@@ -5,9 +5,25 @@
 #ifdef PATH_MAX
 #define NK_CONSOLE_FILE_PATH_MAX PATH_MAX
 #else
-#define NK_CONSOLE_FILE_PATH_MAX 1024
+#define NK_CONSOLE_FILE_PATH_MAX 4096
 #endif
 #endif // NK_CONSOLE_FILE_PATH_MAX
+
+/**
+ * NK_CONSOLE_FILE_SDL_NATIVE_DIALOG: When enabled in SDL3, will enable file widgets to use the native file dialogs.
+ * Auto-enabled when SDL3 is detected. Define NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG to disable.
+ */
+#if !defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && !defined(NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG) && defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION >= 3
+#define NK_CONSOLE_FILE_SDL_NATIVE_DIALOG
+#endif
+
+/**
+ * A single file or directory entry stored for the file widget's list view.
+ */
+typedef struct nk_console_file_entry {
+    char* label; /** The basename of the file or directory. */
+    nk_bool is_directory; /** True if this entry is a directory. */
+} nk_console_file_entry;
 
 /**
  * Custom data for the file widget.
@@ -18,6 +34,15 @@ typedef struct nk_console_file_data {
     int file_path_buffer_size; /** The size of the buffer. */
     char directory[NK_CONSOLE_FILE_PATH_MAX]; /** When selecting a file, this is the current directory. */
     void* file_user_data; /** Custom user data for the file system. */
+    nk_bool select_directory; /** Flag indicating if we are selecting a directory. */
+    nk_bool use_list_view; /** When true, uses a list view for file selection. Defaults to buttons. */
+    nk_bool file_action; /** When true, uses the label as the button text and skips the left-side label. */
+    char starting_directory[NK_CONSOLE_FILE_PATH_MAX]; /** Optional user-specified starting directory. When set, overrides the buffer-derived directory. */
+    char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
+    nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
+    char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
+    void* sdl_filters; /** SDL_DialogFileFilter array for the SDL native dialog. Kept alive until the next dialog opens or the widget is destroyed. */
+    char* sdl_pending_path; /** Path selected in the SDL native dialog, SDL_strdup'd off-thread and applied on the main thread. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -35,6 +60,44 @@ extern "C" {
  * @return The new file widget.
  */
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+
+/**
+ * Creates a directory widget that allows the user to select a directory.
+ *
+ * @param parent The parent widget.
+ * @param label The label for the file widget. For example: "Select a directory".
+ * @param dir_buffer The buffer to store the directory path.
+ * @param dir_buffer_size The size of the buffer.
+ *
+ * @return The new file widget.
+ */
+NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
+
+/**
+ * Creates a file action widget that shows a single full-width button. The label is used as the
+ * button text before a file is selected; afterwards the button shows the chosen filename.
+ *
+ * @param parent The parent widget.
+ * @param label The button label. For example: "Select a file". Pass NULL for the default text.
+ * @param file_path_buffer The buffer to store the file path.
+ * @param file_path_buffer_size The size of the buffer.
+ *
+ * @return The new file action widget.
+ */
+NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size);
+
+/**
+ * Creates a directory action widget that shows a single full-width button. The label is used as
+ * the button text before a directory is selected; afterwards the button shows the chosen directory.
+ *
+ * @param parent The parent widget.
+ * @param label The button label. For example: "Select a directory". Pass NULL for the default text.
+ * @param dir_buffer The buffer to store the directory path.
+ * @param dir_buffer_size The size of the buffer.
+ *
+ * @return The new directory action widget.
+ */
+NK_API nk_console* nk_console_dir_action(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size);
 
 /**
  * Render callback to display the file widget.
@@ -61,7 +124,7 @@ NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data
 NK_API void* nk_console_file_get_file_user_data(nk_console* file);
 
 /**
- * Add a individual file or directory to the given file widget as a child.
+ * Add an individual file or directory entry to the given file widget's list view.
  *
  * This should be called from the file system callbacks. See `nuklear_console_file_system.h` for examples.
  *
@@ -69,20 +132,89 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file);
  * @param path The path to the file or directory.
  * @param is_directory True if the path is a directory. False otherwise.
  *
- * @return True if the entry was added.
+ * @return Non-NULL if the entry was successfully added, NULL otherwise.
  *
- * @see nk_console_file_destroy_tinydir()
+ * @see nk_console_file_add_files_tinydir()
+ * @see nk_console_file_add_files_raylib()
  */
-NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
+NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory);
 
 /**
- * Refreshes the file widget to display the contents of the current directory.
+ * Sets whether the file/directory widget uses a list view or buttons for file selection.
  *
- * @param widget The file widget to refresh.
+ * @param file The file widget.
+ * @param use_list_view True to use a list view, false to use buttons (the default).
+ */
+NK_API void nk_console_file_set_list_view(nk_console* file, nk_bool use_list_view);
+
+/**
+ * Gets whether the file/directory widget is using a list view for file selection.
  *
- * @see nk_console_file_data::directory
+ * @param file The file widget.
+ *
+ * @return True if using a list view, false if using buttons (the default).
+ */
+NK_API nk_bool nk_console_file_get_list_view(nk_console* file);
+
+/**
+ * Sets the starting directory the file browser opens at when activated.
+ *
+ * When set, this overrides the directory derived from the buffer value.
+ * Pass NULL or an empty string to clear and revert to buffer-derived behavior.
+ *
+ * @param file The file widget.
+ * @param directory The starting directory path.
+ */
+NK_API void nk_console_file_set_directory(nk_console* file, const char* directory);
+
+/**
+ * Gets the starting directory set via nk_console_file_set_directory().
+ *
+ * @param file The file widget.
+ *
+ * @return The starting directory, or an empty string if not set.
+ */
+NK_API const char* nk_console_file_get_directory(nk_console* file);
+
+/**
+ * Sets a semicolon-separated extension filter for the file widget (e.g. ".png;.jpg").
+ *
+ * Only files whose extension matches one of the listed extensions will be shown.
+ * Directories are always shown regardless of the filter.
+ * Pass NULL or an empty string to clear the filter and show all files.
+ *
+ * @param file The file widget.
+ * @param filter The filter string, e.g. ".png;.jpg". Pass NULL to clear.
+ */
+NK_API void nk_console_file_set_filter(nk_console* file, const char* filter);
+
+/**
+ * Gets the extension filter set via nk_console_file_set_filter().
+ *
+ * @param file The file widget.
+ *
+ * @return The filter string, or NULL if no filter is set.
+ */
+NK_API const char* nk_console_file_get_filter(nk_console* file);
+
+/**
+ * Refreshes the file widget with the contents with its given directory.
+ *
+ * @internal
  */
 NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
+
+/**
+ * Normalizes ".", "..", and consecutive separators in a path string in place.
+ *
+ * Both '/' and '\\' are treated as separators; output uses '/'. Leading ".."
+ * segments in relative paths are preserved. Absolute paths cannot navigate
+ * above the root.
+ *
+ * @param buf The path buffer to normalize in place.
+ * @param size The size of buf in bytes.
+ */
+NK_API void nk_console_file_normalize_path(char* buf, int size);
 
 #if defined(__cplusplus)
 }
@@ -94,6 +226,26 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data);
 #ifndef NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
 #define NK_CONSOLE_FILE_IMPLEMENTATION_ONCE
 
+#ifndef NK_STRCMP
+/**
+ * Function used to compare two strings.
+ *
+ * @see strcmp()
+ * @see nk_console_file_entry_compare()
+ */
+#define NK_STRCMP(s1, s2) strcmp(s1, s2)
+#endif
+
+#ifndef NK_QSORT
+/**
+ * Function that will be used to sort file entries.
+ *
+ * @see qsort()
+ * @see nk_console_file_refresh()
+ */
+#define NK_QSORT(arr, n, size, comp) qsort(arr, n, size, comp)
+#endif
+
 #include "nuklear_console_file_system.h"
 
 #if defined(__cplusplus)
@@ -102,13 +254,14 @@ extern "C" {
 
 /**
  * Gets the base name of a file path.
+ *
+ * @internal
  */
 static const char* nk_console_file_basename(const char* path) {
     if (path == NULL) {
         return NULL;
     }
 
-    // TODO: Ensure UTF-8 compatibility.
     int len = nk_strlen(path);
     for (int i = len - 1; i > 0; i--) {
         if (path[i] == '\\' || path[i] == '/') {
@@ -120,6 +273,47 @@ static const char* nk_console_file_basename(const char* path) {
     return path;
 }
 
+/**
+ * Returns nk_true if the given basename matches the semicolon-separated extension filter.
+ * Directories always match. Pass NULL filter to match everything.
+ *
+ * @internal
+ */
+static nk_bool nk_console_file_matches_filter(const char* basename, const char* filter) {
+    if (filter == NULL || filter[0] == '\0') {
+        return nk_true;
+    }
+
+    // Find the file extension.
+    const char* ext = NULL;
+    int len = nk_strlen(basename);
+    for (int i = len - 1; i >= 0; i--) {
+        if (basename[i] == '.') {
+            ext = basename + i;
+            break;
+        }
+    }
+    if (ext == NULL) {
+        return nk_false;
+    }
+    int ext_len = nk_strlen(ext);
+
+    // Walk the semicolon-separated token list.
+    const char* p = filter;
+    while (*p != '\0') {
+        const char* end = p;
+        while (*end != '\0' && *end != ';') {
+            end++;
+        }
+        int token_len = (int)(end - p);
+        if (token_len == ext_len && strncmp(ext, p, (size_t)token_len) == 0) {
+            return nk_true;
+        }
+        p = (*end == ';') ? end + 1 : end;
+    }
+    return nk_false;
+}
+
 NK_API struct nk_rect nk_console_file_render(nk_console* console) {
     if (console == NULL || console->data == NULL) {
         return nk_rect(0, 0, 0, 0);
@@ -128,8 +322,8 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
 
     nk_console_layout_widget(console);
 
-    // Display the label
-    if (console->label != NULL && console->label[0] != '\0') {
+    // Display the label (skipped in file_action mode - it becomes the button text instead).
+    if (!data->file_action && console->label != NULL && console->label[0] != '\0') {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->ctx);
         }
@@ -151,8 +345,12 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
     if (data->file_path_buffer != NULL && data->file_path_buffer[0] != '\0') {
         console->label = nk_console_file_basename(data->file_path_buffer);
     }
+    else if (data->file_action && swap_label != NULL && swap_label[0] != '\0') {
+        // In file_action mode, use the widget label as the button text.
+        console->label = swap_label;
+    }
     else {
-        console->label = "[Select a File]";
+        console->label = data->select_directory ? "[Select Directory]" : "[Select a File]";
     }
     struct nk_rect widget_bounds = nk_console_button_render(console);
     console->columns = swap_columns;
@@ -163,6 +361,8 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
 
 /**
  * Gets the file widget from a child button.
+ *
+ * @internal
  */
 static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
     if (button == NULL) {
@@ -182,21 +382,272 @@ static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
 }
 
 /**
- * Free the individual file entry buttons. This clears the label.
+ * Free all file entries stored in the file data.
+ *
+ * @internal
  */
-NK_API void nk_console_file_free_entry(nk_console* button, void* user_data) {
-    NK_UNUSED(user_data);
-    if (button == NULL) {
+static void nk_console_file_entries_clear(nk_console_file_data* data) {
+    if (data == NULL) {
         return;
     }
+    for (size_t i = 0; i < cvector_size(data->entries); i++) {
+        if (data->entries[i].label != NULL) {
+            nk_console_mfree(nk_handle_id(0), data->entries[i].label);
+            data->entries[i].label = NULL;
+        }
+    }
+    cvector_clear(data->entries);
+}
 
-    if (button->label != NULL) {
-        nk_console_mfree(nk_handle_id(0), (void*)button->label);
-        button->label = NULL;
+/**
+ * Event handler: Destroy the file widget.
+ *
+ * @internal
+ */
+static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    // Free the extension filter.
+    if (data->filter != NULL) {
+        nk_console_mfree(nk_handle_id(0), data->filter);
+        data->filter = NULL;
+    }
+
+    // Free any SDL dialog filters.
+    if (data->sdl_filters != NULL) {
+        nk_console_mfree(nk_handle_id(0), data->sdl_filters);
+        data->sdl_filters = NULL;
+    }
+
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+    // Free any staged dialog path that was never applied.
+    if (data->sdl_pending_path != NULL) {
+        SDL_free(data->sdl_pending_path);
+        data->sdl_pending_path = NULL;
+    }
+#endif
+
+    // Clear all the file entries.
+    nk_console_file_entries_clear(data);
+    cvector_free(data->entries);
+    data->entries = NULL;
+}
+
+#ifdef NK_CONSOLE_FILE_ADD_FILES
+/**
+ * get_label callback for the file list view. Appends "/" to directory entries.
+ *
+ * @internal
+ */
+static const char* nk_console_file_list_view_get_label(struct nk_console* list_view, nk_uint index) {
+    nk_console* file = nk_console_file_button_get_file_widget(list_view);
+    if (file == NULL || file->data == NULL) {
+        return NULL;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (cvector_empty(data->entries)) {
+        return "(Empty directory)";
+    }
+    if (index >= cvector_size(data->entries)) {
+        return NULL;
+    }
+    nk_console_file_entry* entry = &data->entries[index];
+    if (entry->is_directory) {
+        nk_size len = (nk_size)nk_strlen(entry->label);
+        if (len + 2 > sizeof(data->dir_label_buf)) {
+            return entry->label;
+        }
+        NK_MEMCPY(data->dir_label_buf, entry->label, len);
+        data->dir_label_buf[len] = '/';
+        data->dir_label_buf[len + 1] = '\0';
+        return data->dir_label_buf;
+    }
+    return entry->label;
+}
+#endif
+
+NK_API void nk_console_file_normalize_path(char* buf, int size) {
+    if (buf == NULL || size <= 0 || buf[0] == '\0') return;
+
+    char tmp[NK_CONSOLE_FILE_PATH_MAX];
+    int tmp_len = 0;
+    int seg_ends[NK_CONSOLE_FILE_PATH_MAX / 2 + 1];
+    int seg_count = 0;
+
+    const char* p = buf;
+    nk_bool absolute = (*p == '/' || *p == '\\');
+    if (absolute) {
+        tmp[tmp_len++] = '/';
+        p++;
+        while (*p == '/' || *p == '\\') p++;
+    }
+
+    while (*p != '\0') {
+        while (*p == '/' || *p == '\\') p++;
+        if (*p == '\0') break;
+
+        const char* seg = p;
+        while (*p != '\0' && *p != '/' && *p != '\\') p++;
+        int seg_len = (int)(p - seg);
+
+        if (seg_len == 1 && seg[0] == '.') continue;
+
+        if (seg_len == 2 && seg[0] == '.' && seg[1] == '.') {
+            if (seg_count > 0) {
+                seg_count--;
+                tmp_len = seg_ends[seg_count];
+            }
+            else if (!absolute) {
+                int restore_len = tmp_len;
+                if (restore_len > 0 && tmp[restore_len - 1] != '/') {
+                    if (tmp_len < size - 1) tmp[tmp_len++] = '/';
+                }
+                if (tmp_len + 2 < size) {
+                    tmp[tmp_len++] = '.';
+                    tmp[tmp_len++] = '.';
+                }
+            }
+            continue;
+        }
+
+        int restore_len = tmp_len;
+        if (tmp_len > 0 && tmp[tmp_len - 1] != '/') {
+            if (tmp_len < size - 1) tmp[tmp_len++] = '/';
+        }
+        if (tmp_len + seg_len < size) {
+            NK_MEMCPY(tmp + tmp_len, seg, (nk_size)seg_len);
+            tmp_len += seg_len;
+        }
+        if (seg_count < NK_CONSOLE_FILE_PATH_MAX / 2) {
+            seg_ends[seg_count++] = restore_len;
+        }
+    }
+
+    tmp[tmp_len] = '\0';
+    if (tmp_len < size) {
+        NK_MEMCPY(buf, tmp, (nk_size)(tmp_len + 1));
     }
 }
 
-NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
+/**
+ * Appends a path component to data->directory, inserting a forward-slash separator.
+ * Returns nk_false and shows an error if the result would overflow the buffer.
+ *
+ * @internal
+ */
+static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, nk_console* file, const char* label) {
+    int len = nk_strlen(data->directory);
+    int label_len = nk_strlen(label);
+
+    int dir_len_after_slash = (len == 1 && data->directory[0] == '.') ? 0 : (len > 0 ? len + 1 : 0);
+    if (dir_len_after_slash + label_len + 1 > NK_CONSOLE_FILE_PATH_MAX) {
+        NK_ASSERT(0); // Path too long
+        nk_console_show_message(file, "Error: File path is too long.");
+        return nk_false;
+    }
+
+    if (len == 1 && data->directory[0] == '.') {
+        len = 0;
+        data->directory[0] = '\0';
+    }
+    else if (len > 0) {
+        data->directory[len] = '/';
+        data->directory[len + 1] = '\0';
+        len++;
+    }
+
+    NK_MEMCPY(data->directory + len, label, (nk_size)(label_len + 1));
+    nk_console_file_normalize_path(data->directory, NK_CONSOLE_FILE_PATH_MAX);
+    return nk_true;
+}
+
+#ifdef NK_CONSOLE_FILE_ADD_FILES
+/**
+ * Click handler for the file list view. Navigates into directories or selects files.
+ *
+ * @internal
+ */
+static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console* file = nk_console_file_button_get_file_widget(list_view);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    nk_console_list_view_data* lv_data = (nk_console_list_view_data*)list_view->data;
+    nk_uint selected = lv_data->selected;
+    if (selected >= cvector_size(data->entries)) {
+        return;
+    }
+
+    nk_console_file_entry* entry = &data->entries[selected];
+    if (!nk_console_file_append_to_directory(data, file, entry->label)) {
+        return;
+    }
+
+    if (entry->is_directory) {
+        // Navigate into the directory.
+        nk_console_set_active_parent(file);
+        nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
+    }
+    else {
+        // Copy the path to the file buffer.
+        int desired_length = nk_strlen(data->directory);
+        if (desired_length >= data->file_path_buffer_size) {
+            NK_ASSERT(0); // File path is too long
+            nk_console_show_message(file, "Error: File path is too long.");
+        }
+        else {
+            NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
+            data->file_path_buffer[desired_length] = '\0';
+            nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+        }
+
+        // Exit the file browser.
+        nk_console_navigate_back(file);
+    }
+}
+#endif
+
+/**
+ * Click handler for the "select this directory" button in directory-selection mode.
+ *
+ * @internal
+ */
+static void nk_console_file_select_dir_onclick(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console* file = nk_console_file_button_get_file_widget(button);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    int desired_length = nk_strlen(data->directory);
+    if (desired_length >= data->file_path_buffer_size) {
+        NK_ASSERT(0); // Directory path is too long
+        nk_console_show_message(file, "Error: Directory path is too long.");
+    }
+    else {
+        NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
+        data->file_path_buffer[desired_length] = '\0';
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+    }
+
+    // Exit the file browser.
+    nk_console_navigate_back(file);
+}
+
+/**
+ * Event hanlder for when the user clicks on an individual file entry.
+ *
+ * @internal
+ */
+static void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (button == NULL || button->label == NULL) {
         return;
@@ -208,104 +659,103 @@ NK_API void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     }
 
     nk_console_file_data* data = (nk_console_file_data*)file->data;
-    int len = nk_strlen(data->directory);
-
-    // Append a slash if the directory is not empty.
-    if (len == 1 && data->directory[0] == '.') {
-        len = 0;
-        data->directory[0] = '\0';
-    }
-    else if (len > 0) {
-// TODO: file: Make sure this is cross-platform.
-#if defined(_WIN32) || defined(WIN32)
-        data->directory[len] = '\\';
-#else
-        data->directory[len] = '/';
-#endif
-        data->directory[len + 1] = '\0';
-        len++;
+    if (!nk_console_file_append_to_directory(data, file, button->label)) {
+        return;
     }
 
-    // Concatenate the button label to the directory.
-    // TODO: file: Resolve the path properly, so the paths don't recurse. For example: folder/../folder
-    // TODO: file: Add UTF-8 support.
-    NK_MEMCPY(data->directory + len, (void*)button->label, (nk_size)(nk_strlen(button->label) + 1));
-
-    enum nk_symbol_type symbol = nk_console_button_get_symbol(button);
-    switch (symbol) { // Directory
-        case NK_SYMBOL_TRIANGLE_LEFT: // Back
-        case NK_SYMBOL_TRIANGLE_RIGHT: // Folder
-            nk_console_set_active_parent(file);
-            nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
-            break;
-        default: // File
-        {
-            // Copy the string to the file buffer.
-            // TODO: Ensure UTF-8 compatibility.
-            int desired_length = nk_strlen(data->directory);
-            if (desired_length >= data->file_path_buffer_size) {
-                NK_ASSERT(0); // File path is too long
-                nk_console_show_message(file, "Error: File path is too long.");
-            }
-            else {
-                NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
-                data->file_path_buffer[desired_length] = '\0';
-
-                // Trigger the onchange event and exit.
-                nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-            }
-
-            // Now that we selected a file, we can exit.
-            nk_console_set_active_parent(file->parent);
-        } break;
-    }
+    // Navigate into the directory (or back to parent via "..").
+    nk_console_set_active_parent(file);
+    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
 }
 
-NK_API nk_bool nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
+#ifdef NK_CONSOLE_FILE_ADD_FILES
+/**
+ * Click handler for file entry buttons (non-directory) in button view mode.
+ *
+ * @internal
+ */
+static void nk_console_file_button_file_onclick(nk_console* button, void* user_data) {
+    NK_UNUSED(user_data);
+    if (button == NULL || button->label == NULL) {
+        return;
+    }
+    nk_console* file = nk_console_file_button_get_file_widget(button);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (!nk_console_file_append_to_directory(data, file, button->label)) {
+        return;
+    }
+    int desired_length = nk_strlen(data->directory);
+    if (desired_length >= data->file_path_buffer_size) {
+        NK_ASSERT(0);
+        nk_console_show_message(file, "Error: File path is too long.");
+    }
+    else {
+        NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
+        data->file_path_buffer[desired_length] = '\0';
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+    }
+    nk_console_navigate_back(file);
+}
+#endif
+
+NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
     if (parent == NULL || path == NULL || path[0] == '\0') {
-        return nk_false;
+        return NULL;
+    }
+
+    nk_console* file = nk_console_file_button_get_file_widget(parent);
+    if (file == NULL || file->data == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    // Are we only selecting directories?
+    if (is_directory == nk_false && data->select_directory == nk_true) {
+        return NULL;
     }
 
     int len = nk_strlen(path);
 
     // Ignore the current directory.
     if (len == 1 && path[0] == '.') {
-        return nk_false;
+        return NULL;
     }
     else if (len == 2 && path[0] == '.' && path[1] == '.') {
         // Ignore the parent directory.
-        return nk_false;
+        return NULL;
     }
 
-    // Add the button.
-    nk_console* button = nk_console_button(parent, NULL);
-
-    // Copy the path for the label, and register an event to destroy it.
-    // TODO: file: Ensure UTF-8 compatibility.
-    button->label = (const char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, (nk_size)(sizeof(char)) * (nk_size)(len + 1));
-    nk_console_add_event(button, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_free_entry);
-
-    char* label = (char*)button->label;
-
-    // Use the base name as the label.
+    // Apply the extension filter to files (directories are never filtered out).
     const char* basename = nk_console_file_basename(path);
+    if (!is_directory && !nk_console_file_matches_filter(basename, data->filter)) {
+        return NULL;
+    }
+
     nk_size basename_len = (nk_size)nk_strlen(basename);
+    char* label = (char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, basename_len + 1);
+    if (label == NULL) {
+        return NULL;
+    }
     NK_MEMCPY(label, basename, basename_len);
     label[basename_len] = '\0';
 
-    // Symbol
-    if (is_directory == nk_true) {
-        nk_console_button_set_symbol(button, NK_SYMBOL_TRIANGLE_RIGHT);
-    }
+    nk_console_file_entry entry;
+    entry.label = label;
+    entry.is_directory = is_directory;
+    cvector_push_back(data->entries, entry);
 
-    // Event
-    nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, nk_console_file_entry_onclick);
-    return nk_true;
+    // Return the file widget as a non-NULL success indicator.
+    return file;
 }
-
 
 /**
  * Gets the length of the directory string of the given file path.
+ *
+ * @internal
  */
 static int nk_console_file_get_directory_len(const char* file_path) {
     if (file_path == NULL) {
@@ -320,8 +770,24 @@ static int nk_console_file_get_directory_len(const char* file_path) {
     return 0;
 }
 
+#ifdef NK_CONSOLE_FILE_ADD_FILES
 /**
- * Fills the files array with the files in the current directory.
+ * Comparison function for sorting file entries: directories before files, then alphabetically.
+ *
+ * @internal
+ */
+static int nk_console_file_entry_compare(const void* a, const void* b) {
+    const nk_console_file_entry* ea = (const nk_console_file_entry*)a;
+    const nk_console_file_entry* eb = (const nk_console_file_entry*)b;
+    if (ea->is_directory != eb->is_directory) {
+        return ea->is_directory ? -1 : 1;
+    }
+    return NK_STRCMP(ea->label, eb->label);
+}
+#endif
+
+/**
+ * Fills the list view with the files in the current directory.
  */
 NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     NK_UNUSED(user_data);
@@ -332,24 +798,99 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
 
-    // Clear out all the current entries.
-    nk_console_free_children(widget);
+    // Clear existing entries.
+    nk_console_file_entries_clear(data);
 
-    // Add the back/cancel button
-    nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
+    // Build the static children (cancel, directory label, parent dir button) on the first call only.
+    // children[1]'s label points directly to data->directory, so it auto-updates on subsequent calls.
+    if (widget->children == NULL || cvector_empty(widget->children)) {
+        // Add the back/cancel button
+        nk_console* cancelButton = nk_console_button_onclick(widget, "Cancel", &nk_console_button_back);
+        nk_console_button_set_symbol(cancelButton, NK_SYMBOL_X);
 
-    // Active directory label
-    nk_console_label(widget, data->directory)->alignment = NK_TEXT_CENTERED;
+        // Show the active directory.
+        if (!data->select_directory) {
+            // Active directory label
+            nk_console* activeLabel = nk_console_label(widget, data->directory);
+            activeLabel->alignment = NK_TEXT_CENTERED;
+        }
+        else {
+            // Add a button to select the current directory.
+            nk_console* button = nk_console_button(widget, data->directory);
+            nk_console_button_set_symbol(button, NK_SYMBOL_CIRCLE_SOLID);
+            nk_console_set_tooltip(button, "Use this directory");
+            nk_console_add_event(button, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_select_dir_onclick);
+        }
 
-    // Add the parent directory button
-    nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", &nk_console_file_entry_onclick);
-    nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
-    nk_console_set_active_widget(parent_directory_button);
+        // Add the parent directory button
+        nk_console* parent_directory_button = nk_console_button_onclick(widget, "..", &nk_console_file_entry_onclick);
+        nk_console_button_set_symbol(parent_directory_button, NK_SYMBOL_TRIANGLE_LEFT);
+        nk_console_set_tooltip(parent_directory_button, "Navigate to the parent directory");
+    }
+
+    // Focus the parent directory button (always children[2]).
+    NK_ASSERT(cvector_size(widget->children) > 2 && widget->children[2] != NULL);
+    nk_console_set_active_widget(widget->children[2]);
 
 #ifdef NK_CONSOLE_FILE_ADD_FILES
-    // Iterate through the files in the directory, and add them as entries.
-    if (NK_CONSOLE_FILE_ADD_FILES(widget, data->directory) == nk_false) {
-        nk_console_label(widget, "No files found.")->alignment = NK_TEXT_CENTERED;
+    // Populate the entries array via the file system callback.
+    NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
+
+    // Sort entries: directories first, then files, both alphabetically.
+    if (!cvector_empty(data->entries)) {
+        NK_QSORT(data->entries, cvector_size(data->entries), sizeof(nk_console_file_entry), nk_console_file_entry_compare);
+    }
+
+    if (data->use_list_view) {
+        // Show at least 1 item so the get_label callback can display "[Empty]".
+        nk_uint display_count = cvector_empty(data->entries) ? 1 : (nk_uint)cvector_size(data->entries);
+        if (cvector_size(widget->children) >= 4 && widget->children[3]->type == NK_CONSOLE_LIST_VIEW) {
+            // Update the existing list view in place.
+            nk_console_list_view_set_item_count(widget->children[3], display_count);
+        }
+        else {
+            // Remove any old button-mode children before creating the list view.
+            while (cvector_size(widget->children) > 3) {
+                size_t idx = cvector_size(widget->children) - 1;
+                nk_console* child = widget->children[idx];
+                cvector_erase(widget->children, idx);
+                nk_console_free(child);
+            }
+            nk_console* list_view = nk_console_list_view(widget, "file_entries", 10, display_count, &nk_console_file_list_view_get_label);
+            nk_console_add_event(list_view, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_list_view_onclick);
+        }
+    }
+    else {
+        // Button mode: remove old entry children (list view or previous button entries).
+        while (cvector_size(widget->children) > 3) {
+            size_t idx = cvector_size(widget->children) - 1;
+            nk_console* child = widget->children[idx];
+            cvector_erase(widget->children, idx);
+            nk_console_free(child);
+        }
+
+        if (cvector_empty(data->entries)) {
+            nk_console* empty_label = nk_console_label(widget, "[Empty Directory]");
+            empty_label->alignment = NK_TEXT_CENTERED;
+            empty_label->disabled = nk_true;
+        }
+        else {
+            for (size_t i = 0; i < cvector_size(data->entries); i++) {
+                nk_console_file_entry* entry = &data->entries[i];
+                if (entry->is_directory) {
+                    nk_console* btn = nk_console_button_onclick(widget, entry->label, &nk_console_file_entry_onclick);
+                    nk_console_button_set_symbol(btn, NK_SYMBOL_TRIANGLE_RIGHT);
+                }
+                else {
+                    nk_console_button_onclick(widget, entry->label, &nk_console_file_button_file_onclick);
+                }
+            }
+        }
+
+        // Focus the first entry button if available.
+        if (cvector_size(widget->children) > 3) {
+            nk_console_set_active_widget(widget->children[3]);
+        }
     }
 #else
     // NK_CONSOLE_FILE_ADD_FILES is undefined, so back out.
@@ -364,9 +905,132 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 }
 
 /**
- * Button callback for the main file button.
+ * Event handler to clear out unneeded data for the file widget.
+ *
+ * @see nk_console_file_event_back
+ * @internal
  */
-static void nk_console_file_main_click(nk_console* button, void* user_data) {
+static void nk_console_file_event_back_post_render(nk_console* file, void* user_data) {
+    // Remove all the children, since we don't need them.
+    nk_console_free_children(file);
+
+    // Clear out all the file entries too.
+    nk_console_file_event_destroy(file, user_data);
+}
+
+/**
+ * Event handler to clear out all unneeded data when not using the widget.
+ * @internal
+ */
+static void nk_console_file_event_back(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+    // Clear it out at post-render to avoid segfaults.
+    nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_event_back_post_render);
+}
+
+/**
+ * Event handler: Called when the make file button is clicked.
+ *
+ * Will build out the sub-elements to select a file.
+ *
+ * @internal
+ */
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+/**
+ * SDL_MainThreadCallback that applies the staged dialog path to the file widget.
+ * @internal
+ */
+static void nk_console_file_sdl_dialog_apply(void* userdata) {
+    nk_console* file = (nk_console*)userdata;
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data == NULL || data->sdl_pending_path == NULL) {
+        return;
+    }
+    int len = nk_strlen(data->sdl_pending_path);
+    if (len < data->file_path_buffer_size) {
+        NK_MEMCPY(data->file_path_buffer, data->sdl_pending_path, (nk_size)(len + 1));
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+    }
+    SDL_free(data->sdl_pending_path);
+    data->sdl_pending_path = NULL;
+}
+
+/**
+ * SDL_DialogFileCallback fired when the native file/folder picker closes.
+ *
+ * SDL may invoke this from a different thread than the one that opened the
+ * dialog, so it only stages the selected path in the widget data and defers
+ * the console state changes to the main thread via SDL_RunOnMainThread().
+ * No mutex is needed: only one dialog is open per widget at a time, and
+ * SDL_RunOnMainThread() orders the staged write before the main-thread read.
+ *
+ * @internal
+ */
+static void nk_console_file_sdl_dialog_callback(void* userdata, const char* const* filelist, int filter) {
+    NK_UNUSED(filter);
+    nk_console* file = (nk_console*)userdata;
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data == NULL) return;
+    if (filelist == NULL) {
+        /* An error occurred while showing the dialog. */
+        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "nk_console: file dialog failed: %s", SDL_GetError());
+        return;
+    }
+    if (filelist[0] == NULL) return; /* dialog cancelled */
+
+    char* path = SDL_strdup(filelist[0]);
+    if (path == NULL) return;
+    if (data->sdl_pending_path != NULL) {
+        SDL_free(data->sdl_pending_path);
+    }
+    data->sdl_pending_path = path;
+
+    if (!SDL_RunOnMainThread(nk_console_file_sdl_dialog_apply, file, false)) {
+        SDL_free(data->sdl_pending_path);
+        data->sdl_pending_path = NULL;
+    }
+}
+
+/**
+ * Build a heap-allocated array of SDL_DialogFileFilter from the semicolon-separated filter string.
+ * Returns NULL if filter is NULL or empty. SDL requires the array to remain valid at least until
+ * the dialog callback is invoked, so the caller stores it in data->sdl_filters, where it is freed
+ * on the next dialog open, or when the widget is destroyed.
+ * @internal
+ */
+static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filter, int* out_count) {
+    *out_count = 0;
+    if (filter == NULL || filter[0] == '\0') return NULL;
+    int filter_len = nk_strlen(filter);
+    /* Allocate the filter struct and pattern string in one block. */
+    SDL_DialogFileFilter* filters = (SDL_DialogFileFilter*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(SDL_DialogFileFilter) + (nk_size)(filter_len + 1));
+    if (filters == NULL) return NULL;
+    /* Pattern string lives right after the struct. */
+    char* sdl_pattern = (char*)(filters + 1);
+    /* Strip the leading dot of each entry for the SDL pattern (SDL uses "png;jpg" not ".png;.jpg").
+     * Dots within an extension are kept, so ".tar.gz" becomes "tar.gz". */
+    int p = 0;
+    const char* src = filter;
+    nk_bool entry_start = nk_true;
+    while (*src) {
+        if (entry_start && *src == '.') {
+            entry_start = nk_false;
+            src++;
+            continue;
+        }
+        entry_start = (*src == ';') ? nk_true : nk_false;
+        sdl_pattern[p++] = *src;
+        src++;
+    }
+    sdl_pattern[p] = '\0';
+    filters[0].name = "Supported Files";
+    filters[0].pattern = sdl_pattern;
+    *out_count = 1;
+    return filters;
+}
+#endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
+
+static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     if (button == NULL || button->data == NULL) {
         return;
@@ -379,19 +1043,77 @@ static void nk_console_file_main_click(nk_console* button, void* user_data) {
 
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
-    int directory_len = nk_console_file_get_directory_len(data->file_path_buffer);
-    NK_MEMCPY(data->directory, data->file_path_buffer, (nk_size)directory_len);
-    data->directory[directory_len] = '\0';
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+    {
+        /* Obtain the SDL_Window from user-defined macro, or grab it from the file_user_data, or use NULL. */
+#ifndef NK_CONSOLE_FILE_SDL_WINDOW
+#define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
+#endif
+        // Get the SDL_Window if possible.
+        SDL_Window* sdl_window = NK_CONSOLE_FILE_SDL_WINDOW(file);
+        if (sdl_window == NULL && data->file_user_data != NULL) {
+            sdl_window = (SDL_Window*)data->file_user_data;
+        }
 
-    if (nk_strlen(data->directory) == 0) {
-        // TODO: file: Make get current working directory function.
-        data->directory[0] = '.';
-        data->directory[1] = '\0';
+        // Free the filters from any previous dialog; its callback has already run.
+        if (data->sdl_filters != NULL) {
+            NK_CONSOLE_FREE(nk_handle_id(0), data->sdl_filters);
+            data->sdl_filters = NULL;
+        }
+
+        // SDL requires the filters to stay valid until the dialog callback is invoked,
+        // so keep them alive in the widget data rather than freeing them here.
+        int filter_count = 0;
+        SDL_DialogFileFilter* sdl_filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
+        data->sdl_filters = sdl_filters;
+        const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
+        if (data->select_directory) {
+            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, starting, false);
+        }
+        else {
+            SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, sdl_filters, filter_count, starting, false);
+        }
+        return;
+    }
+#endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
+
+    if (data->starting_directory[0] != '\0') {
+        int len = nk_strlen(data->starting_directory);
+        NK_MEMCPY(data->directory, data->starting_directory, (nk_size)(len + 1));
+    }
+    else {
+        int directory_len = nk_console_file_get_directory_len(data->file_path_buffer);
+        NK_MEMCPY(data->directory, data->file_path_buffer, (nk_size)directory_len);
+        data->directory[directory_len] = '\0';
+
+        if (nk_strlen(data->directory) == 0) {
+            // TODO: file: Make get current working directory function.
+            data->directory[0] = '.';
+            data->directory[1] = '\0';
+        }
     }
 
     // Set the active parent to the file widget, and refresh it after rendering everything else.
     nk_console_set_active_parent(file);
     nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_refresh);
+}
+
+NK_API void nk_console_file_set_list_view(nk_console* file, nk_bool use_list_view) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    data->use_list_view = use_list_view;
+}
+
+NK_API nk_bool nk_console_file_get_list_view(nk_console* file) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return nk_false;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    return data->use_list_view;
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
@@ -412,6 +1134,66 @@ NK_API void* nk_console_file_get_file_user_data(nk_console* file) {
     return data->file_user_data;
 }
 
+NK_API void nk_console_file_set_directory(nk_console* file, const char* directory) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (directory == NULL || directory[0] == '\0') {
+        data->starting_directory[0] = '\0';
+        return;
+    }
+    int len = nk_strlen(directory);
+    if (len >= NK_CONSOLE_FILE_PATH_MAX) {
+        NK_ASSERT(0); // Directory path too long
+        return;
+    }
+    NK_MEMCPY(data->starting_directory, directory, (nk_size)(len + 1));
+}
+
+NK_API const char* nk_console_file_get_directory(nk_console* file) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return "";
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    return data->starting_directory;
+}
+
+NK_API void nk_console_file_set_filter(nk_console* file, const char* filter) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+    // Free any existing filter.
+    if (data->filter != NULL) {
+        nk_console_mfree(nk_handle_id(0), data->filter);
+        data->filter = NULL;
+    }
+
+    if (filter == NULL || filter[0] == '\0') {
+        return;
+    }
+
+    nk_size len = (nk_size)nk_strlen(filter);
+    data->filter = (char*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, len + 1);
+    if (data->filter != NULL) {
+        NK_MEMCPY(data->filter, filter, len + 1);
+    }
+}
+
+NK_API const char* nk_console_file_get_filter(nk_console* file) {
+    file = nk_console_file_button_get_file_widget(file);
+    if (file == NULL || file->data == NULL) {
+        return NULL;
+    }
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    return data->filter;
+}
+
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {
     if (parent == NULL || file_path_buffer == NULL || file_path_buffer_size <= 0) {
         return NULL;
@@ -419,6 +1201,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
 
     // Create the widget data.
     nk_console_file_data* data = (nk_console_file_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_file_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_file_data));
 
     data->file_path_buffer = file_path_buffer;
@@ -431,7 +1214,47 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
     widget->selectable = nk_true;
     widget->data = data;
 
-    nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_main_click);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_event_clicked);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_event_back);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_event_destroy);
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_dir(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
+    nk_console* widget = nk_console_file(parent, label, dir_buffer, dir_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->select_directory = nk_true;
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_file_action(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {
+    nk_console* widget = nk_console_file(parent, label, file_path_buffer, file_path_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->file_action = nk_true;
+    widget->columns = 1;
+
+    return widget;
+}
+
+NK_API nk_console* nk_console_dir_action(nk_console* parent, const char* label, char* dir_buffer, int dir_buffer_size) {
+    nk_console* widget = nk_console_file_action(parent, label, dir_buffer, dir_buffer_size);
+    if (widget == NULL) {
+        return NULL;
+    }
+
+    nk_console_file_data* data = (nk_console_file_data*)widget->data;
+    data->select_directory = nk_true;
+
     return widget;
 }
 

@@ -22,6 +22,7 @@
 #define NK_IMPLEMENTATION
 #define NK_GLFW_GL3_IMPLEMENTATION
 #define NK_KEYSTATE_BASED_INPUT
+#define NK_BUTTON_TRIGGER_ON_RELEASE
 #include "../../vendor/Nuklear/nuklear.h"
 #include "../../vendor/Nuklear/demo/glfw_opengl3/nuklear_glfw_gl3.h"
 

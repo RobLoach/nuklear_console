@@ -1,20 +1,23 @@
 #ifndef NK_CONSOLE_CHECKBOX_H__
 #define NK_CONSOLE_CHECKBOX_H__
 
-#if defined(__cplusplus)
-extern "C" {
-#endif
-
 typedef struct nk_console_checkbox_data {
     nk_bool* value_bool;
 } nk_console_checkbox_data;
 
+#if defined(__cplusplus)
+extern "C" {
+#endif
+
+/** Add a checkbox widget bound to @p active. @return The new checkbox widget. */
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active);
+/** Render the checkbox widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_checkbox_render(nk_console* console);
 
 #if defined(__cplusplus)
 }
 #endif
+
 
 #endif // NK_CONSOLE_CHECKBOX_H__
 
@@ -105,7 +108,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 
     // Allow switching up/down in widgets
     if (nk_console_is_active_widget(console)) {
-        nk_console_check_up_down(console, widget_bounds);
+        nk_console_check_up_down(console);
         nk_console_check_tooltip(console);
     }
 
@@ -115,6 +118,7 @@ NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
 NK_API nk_console* nk_console_checkbox(nk_console* parent, const char* text, nk_bool* active) {
     NK_ASSERT(active != NULL);
     nk_console_checkbox_data* data = (nk_console_checkbox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_checkbox_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_checkbox_data));
 
     nk_console* checkbox = nk_console_label(parent, text);

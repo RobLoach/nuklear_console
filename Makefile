@@ -18,6 +18,9 @@ glfw:
 sdl:
 	$(MAKE) -C demo/sdl_renderer test
 
+sdl3:
+	$(MAKE) -C demo/sdl3_renderer test
+
 pntr:
 	$(MAKE) -C demo/pntr test
 

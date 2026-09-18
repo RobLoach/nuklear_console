@@ -93,7 +93,7 @@ NK_API struct nk_rect nk_console_image_render(nk_console* widget) {
     }
 
     if (nk_console_is_active_widget(widget)) {
-        nk_console_check_up_down(widget, widget_bounds);
+        nk_console_check_up_down(widget);
         nk_console_check_tooltip(widget);
     }
 
@@ -109,6 +109,7 @@ NK_API
 nk_console* nk_console_image_color(nk_console* parent, struct nk_image image, struct nk_color color) {
     nk_console_image_data* data =
         (nk_console_image_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(*data));
+    if (data == NULL) return NULL;
     data->image = image;
     data->color = color;
 
