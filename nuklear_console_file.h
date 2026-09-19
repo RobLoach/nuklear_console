@@ -832,6 +832,11 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     NK_ASSERT(cvector_size(widget->children) > 2 && widget->children[2] != NULL);
     nk_console_set_active_widget(widget->children[2]);
 
+    // The entry listing is being rebuilt, so any retained scroll position is meaningless. Scroll back to the top.
+    if (widget->ctx != NULL && widget->ctx->current != NULL) {
+        nk_window_set_scroll(widget->ctx, 0, 0);
+    }
+
 #ifdef NK_CONSOLE_FILE_ADD_FILES
     // Populate the entries array via the file system callback.
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
