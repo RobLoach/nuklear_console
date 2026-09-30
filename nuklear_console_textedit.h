@@ -85,7 +85,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 extern "C" {
 #endif
 
-/* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
+/* Default ASCII keyboard layout rows, with the letters in alphabetical order (NULL-terminated; last row gets Shift+Backspace). */
 static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
     {"1", "!"},
     {"2", "@"},
@@ -99,37 +99,37 @@ static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
     {"0", ")"},
     {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
-    {"q", "Q"},
-    {"w", "W"},
-    {"e", "E"},
-    {"r", "R"},
-    {"t", "T"},
-    {"y", "Y"},
-    {"u", "U"},
-    {"i", "I"},
-    {"o", "O"},
-    {"p", "P"},
-    {NULL, NULL}};
-static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
     {"a", "A"},
-    {"s", "S"},
+    {"b", "B"},
+    {"c", "C"},
     {"d", "D"},
+    {"e", "E"},
     {"f", "F"},
     {"g", "G"},
     {"h", "H"},
+    {"i", "I"},
     {"j", "J"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
     {"k", "K"},
     {"l", "L"},
-    {".", ">"},
+    {"m", "M"},
+    {"n", "N"},
+    {"o", "O"},
+    {"p", "P"},
+    {"q", "Q"},
+    {"r", "R"},
+    {"s", "S"},
+    {"t", "T"},
     {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
-    {"z", "Z"},
-    {"x", "X"},
-    {"c", "C"},
+    {"u", "U"},
     {"v", "V"},
-    {"b", "B"},
-    {"n", "N"},
-    {"m", "M"},
+    {"w", "W"},
+    {"x", "X"},
+    {"y", "Y"},
+    {"z", "Z"},
+    {".", ">"},
     {",", "<"},
     {NULL, NULL}};
 static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
