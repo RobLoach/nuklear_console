@@ -42,6 +42,7 @@ typedef struct nk_console_textedit_data {
     nk_bool changed; /** Set when the buffer is edited; CHANGED event fires on back if true. */
     char masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH + 4]; // Space for null-terminator and some protection.
     const nk_console_textedit_key** keyboard_layout; /**< NULL-terminated array of key rows; last row gets shift/backspace added. */
+    nk_plugin_filter filter; /**< Restricts which codepoints can be entered. Defaults to nk_filter_ascii. */
 } nk_console_textedit_data;
 
 #if defined(__cplusplus)
@@ -74,6 +75,32 @@ NK_API nk_console* nk_console_textedit_masked(nk_console* parent, const char* la
  */
 NK_API nk_console* nk_console_textedit_action(nk_console* parent, const char* label, char* buffer, int buffer_size);
 NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const nk_console_textedit_key** layout);
+
+/**
+ * Restricts which characters the textedit will accept.
+ *
+ * The filter applies both to the typed text field and to the on-screen keyboard, where keys
+ * that the filter rejects are displayed as disabled. Nuklear provides nk_filter_default(),
+ * nk_filter_ascii(), nk_filter_float(), nk_filter_decimal(), nk_filter_hex(), nk_filter_oct()
+ * and nk_filter_binary(), but any nk_plugin_filter can be used.
+ *
+ * @param textedit The textedit widget to apply the filter to.
+ * @param filter The filter to use, or NULL to restore the default (nk_filter_ascii).
+ *
+ * @see nk_console_textedit_get_filter()
+ */
+NK_API void nk_console_textedit_set_filter(nk_console* textedit, nk_plugin_filter filter);
+
+/**
+ * Retrieves the filter that the given textedit uses to restrict entry.
+ *
+ * @param textedit The textedit widget to get the filter from.
+ *
+ * @return The active filter, or NULL if the widget is not a valid textedit.
+ *
+ * @see nk_console_textedit_set_filter()
+ */
+NK_API nk_plugin_filter nk_console_textedit_get_filter(nk_console* textedit);
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console);
 NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data);
 NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data);
@@ -187,6 +214,44 @@ static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
     NULL};
 
 /**
+ * Determines whether every codepoint of the given text is allowed by the textedit's filter.
+ *
+ * @param textedit The textedit widget holding the filter.
+ * @param text The null-terminated UTF-8 text to check.
+ *
+ * @return nk_true when there is no filter, or when every codepoint passes it.
+ *
+ * @see nk_console_textedit_set_filter()
+ * @internal
+ */
+static nk_bool nk_console_textedit_filter_text(nk_console* textedit, const char* text) {
+    if (textedit == NULL || textedit->data == NULL || text == NULL) {
+        return nk_true;
+    }
+
+    nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
+    if (data->filter == NULL) {
+        return nk_true;
+    }
+
+    // The built-in filters ignore the text edit state, but custom ones may use it.
+    struct nk_text_edit* box = textedit->ctx != NULL ? &textedit->ctx->text_edit : NULL;
+
+    int len = nk_strlen(text);
+    int i = 0;
+    while (i < len) {
+        nk_rune unicode = 0;
+        int glyph_len = nk_utf_decode(text + i, &unicode, len - i);
+        if (glyph_len <= 0 || !data->filter(box, unicode)) {
+            return nk_false;
+        }
+        i += glyph_len;
+    }
+
+    return nk_true;
+}
+
+/**
  * Frees all the children for the given textedit as an event.
  */
 static void nk_console_textedit_free_children(nk_console* textedit, void* user_data) {
@@ -271,6 +336,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
                                     if (strcmp(lbl, normal) == 0 || strcmp(lbl, shifted) == 0) {
                                         const char* new_lbl = data->shift ? shifted : normal;
                                         nk_console_set_label(activeButton, new_lbl, nk_strlen(new_lbl));
+                                        nk_console_set_disabled(activeButton, !nk_console_textedit_filter_text(textedit, new_lbl));
                                         found = nk_true;
                                     }
                                 }
@@ -296,6 +362,9 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
 
         // Space
         case NK_SYMBOL_RECT_SOLID: {
+            if (!nk_console_textedit_filter_text(textedit, " ")) {
+                break;
+            }
             int len = nk_strlen(data->buffer);
             if (len < data->buffer_size - 1) {
                 data->buffer[len] = ' ';
@@ -306,6 +375,10 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
 
         // Any key character
         case NK_SYMBOL_NONE: {
+            if (!nk_console_textedit_filter_text(textedit, key->label)) {
+                break;
+            }
+
             // Append all bytes of the key label to support multi-byte UTF-8 glyphs.
             int len = nk_strlen(data->buffer);
             int key_len = nk_strlen(key->label);
@@ -361,7 +434,11 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
 
             for (int k = 0; row_keys[k].normal != NULL; k++) {
                 const char* shifted = row_keys[k].shifted != NULL ? row_keys[k].shifted : row_keys[k].normal;
-                nk_console_button_onclick(row, data->shift ? shifted : row_keys[k].normal, &nk_console_textedit_key_click);
+                const char* label = data->shift ? shifted : row_keys[k].normal;
+                key = nk_console_button_onclick(row, label, &nk_console_textedit_key_click);
+
+                // Disable any key that the filter won't accept.
+                nk_console_set_disabled(key, !nk_console_textedit_filter_text(button, label));
             }
 
             if (is_last_row) {
@@ -378,6 +455,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
         key = nk_console_button_onclick(row, NULL, &nk_console_textedit_key_click);
         key->columns = 3;
         nk_console_button_set_symbol(key, NK_SYMBOL_RECT_SOLID);
+        nk_console_set_disabled(key, !nk_console_textedit_filter_text(button, " "));
 
         key = nk_console_button_onclick(row, "Back", &nk_console_textedit_button_back_click);
         key->columns = 1;
@@ -411,6 +489,7 @@ NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, ch
     }
     data->masked_display[NK_CONSOLE_TEXTEDIT_MASKED_LENGTH] = '\0';
     data->keyboard_layout = nk_console_textedit_layout_ascii;
+    data->filter = nk_filter_ascii;
 
     nk_console_add_event(textedit, NK_CONSOLE_EVENT_CLICKED, &nk_console_textedit_button_main_click);
     nk_console_add_event(textedit, NK_CONSOLE_EVENT_BACK, &nk_console_textedit_text_event_back);
@@ -445,6 +524,23 @@ NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const 
     if (!textedit || !textedit->data) return;
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
     data->keyboard_layout = layout != NULL ? layout : nk_console_textedit_layout_ascii;
+}
+
+NK_API void nk_console_textedit_set_filter(nk_console* textedit, nk_plugin_filter filter) {
+    if (textedit == NULL || textedit->data == NULL) {
+        return;
+    }
+
+    nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
+    data->filter = filter != NULL ? filter : nk_filter_ascii;
+}
+
+NK_API nk_plugin_filter nk_console_textedit_get_filter(nk_console* textedit) {
+    if (textedit == NULL || textedit->data == NULL) {
+        return NULL;
+    }
+
+    return ((nk_console_textedit_data*)textedit->data)->filter;
 }
 
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {

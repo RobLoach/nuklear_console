@@ -898,6 +898,70 @@ int main() {
         ctx->delta_time_seconds = saved_dt;
     }
 
+    // nk_console_textedit_set_filter()
+    {
+        static char filter_buffer[32] = "";
+        nk_console* filtered = nk_console_textedit(console, "Filtered", filter_buffer, (int)sizeof(filter_buffer));
+        assert(filtered != NULL);
+
+        // ASCII entry is the default.
+        assert(nk_console_textedit_get_filter(filtered) == nk_filter_ascii);
+
+        // NULL restores the default.
+        nk_console_textedit_set_filter(filtered, nk_filter_hex);
+        assert(nk_console_textedit_get_filter(filtered) == nk_filter_hex);
+        nk_console_textedit_set_filter(filtered, NULL);
+        assert(nk_console_textedit_get_filter(filtered) == nk_filter_ascii);
+
+        // Restrict the widget to decimal digits, then build the on-screen keyboard.
+        nk_console_textedit_set_filter(filtered, nk_filter_decimal);
+        nk_console_textedit_button_main_click(filtered, NULL);
+
+        nk_console* digit = NULL;
+        nk_console* letter = NULL;
+        nk_console* shift = NULL;
+        for (int i = 0; i < (int)cvector_size(filtered->children); i++) {
+            nk_console* row = filtered->children[i];
+            if (row->type != NK_CONSOLE_ROW) {
+                continue;
+            }
+            for (int k = 0; k < (int)cvector_size(row->children); k++) {
+                nk_console* key = row->children[k];
+                if (nk_console_button_get_symbol(key) == NK_SYMBOL_TRIANGLE_UP_OUTLINE) {
+                    shift = key;
+                }
+                else if (key->label != NULL && strcmp(key->label, "5") == 0) {
+                    digit = key;
+                }
+                else if (key->label != NULL && strcmp(key->label, "q") == 0) {
+                    letter = key;
+                }
+            }
+        }
+        assert(digit != NULL && letter != NULL && shift != NULL);
+
+        // Keys the filter rejects are shown as disabled; allowed keys are not.
+        assert(nk_console_is_disabled(digit) == nk_false);
+        assert(nk_console_is_disabled(letter) == nk_true);
+
+        // Pressing a rejected key does nothing, while an allowed key is appended.
+        nk_console_textedit_key_click(letter, NULL);
+        assert(strcmp(filter_buffer, "") == 0);
+        nk_console_textedit_key_click(digit, NULL);
+        assert(strcmp(filter_buffer, "5") == 0);
+
+        // Toggling shift re-evaluates the filter against the new labels: "5" becomes "%".
+        nk_console_textedit_key_click(shift, NULL);
+        assert(strcmp(digit->label, "%") == 0);
+        assert(nk_console_is_disabled(digit) == nk_true);
+        nk_console_textedit_key_click(digit, NULL);
+        assert(strcmp(filter_buffer, "5") == 0);
+
+        // Restore the console state for the remaining tests.
+        nk_console_free_children(filtered);
+        nk_console_set_active_parent(console);
+    }
+
     // nk_console_widget_type_name()
     {
         // Known values map to their lowercase names.

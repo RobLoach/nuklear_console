@@ -87,6 +87,7 @@ static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 static char textedit_password_buffer[256] = "12345";
 static char textedit_action_buffer[256] = {0};
+static char textedit_pin_buffer[256] = "1234";
 
 // Input
 static int gamepad_number = 0;
@@ -512,6 +513,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
         struct nk_console* textedit_action = nk_console_textedit_action(widgets, "Enter Text", textedit_action_buffer, textedit_buffer_size);
         nk_console_add_event_handler(textedit_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_textedit_action_changed, textedit_action_buffer, NULL);
+        struct nk_console* textedit_pin = nk_console_textedit(widgets, "PIN", textedit_pin_buffer, textedit_buffer_size);
+        nk_console_textedit_set_filter(textedit_pin, nk_filter_decimal);
+        nk_console_set_tooltip(textedit_pin, "Digits only!");
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);
