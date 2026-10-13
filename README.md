@@ -142,6 +142,7 @@ void nk_console_check_up_down(nk_console* widget);
 - `NK_CONSOLE_INPUT_TIMER`: Seconds to wait for input before timing out in the input widget
 - `NK_CONSOLE_TEXTEDIT_MASKED_LENGTH`: Number of `*` characters shown when the text-edit widget is in masked/password mode
 - `NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH`: Maximum preview character count shown in a collapsed text-edit widget
+- `NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL`: Define to order the text-edit on-screen keyboard's letters alphabetically (ABCDEF) instead of the default QWERTY
 - `NK_CONSOLE_MESSAGE_DURATION`: Seconds a message widget is displayed before auto-dismissal
 - `NK_CONSOLE_MESSAGE_SCROLL_SPEED`: Pixels per second at which a long message scrolls horizontally
 - `NK_CONSOLE_MESSAGE_SCROLL_PAUSE`: Seconds to pause at the start and end of a scrolling message

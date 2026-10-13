@@ -266,6 +266,28 @@ int main() {
         static char textedit_buffer[256] = "brianwatling";
         nk_console* textedit = nk_console_textedit(console, "Textedit", textedit_buffer, textedit_buffer_size);
         assert(textedit != NULL);
+
+        // The on-screen keyboard defaults to QWERTY, unless NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL is defined.
+        const nk_console_textedit_key** layout = nk_console_textedit_layout_ascii;
+#ifdef NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+        assert(strcmp(layout[1][0].normal, "a") == 0);
+        assert(strcmp(layout[1][0].shifted, "A") == 0);
+#else
+        assert(strcmp(layout[1][0].normal, "q") == 0);
+        assert(strcmp(layout[1][0].shifted, "Q") == 0);
+#endif
+
+        // Every row, and the layout itself, is NULL-terminated like the keyboard build loop expects.
+        int layout_rows = 0;
+        while (layout[layout_rows] != NULL) {
+            int layout_keys = 0;
+            while (layout[layout_rows][layout_keys].normal != NULL) {
+                layout_keys++;
+            }
+            assert(layout_keys > 0);
+            layout_rows++;
+        }
+        assert(layout_rows == 4);
     }
 
     // nk_console_color()

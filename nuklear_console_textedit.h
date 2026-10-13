@@ -16,6 +16,14 @@
 #endif
 
 /**
+ * @def NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+ *
+ * Define to lay out the on-screen keyboard's letter keys in alphabetical order (ABCDEF).
+ *
+ * When it is not defined, the on-screen keyboard uses the default QWERTY order.
+ */
+
+/**
  * A key entry in a keyboard layout row.
  * A row is a NULL-terminated array of these; the last entry has normal == NULL.
  */
@@ -85,7 +93,7 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data);
 extern "C" {
 #endif
 
-/* Default ASCII keyboard layout rows, with the letters in alphabetical order (NULL-terminated; last row gets Shift+Backspace). */
+/* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
 static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
     {"1", "!"},
     {"2", "@"},
@@ -98,6 +106,8 @@ static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
     {"9", "("},
     {"0", ")"},
     {NULL, NULL}};
+#ifdef NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+/* Letter rows in alphabetical order. */
 static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
     {"a", "A"},
     {"b", "B"},
@@ -132,6 +142,43 @@ static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
     {".", ">"},
     {",", "<"},
     {NULL, NULL}};
+#else
+/* Letter rows in QWERTY order. */
+static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
+    {"q", "Q"},
+    {"w", "W"},
+    {"e", "E"},
+    {"r", "R"},
+    {"t", "T"},
+    {"y", "Y"},
+    {"u", "U"},
+    {"i", "I"},
+    {"o", "O"},
+    {"p", "P"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
+    {"a", "A"},
+    {"s", "S"},
+    {"d", "D"},
+    {"f", "F"},
+    {"g", "G"},
+    {"h", "H"},
+    {"j", "J"},
+    {"k", "K"},
+    {"l", "L"},
+    {".", ">"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
+    {"z", "Z"},
+    {"x", "X"},
+    {"c", "C"},
+    {"v", "V"},
+    {"b", "B"},
+    {"n", "N"},
+    {"m", "M"},
+    {",", "<"},
+    {NULL, NULL}};
+#endif
 static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
     nk_console_textedit_ascii_row0,
     nk_console_textedit_ascii_row1,
