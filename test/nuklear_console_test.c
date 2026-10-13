@@ -430,6 +430,42 @@ int main() {
         nk_console_free(nav);
     }
 
+    // Scroll on parent switch (#265): switching to a parent with an active
+    // widget queues it as the render loop's scroll target instead of resetting
+    // the scroll to the top.
+    {
+        nk_console* nav = nk_console_init(ctx);
+        assert(nav != NULL);
+        nk_console* submenu = nk_console_button(nav, "Submenu");
+        nk_console* leaf_a = nk_console_button(submenu, "Leaf A");
+        nk_console* leaf_b = nk_console_button(submenu, "Leaf B");
+        assert(leaf_a != NULL && leaf_b != NULL);
+        nk_console_top_data* top_data = (nk_console_top_data*)nav->data;
+
+        // Without an active widget, no scroll target is queued.
+        nk_console_set_active_parent(submenu);
+        assert(top_data->scroll_to_widget == NULL);
+
+        // Navigating to a leaf queues the leaf itself, not the previously active widget.
+        nk_console_set_active_widget(leaf_a);
+        assert(nk_console_navigate_to_path(nav, "Submenu/Leaf B") == nk_true);
+        assert(top_data->scroll_to_widget == leaf_b);
+
+        // Re-entering a parent queues its remembered active widget.
+        nk_console_set_active_parent(nav);
+        top_data->scroll_to_widget = NULL;
+        nk_console_set_active_parent(submenu);
+        assert(top_data->scroll_to_widget == leaf_b);
+
+        // Freeing the queued widget clears the scroll target rather than leaving it dangling.
+        nk_console_set_active_widget(leaf_a);
+        submenu->children[1] = NULL; // Detach leaf_b, like a listing rebuild would.
+        nk_console_free(leaf_b);
+        assert(top_data->scroll_to_widget == NULL);
+
+        nk_console_free(nav);
+    }
+
     // nk_console_image()
     pntr_image* image_value = pntr_load_image("resources/image.png");
     assert(image_value != NULL);
