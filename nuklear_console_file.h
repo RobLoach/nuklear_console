@@ -1033,6 +1033,57 @@ static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filte
     *out_count = 1;
     return filters;
 }
+
+/**
+ * NK_CONSOLE_FILE_SDL_WINDOW: Resolves the file widget to the SDL_Window that owns it.
+ *
+ * Define it when the application wants to name the window explicitly, for example when
+ * several windows are open and the focused one isn't the one holding the console.
+ */
+#ifndef NK_CONSOLE_FILE_SDL_WINDOW
+#define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
+#endif
+
+/**
+ * Find the SDL_Window that the native file dialog should be modal to.
+ *
+ * Prefers the window given by NK_CONSOLE_FILE_SDL_WINDOW(), then the window holding
+ * input focus, and finally the application's first window. A NULL result makes SDL
+ * show the dialog without a parent, so it isn't modal to anything.
+ *
+ * @internal
+ */
+static SDL_Window* nk_console_file_sdl_dialog_window(nk_console* file) {
+    NK_UNUSED(file);
+
+    SDL_Window* window = NK_CONSOLE_FILE_SDL_WINDOW(file);
+    if (window != NULL) {
+        return window;
+    }
+
+    // The console is being interacted with, so its window is the one with focus.
+    window = SDL_GetKeyboardFocus();
+    if (window != NULL) {
+        return window;
+    }
+
+    window = SDL_GetMouseFocus();
+    if (window != NULL) {
+        return window;
+    }
+
+    // Nothing has focus, so fall back to the first window the application created.
+    int window_count = 0;
+    SDL_Window** windows = SDL_GetWindows(&window_count);
+    if (windows != NULL) {
+        if (window_count > 0) {
+            window = windows[0];
+        }
+        SDL_free(windows);
+    }
+
+    return window;
+}
 #endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
 
 static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
@@ -1050,15 +1101,8 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
 
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
     {
-        /* Obtain the SDL_Window from user-defined macro, or grab it from the file_user_data, or use NULL. */
-#ifndef NK_CONSOLE_FILE_SDL_WINDOW
-#define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
-#endif
-        // Get the SDL_Window if possible.
-        SDL_Window* sdl_window = NK_CONSOLE_FILE_SDL_WINDOW(file);
-        if (sdl_window == NULL && data->file_user_data != NULL) {
-            sdl_window = (SDL_Window*)data->file_user_data;
-        }
+        // Parent the dialog to the application's window so that it displays as a modal.
+        SDL_Window* sdl_window = nk_console_file_sdl_dialog_window(file);
 
         // Free the filters from any previous dialog; its callback has already run.
         if (data->sdl_filters != NULL) {

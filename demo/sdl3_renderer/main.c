@@ -117,12 +117,6 @@ SDL_AppResult SDL_AppInit(void **appstate, int argc, char *argv[]) {
     // Create the Nuklear Console Demo
     app->console = nuklear_console_demo_init(app->ctx, NULL, img);
 
-    // SDL allows using native file browser. Set the SDL_Window for each file system widget to make it a modal.
-    nk_console* fileWidget = nk_console_find_by_path(app->console, "Widgets/File System/Select a File");
-    if (fileWidget) {
-        nk_console_file_set_file_user_data(fileWidget, app->window);
-    }
-
     nk_input_begin(app->ctx);
 
     return SDL_APP_CONTINUE;
