@@ -134,6 +134,9 @@ typedef struct nk_console {
     // Events
     nk_console_event_handler* events; /** Events handled for the widget. */
     nk_console_render_event render; /** Render the widget. */
+
+    // Styles
+    const struct nk_style* style; /** When set, the style used to render this widget and its children. NULL inherits the parent's style, falling back to the context's own ctx->style. The caller keeps ownership, and the style must outlive the widget. @see nk_console_set_style() */
 } nk_console;
 
 typedef struct nk_console_top_data {
@@ -284,6 +287,55 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
 NK_API void nk_console_set_height(nk_console* widget, int height);
 /** Return the row height of @p widget in pixels. */
 NK_API int nk_console_height(nk_console* widget);
+/**
+ * Set the style used to render @p widget and its children.
+ *
+ * Styles are shared by pointer, so a single style can be assigned to any number of widgets.
+ * The caller keeps ownership of @p style, and it must outlive the widget.
+ *
+ * @param widget The widget to style.
+ * @param style The style to use, or NULL to clear it and inherit the parent's style.
+ */
+NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style);
+/**
+ * Get the style that @p widget will render with: its own style, or the closest ancestor's.
+ *
+ * @param widget The widget to query.
+ * @return The effective style, or NULL when the context's own style is used.
+ */
+NK_API const struct nk_style* nk_console_get_style(nk_console* widget);
+/**
+ * Determine the row height that @p widget is laid out with, in pixels.
+ *
+ * The explicit height when one is set, otherwise the minimum row height for the
+ * widget's effective style. 0 means the window's default minimum row height is used.
+ *
+ * @param widget The widget to measure.
+ * @return The row height in pixels, or 0 to use the window's default minimum row height.
+ */
+NK_API float nk_console_layout_height(nk_console* widget);
+/**
+ * Apply @p widget's effective style to its context, saving the style it replaces.
+ *
+ * Internal helper used by the render paths. Nuklear has no push/pop for a whole
+ * style, so the context's style is swapped by value and put back by
+ * nk_console_style_end().
+ *
+ * @param widget The widget that is about to be rendered.
+ * @param saved Where the context's current style is saved. Left untouched when nk_false is returned.
+ * @return nk_true when a style was applied and must be restored, nk_false otherwise.
+ */
+NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved);
+/**
+ * Restore the style that nk_console_style_begin() replaced.
+ *
+ * Internal helper used by the render paths.
+ *
+ * @param widget The widget that finished rendering.
+ * @param saved The style saved by nk_console_style_begin().
+ * @param began The value that nk_console_style_begin() returned.
+ */
+NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began);
 /** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
 /** Return a human-readable name for @p type (e.g. "button"), or "unknown" for unrecognized values. */
@@ -783,6 +835,70 @@ NK_API int nk_console_height(nk_console* widget) {
     return widget->height;
 }
 
+NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style) {
+    if (widget == NULL) {
+        return;
+    }
+    widget->style = style;
+}
+
+NK_API const struct nk_style* nk_console_get_style(nk_console* widget) {
+    while (widget != NULL) {
+        if (widget->style != NULL) {
+            return widget->style;
+        }
+        widget = widget->parent;
+    }
+    return NULL;
+}
+
+NK_API float nk_console_layout_height(nk_console* widget) {
+    if (widget == NULL) {
+        return 0.0f;
+    }
+
+    if (widget->height > 0) {
+        return (float)widget->height;
+    }
+
+    const struct nk_style* style = nk_console_get_style(widget);
+    if (style == NULL || widget->ctx == NULL) {
+        return 0.0f;
+    }
+
+    const struct nk_user_font* font = style->font != NULL ? style->font : widget->ctx->style.font;
+    if (font == NULL) {
+        return 0.0f;
+    }
+
+    // Match Nuklear's minimum row height, but for the widget's own style.
+    return font->height + style->text.padding.y * 2.0f + style->window.min_row_height_padding * 2.0f;
+}
+
+NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved) {
+    if (widget == NULL || widget->ctx == NULL || saved == NULL) {
+        return nk_false;
+    }
+
+    // Applying the context's own style would be a no-op.
+    const struct nk_style* style = nk_console_get_style(widget);
+    if (style == NULL || style == &widget->ctx->style) {
+        return nk_false;
+    }
+
+    // Nuklear has no push/pop for a whole style, so swap it by value.
+    *saved = widget->ctx->style;
+    widget->ctx->style = *style;
+    return nk_true;
+}
+
+NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began) {
+    if (began == nk_false || widget == NULL || widget->ctx == NULL || saved == NULL) {
+        return;
+    }
+    widget->ctx->style = *saved;
+}
+
 /**
  * Get the given widget's index from it's parent's children.
  *
@@ -1252,12 +1368,23 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
+    // Push any styles. Skip the push when the effective style is already active.
+    struct nk_style saved_style;
+    nk_bool style_pushed = nk_console_style_begin(console, &saved_style);
+
     if (console->parent == NULL) {
         nk_console_render_top(console);
+
+        // Finish the styles.
+        nk_console_style_end(console, &saved_style, style_pushed);
         return;
     }
 
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
+
+    // Finish the styles.
+    nk_console_style_end(console, &saved_style, style_pushed);
+
     if (widget_bounds.w <= 0 || widget_bounds.h <= 0) {
         return;
     }
@@ -1519,7 +1646,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     }
 
     // Since we're not within a row, the widget owns the whole row.
-    nk_layout_row_dynamic(widget->ctx, (float)widget->height, widget->columns);
+    nk_layout_row_dynamic(widget->ctx, nk_console_layout_height(widget), widget->columns);
 }
 
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads) {
