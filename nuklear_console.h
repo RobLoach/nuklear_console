@@ -136,7 +136,7 @@ typedef struct nk_console {
     nk_console_render_event render; /** Render the widget. */
 
     // Styles
-    const struct nk_user_font* font; /** When set, the font used to render this widget and its children. NULL inherits the parent/global font. @see nk_console_set_font() */
+    const struct nk_style* style; /** When set, the style used to render this widget and its children. NULL inherits the parent's style, falling back to the context's own ctx->style. The caller keeps ownership, and the style must outlive the widget. @see nk_console_set_style() */
 } nk_console;
 
 typedef struct nk_console_top_data {
@@ -288,28 +288,54 @@ NK_API void nk_console_set_height(nk_console* widget, int height);
 /** Return the row height of @p widget in pixels. */
 NK_API int nk_console_height(nk_console* widget);
 /**
- * Set the font used to render @p widget and its children.
+ * Set the style used to render @p widget and its children.
  *
- * Fonts are shared by pointer, so a single font can be assigned to any number of widgets.
- * The caller keeps ownership of @p font, and it must outlive the widget.
+ * Styles are shared by pointer, so a single style can be assigned to any number of widgets.
+ * The caller keeps ownership of @p style, and it must outlive the widget.
  *
  * @param widget The widget to style.
- * @param font The font to use, or NULL to inherit the parent/global font.
+ * @param style The style to use, or NULL to clear it and inherit the parent's style.
  */
-NK_API void nk_console_set_font(nk_console* widget, const struct nk_user_font* font);
+NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style);
 /**
- * Get the font that @p widget will render with: its own font, or the closest ancestor's.
+ * Get the style that @p widget will render with: its own style, or the closest ancestor's.
  *
- * @return The effective font, or NULL when the global Nuklear font is used.
+ * @param widget The widget to query.
+ * @return The effective style, or NULL when the context's own style is used.
  */
-NK_API const struct nk_user_font* nk_console_get_font(nk_console* widget);
+NK_API const struct nk_style* nk_console_get_style(nk_console* widget);
 /**
  * Determine the row height that @p widget is laid out with, in pixels.
  *
  * The explicit height when one is set, otherwise the minimum row height for the
- * widget's effective font. 0 means the window's default minimum row height is used.
+ * widget's effective style. 0 means the window's default minimum row height is used.
+ *
+ * @param widget The widget to measure.
+ * @return The row height in pixels, or 0 to use the window's default minimum row height.
  */
 NK_API float nk_console_layout_height(nk_console* widget);
+/**
+ * Apply @p widget's effective style to its context, saving the style it replaces.
+ *
+ * Internal helper used by the render paths. Nuklear has no push/pop for a whole
+ * style, so the context's style is swapped by value and put back by
+ * nk_console_style_end().
+ *
+ * @param widget The widget that is about to be rendered.
+ * @param saved Where the context's current style is saved. Left untouched when nk_false is returned.
+ * @return nk_true when a style was applied and must be restored, nk_false otherwise.
+ */
+NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved);
+/**
+ * Restore the style that nk_console_style_begin() replaced.
+ *
+ * Internal helper used by the render paths.
+ *
+ * @param widget The widget that finished rendering.
+ * @param saved The style saved by nk_console_style_begin().
+ * @param began The value that nk_console_style_begin() returned.
+ */
+NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began);
 /** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
 /** Return a human-readable name for @p type (e.g. "button"), or "unknown" for unrecognized values. */
@@ -809,17 +835,17 @@ NK_API int nk_console_height(nk_console* widget) {
     return widget->height;
 }
 
-NK_API void nk_console_set_font(nk_console* widget, const struct nk_user_font* font) {
+NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style) {
     if (widget == NULL) {
         return;
     }
-    widget->font = font;
+    widget->style = style;
 }
 
-NK_API const struct nk_user_font* nk_console_get_font(nk_console* widget) {
+NK_API const struct nk_style* nk_console_get_style(nk_console* widget) {
     while (widget != NULL) {
-        if (widget->font != NULL) {
-            return widget->font;
+        if (widget->style != NULL) {
+            return widget->style;
         }
         widget = widget->parent;
     }
@@ -835,13 +861,42 @@ NK_API float nk_console_layout_height(nk_console* widget) {
         return (float)widget->height;
     }
 
-    const struct nk_user_font* font = nk_console_get_font(widget);
-    if (font == NULL || widget->ctx == NULL) {
+    const struct nk_style* style = nk_console_get_style(widget);
+    if (style == NULL || widget->ctx == NULL) {
         return 0.0f;
     }
 
-    // Match Nuklear's minimum row height, but for the widget's own font.
-    return font->height + widget->ctx->style.text.padding.y * 2.0f + widget->ctx->style.window.min_row_height_padding * 2.0f;
+    const struct nk_user_font* font = style->font != NULL ? style->font : widget->ctx->style.font;
+    if (font == NULL) {
+        return 0.0f;
+    }
+
+    // Match Nuklear's minimum row height, but for the widget's own style.
+    return font->height + style->text.padding.y * 2.0f + style->window.min_row_height_padding * 2.0f;
+}
+
+NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved) {
+    if (widget == NULL || widget->ctx == NULL || saved == NULL) {
+        return nk_false;
+    }
+
+    // Applying the context's own style would be a no-op.
+    const struct nk_style* style = nk_console_get_style(widget);
+    if (style == NULL || style == &widget->ctx->style) {
+        return nk_false;
+    }
+
+    // Nuklear has no push/pop for a whole style, so swap it by value.
+    *saved = widget->ctx->style;
+    widget->ctx->style = *style;
+    return nk_true;
+}
+
+NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began) {
+    if (began == nk_false || widget == NULL || widget->ctx == NULL || saved == NULL) {
+        return;
+    }
+    widget->ctx->style = *saved;
 }
 
 /**
@@ -1313,30 +1368,22 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
-    // Push any styles. Skip the push when the effective font is already active.
-    const struct nk_user_font* font = nk_console_get_font(console);
-    nk_bool font_pushed = nk_false;
-    if (font != NULL && font != console->ctx->style.font) {
-        nk_style_push_font(console->ctx, font);
-        font_pushed = nk_true;
-    }
+    // Push any styles. Skip the push when the effective style is already active.
+    struct nk_style saved_style;
+    nk_bool style_pushed = nk_console_style_begin(console, &saved_style);
 
     if (console->parent == NULL) {
         nk_console_render_top(console);
 
         // Finish the styles.
-        if (font_pushed) {
-            nk_style_pop_font(console->ctx);
-        }
+        nk_console_style_end(console, &saved_style, style_pushed);
         return;
     }
 
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
 
     // Finish the styles.
-    if (font_pushed) {
-        nk_style_pop_font(console->ctx);
-    }
+    nk_console_style_end(console, &saved_style, style_pushed);
 
     if (widget_bounds.w <= 0 || widget_bounds.h <= 0) {
         return;

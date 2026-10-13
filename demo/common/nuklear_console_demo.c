@@ -112,9 +112,12 @@ static enum nk_buttons input_keyboard_mouse_button = NK_BUTTON_LEFT;
 // Color
 static struct nk_colorf color = {0.31f, 1.0f, 0.48f, 1.0f};
 
-// Fonts: scaled copies of the backend's font, shared across widgets by pointer.
+// Styles: copies of the live context style, shared across widgets by pointer.
 static struct nk_user_font font_large;
 static struct nk_user_font font_small;
+static struct nk_style style_large;
+static struct nk_style style_small;
+static struct nk_style style_orange;
 
 void button_clicked(struct nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
@@ -342,9 +345,9 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_button_onclick(spacing, "Back", &nk_console_button_back);
         }
 
-        // Fonts
+        // Styles
         if (ctx->style.font != NULL) {
-            struct nk_console* fonts = nk_console_button(widgets, "Fonts");
+            struct nk_console* styles = nk_console_button(widgets, "Styles");
             // Derive larger and smaller fonts from the backend's font. Since glyphs are
             // scaled from the same baked font, no extra font assets are needed.
             font_large = *ctx->style.font;
@@ -352,21 +355,35 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             font_small = *ctx->style.font;
             font_small.height *= 0.75f;
 
-            nk_console_label(fonts, "A label with the default font.");
-            nk_console_set_font(nk_console_label(fonts, "A large font!"), &font_large);
-            nk_console_set_font(nk_console_label(fonts, "A small font."), &font_small);
-            nk_console_set_font(nk_console_button(fonts, "Large Button"), &font_large);
+            // Each style is a copy of the live context style, changing only what it needs.
+            style_large = ctx->style;
+            style_large.font = &font_large;
+            style_small = ctx->style;
+            style_small.font = &font_small;
 
-            // Children inherit their parent's font, unless they set their own.
-            struct nk_console* inherit = nk_console_button(fonts, "Inherited Fonts");
-            nk_console_set_font(inherit, &font_large);
+            // A full style can change what a font alone could not, like the text color.
+            style_orange = ctx->style;
+            style_orange.text.color = nk_rgb(255, 165, 0);
+            style_orange.button.text_normal = nk_rgb(255, 165, 0);
+            style_orange.button.text_hover = nk_rgb(255, 165, 0);
+            style_orange.button.text_active = nk_rgb(255, 165, 0);
+
+            nk_console_label(styles, "A label with the default style.");
+            nk_console_set_style(nk_console_label(styles, "A large font!"), &style_large);
+            nk_console_set_style(nk_console_label(styles, "A small font."), &style_small);
+            nk_console_set_style(nk_console_label(styles, "An orange label."), &style_orange);
+            nk_console_set_style(nk_console_button(styles, "Orange Button"), &style_orange);
+
+            // Children inherit their parent's style, unless they set their own.
+            struct nk_console* inherit = nk_console_button(styles, "Inherited Styles");
+            nk_console_set_style(inherit, &style_large);
             {
-                nk_console_label(inherit, "Children inherit the parent's font.");
-                nk_console_set_font(nk_console_label(inherit, "Unless they set their own."), &font_small);
+                nk_console_label(inherit, "Children inherit the parent's style.");
+                nk_console_set_style(nk_console_label(inherit, "Unless they set their own."), &style_orange);
                 nk_console_button_onclick(inherit, "Back", &nk_console_button_back);
             }
 
-            nk_console_button_onclick(fonts, "Back", &nk_console_button_back);
+            nk_console_button_onclick(styles, "Back", &nk_console_button_back);
         }
 
         // Horizontal Rule

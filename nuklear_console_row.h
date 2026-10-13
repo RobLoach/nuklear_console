@@ -185,7 +185,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
 
-    // The row is as tall as its tallest child, taking each child's font into account.
+    // The row is as tall as its tallest child, taking each child's style into account.
     int numChildren = (int)cvector_size(console->children);
     float row_height = nk_console_layout_height(console);
     for (int i = 0; i < numChildren; ++i) {
@@ -274,6 +274,11 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = console->children[i];
         if (child->render != NULL && child->visible == nk_true) {
+            // Children are rendered directly rather than through nk_console_render(),
+            // so push any of their styles here.
+            struct nk_style saved_style;
+            nk_bool style_pushed = nk_console_style_begin(child, &saved_style);
+
             // If the row is disabled, then temporarily disable the child when rendering.
             if (console->disabled) {
                 nk_bool child_disabled = child->disabled;
@@ -284,6 +289,9 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
             else {
                 child->render(child);
             }
+
+            // Finish the styles.
+            nk_console_style_end(child, &saved_style, style_pushed);
         }
     }
 
