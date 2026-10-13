@@ -12,7 +12,7 @@
 /**
  * Maximum number of characters shown in the textedit button preview.
  */
-#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 10
+#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 12
 #endif
 
 /**
