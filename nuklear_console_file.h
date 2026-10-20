@@ -914,15 +914,25 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 /**
  * Event handler to clear out unneeded data for the file widget.
  *
+ * Only the browser's listing goes; the widget's settings, like its extension filter, stay for the
+ * next time it opens.
+ *
  * @see nk_console_file_event_back
  * @internal
  */
 static void nk_console_file_event_back_post_render(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+
     // Remove all the children, since we don't need them.
     nk_console_free_children(file);
 
     // Clear out all the file entries too.
-    nk_console_file_event_destroy(file, user_data);
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data != NULL) {
+        nk_console_file_entries_clear(data);
+        cvector_free(data->entries);
+        data->entries = NULL;
+    }
 }
 
 /**

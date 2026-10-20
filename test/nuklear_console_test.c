@@ -303,6 +303,14 @@ int main() {
         static char file_path_buffer[256] = "";
         nk_console* file = nk_console_file(console, "File", file_path_buffer, file_path_buffer_size);
         assert(file != NULL);
+
+        // Backing out of the file browser keeps the widget's extension filter (regression for the
+        // filter being freed along with the browser's entries).
+        nk_console_file_set_filter(file, ".txt;.png");
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_BACK);
+        nk_console_render_window(console, "file_back_test", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        assert(nk_console_file_get_filter(file) != NULL);
+        assert(strcmp(nk_console_file_get_filter(file), ".txt;.png") == 0);
     }
 
     // nk_console_dir()
