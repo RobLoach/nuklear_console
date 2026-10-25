@@ -91,6 +91,8 @@ static const int textedit_buffer_size = 256;
 static char textedit_buffer[256] = "vurtun";
 static char textedit_password_buffer[256] = "12345";
 static char textedit_action_buffer[256] = {0};
+static char textedit_pin_buffer[256] = "1234";
+static char textedit_hex_buffer[256] = "FF00FF";
 
 // Input
 static int gamepad_number = 0;
@@ -520,12 +522,22 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         }
 
         // Textedit
-        struct nk_console* textedit = nk_console_textedit(widgets, "Username", textedit_buffer, textedit_buffer_size);
-        nk_console_set_tooltip(textedit, "Enter your username!");
-        struct nk_console* password = nk_console_textedit_masked(widgets, "Password", textedit_password_buffer, textedit_buffer_size);
-        nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
-        struct nk_console* textedit_action = nk_console_textedit_action(widgets, "Enter Text", textedit_action_buffer, textedit_buffer_size);
-        nk_console_add_event_handler(textedit_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_textedit_action_changed, textedit_action_buffer, NULL);
+        struct nk_console* textedits = nk_console_button(widgets, "Textedit");
+        {
+            struct nk_console* textedit = nk_console_textedit(textedits, "Username", textedit_buffer, textedit_buffer_size);
+            nk_console_set_tooltip(textedit, "Enter your username!");
+            struct nk_console* password = nk_console_textedit_masked(textedits, "Password", textedit_password_buffer, textedit_buffer_size);
+            nk_console_add_event(password, NK_CONSOLE_EVENT_BACK, &nk_console_password_back);
+            struct nk_console* textedit_action = nk_console_textedit_action(textedits, "Enter Text", textedit_action_buffer, textedit_buffer_size);
+            nk_console_add_event_handler(textedit_action, NK_CONSOLE_EVENT_CHANGED, &nk_console_textedit_action_changed, textedit_action_buffer, NULL);
+            struct nk_console* textedit_pin = nk_console_textedit(textedits, "PIN", textedit_pin_buffer, textedit_buffer_size);
+            nk_console_textedit_set_filter(textedit_pin, nk_filter_decimal);
+            nk_console_set_tooltip(textedit_pin, "Digits only!");
+            struct nk_console* textedit_hex = nk_console_textedit(textedits, "Hex Color", textedit_hex_buffer, textedit_buffer_size);
+            nk_console_textedit_set_filter(textedit_hex, nk_filter_hex);
+            nk_console_set_tooltip(textedit_hex, "Hexadecimal digits only!");
+            nk_console_button_onclick(textedits, "Back", &nk_console_button_back);
+        }
 
         // Color
         nk_console_color(widgets, "Select Color", &color, NK_RGBA);

@@ -70,7 +70,6 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         nk_edit_unfocus(widget->ctx);
     }
 
-    // TODO: textedit_text: Add an option to change the filter.
     int buffer_strlen = data->buffer != NULL ? (int)nk_strlen(data->buffer) : 0;
 
     // Allow for masking the textedit.
@@ -81,7 +80,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
             mask[i] = '*';
         }
         mask[buffer_strlen < mask_max ? buffer_strlen : mask_max - 1] = '\0';
-        nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, mask, mask_max, nk_filter_ascii);
+        nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, mask, mask_max, data->filter);
         int mask_strlen = (int)nk_strlen(mask);
         if (mask_strlen < buffer_strlen) { // Characters deleted
             int real_len = (int)nk_strlen(data->buffer);
@@ -102,7 +101,7 @@ NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
         }
     }
     else {
-        nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, nk_filter_ascii);
+        nk_edit_string_zero_terminated(widget->ctx, NK_EDIT_FIELD, data->buffer, data->buffer_size, data->filter);
         if (buffer_strlen != (int)nk_strlen(data->buffer)) {
             data->changed = nk_true;
         }
