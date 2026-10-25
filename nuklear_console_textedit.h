@@ -12,8 +12,16 @@
 /**
  * Maximum number of characters shown in the textedit button preview.
  */
-#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 10
+#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 12
 #endif
+
+/**
+ * @def NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+ *
+ * Define to lay out the on-screen keyboard's letter keys in alphabetical order (ABCDEF).
+ *
+ * When it is not defined, the on-screen keyboard uses the default QWERTY order.
+ */
 
 /**
  * A key entry in a keyboard layout row.
@@ -98,6 +106,44 @@ static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
     {"9", "("},
     {"0", ")"},
     {NULL, NULL}};
+#ifdef NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+/* Letter rows in alphabetical order. */
+static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
+    {"a", "A"},
+    {"b", "B"},
+    {"c", "C"},
+    {"d", "D"},
+    {"e", "E"},
+    {"f", "F"},
+    {"g", "G"},
+    {"h", "H"},
+    {"i", "I"},
+    {"j", "J"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
+    {"k", "K"},
+    {"l", "L"},
+    {"m", "M"},
+    {"n", "N"},
+    {"o", "O"},
+    {"p", "P"},
+    {"q", "Q"},
+    {"r", "R"},
+    {"s", "S"},
+    {"t", "T"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
+    {"u", "U"},
+    {"v", "V"},
+    {"w", "W"},
+    {"x", "X"},
+    {"y", "Y"},
+    {"z", "Z"},
+    {".", ">"},
+    {",", "<"},
+    {NULL, NULL}};
+#else
+/* Letter rows in QWERTY order. */
 static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
     {"q", "Q"},
     {"w", "W"},
@@ -132,6 +178,7 @@ static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
     {"m", "M"},
     {",", "<"},
     {NULL, NULL}};
+#endif
 static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
     nk_console_textedit_ascii_row0,
     nk_console_textedit_ascii_row1,

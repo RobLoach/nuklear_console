@@ -98,6 +98,8 @@ nk_console* nk_console_get_top(nk_console* widget);
 int nk_console_get_widget_index(nk_console* widget);
 int nk_console_height(nk_console* widget);
 void nk_console_set_height(nk_console* widget, int height);
+const struct nk_style* nk_console_get_style(nk_console* widget);
+void nk_console_set_style(nk_console* widget, const struct nk_style* style);
 nk_bool nk_console_is_active_widget(nk_console* widget);
 nk_bool nk_console_selectable(nk_console* widget);
 void nk_console_set_active_parent(nk_console* new_parent);
@@ -142,10 +144,11 @@ void nk_console_check_up_down(nk_console* widget);
 - `NK_CONSOLE_INPUT_TIMER`: Seconds to wait for input before timing out in the input widget
 - `NK_CONSOLE_TEXTEDIT_MASKED_LENGTH`: Number of `*` characters shown when the text-edit widget is in masked/password mode
 - `NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH`: Maximum preview character count shown in a collapsed text-edit widget
+- `NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL`: Define to order the text-edit on-screen keyboard's letters alphabetically (ABCDEF) instead of the default QWERTY
 - `NK_CONSOLE_MESSAGE_DURATION`: Seconds a message widget is displayed before auto-dismissal
 - `NK_CONSOLE_MESSAGE_SCROLL_SPEED`: Pixels per second at which a long message scrolls horizontally
 - `NK_CONSOLE_MESSAGE_SCROLL_PAUSE`: Seconds to pause at the start and end of a scrolling message
-- `NK_CONSOLE_FILE_SDL_NATIVE_DIALOG`: In SDL3, will enable file widgets to use native file dialogs
+- `NK_CONSOLE_FILE_SDL_NATIVE_DIALOG`: In SDL3, will enable file widgets to use native file dialogs. Widgets activated with a gamepad, or whose dialog fails to open, use the built-in file browser instead
 - `NK_CONSOLE_GAMEPAD`: Defined automatically when [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad) is included before nuklear_console; enables gamepad input support
 - `NK_CONSOLE_NO_GAMEPAD`: Define to force-disable gamepad support even when nuklear_gamepad is present; corresponds to CMake option `NUKLEAR_CONSOLE_GAMEPAD=OFF`
 

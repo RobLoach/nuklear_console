@@ -12,6 +12,8 @@
 /**
  * NK_CONSOLE_FILE_SDL_NATIVE_DIALOG: When enabled in SDL3, will enable file widgets to use the native file dialogs.
  * Auto-enabled when SDL3 is detected. Define NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG to disable.
+ * A gamepad can't drive the native dialog, so widgets activated with a gamepad, or whose dialog fails to open
+ * (for example, with no portal or zenity on Linux), use the built-in file browser instead.
  */
 #if !defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && !defined(NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG) && defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION >= 3
 #define NK_CONSOLE_FILE_SDL_NATIVE_DIALOG
@@ -832,6 +834,11 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     NK_ASSERT(cvector_size(widget->children) > 2 && widget->children[2] != NULL);
     nk_console_set_active_widget(widget->children[2]);
 
+    // The entry listing is being rebuilt, so any retained scroll position is meaningless. Scroll back to the top.
+    if (widget->ctx != NULL && widget->ctx->current != NULL) {
+        nk_window_set_scroll(widget->ctx, 0, 0);
+    }
+
 #ifdef NK_CONSOLE_FILE_ADD_FILES
     // Populate the entries array via the file system callback.
     NK_CONSOLE_FILE_ADD_FILES(widget, data->directory);
@@ -907,15 +914,25 @@ NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
 /**
  * Event handler to clear out unneeded data for the file widget.
  *
+ * Only the browser's listing goes; the widget's settings, like its extension filter, stay for the
+ * next time it opens.
+ *
  * @see nk_console_file_event_back
  * @internal
  */
 static void nk_console_file_event_back_post_render(nk_console* file, void* user_data) {
+    NK_UNUSED(user_data);
+
     // Remove all the children, since we don't need them.
     nk_console_free_children(file);
 
     // Clear out all the file entries too.
-    nk_console_file_event_destroy(file, user_data);
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data != NULL) {
+        nk_console_file_entries_clear(data);
+        cvector_free(data->entries);
+        data->entries = NULL;
+    }
 }
 
 /**
@@ -928,6 +945,8 @@ static void nk_console_file_event_back(nk_console* file, void* user_data) {
     nk_console_add_event(file, NK_CONSOLE_EVENT_POST_RENDER_ONCE, &nk_console_file_event_back_post_render);
 }
 
+static void nk_console_file_open_browser(nk_console* file);
+
 /**
  * Event handler: Called when the make file button is clicked.
  *
@@ -936,6 +955,24 @@ static void nk_console_file_event_back(nk_console* file, void* user_data) {
  * @internal
  */
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+/**
+ * SDL_MainThreadCallback that opens the built-in file browser when the native dialog couldn't be shown.
+ * @internal
+ */
+static void nk_console_file_sdl_dialog_fallback(void* userdata) {
+    nk_console_file_open_browser((nk_console*)userdata);
+}
+
+/**
+ * Whether a gamepad press activated the file widget this frame, rather than the mouse or keyboard.
+ * @internal
+ */
+static nk_bool nk_console_file_gamepad_activated(nk_console* file) {
+    nk_console* top = nk_console_get_top(file);
+    nk_console_top_data* top_data = top != NULL ? (nk_console_top_data*)top->data : NULL;
+    return top_data != NULL && nk_gamepad_is_button_released(top_data->gamepads, top_data->gamepad_num, NK_GAMEPAD_BUTTON_A);
+}
+
 /**
  * SDL_MainThreadCallback that applies the staged dialog path to the file widget.
  * @internal
@@ -972,8 +1009,9 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (data == NULL) return;
     if (filelist == NULL) {
-        /* An error occurred while showing the dialog. */
-        SDL_LogError(SDL_LOG_CATEGORY_ERROR, "nk_console: file dialog failed: %s", SDL_GetError());
+        /* The dialog couldn't be shown, so browse with the built-in file browser instead. */
+        SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "nk_console: file dialog failed, using the built-in browser: %s", SDL_GetError());
+        SDL_RunOnMainThread(nk_console_file_sdl_dialog_fallback, file, false);
         return;
     }
     if (filelist[0] == NULL) return; /* dialog cancelled */
@@ -1028,6 +1066,57 @@ static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filte
     *out_count = 1;
     return filters;
 }
+
+/**
+ * NK_CONSOLE_FILE_SDL_WINDOW: Resolves the file widget to the SDL_Window that owns it.
+ *
+ * Define it when the application wants to name the window explicitly, for example when
+ * several windows are open and the focused one isn't the one holding the console.
+ */
+#ifndef NK_CONSOLE_FILE_SDL_WINDOW
+#define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
+#endif
+
+/**
+ * Find the SDL_Window that the native file dialog should be modal to.
+ *
+ * Prefers the window given by NK_CONSOLE_FILE_SDL_WINDOW(), then the window holding
+ * input focus, and finally the application's first window. A NULL result makes SDL
+ * show the dialog without a parent, so it isn't modal to anything.
+ *
+ * @internal
+ */
+static SDL_Window* nk_console_file_sdl_dialog_window(nk_console* file) {
+    NK_UNUSED(file);
+
+    SDL_Window* window = NK_CONSOLE_FILE_SDL_WINDOW(file);
+    if (window != NULL) {
+        return window;
+    }
+
+    // The console is being interacted with, so its window is the one with focus.
+    window = SDL_GetKeyboardFocus();
+    if (window != NULL) {
+        return window;
+    }
+
+    window = SDL_GetMouseFocus();
+    if (window != NULL) {
+        return window;
+    }
+
+    // Nothing has focus, so fall back to the first window the application created.
+    int window_count = 0;
+    SDL_Window** windows = SDL_GetWindows(&window_count);
+    if (windows != NULL) {
+        if (window_count > 0) {
+            window = windows[0];
+        }
+        SDL_free(windows);
+    }
+
+    return window;
+}
 #endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
 
 static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
@@ -1041,19 +1130,13 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
         return;
     }
 
-    nk_console_file_data* data = (nk_console_file_data*)file->data;
-
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
-    {
-        /* Obtain the SDL_Window from user-defined macro, or grab it from the file_user_data, or use NULL. */
-#ifndef NK_CONSOLE_FILE_SDL_WINDOW
-#define NK_CONSOLE_FILE_SDL_WINDOW(c) NULL
-#endif
-        // Get the SDL_Window if possible.
-        SDL_Window* sdl_window = NK_CONSOLE_FILE_SDL_WINDOW(file);
-        if (sdl_window == NULL && data->file_user_data != NULL) {
-            sdl_window = (SDL_Window*)data->file_user_data;
-        }
+    // A gamepad can't drive the native dialog, so gamepad users get the built-in browser.
+    if (!nk_console_file_gamepad_activated(file)) {
+        nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+        // Parent the dialog to the application's window so that it displays as a modal.
+        SDL_Window* sdl_window = nk_console_file_sdl_dialog_window(file);
 
         // Free the filters from any previous dialog; its callback has already run.
         if (data->sdl_filters != NULL) {
@@ -1076,6 +1159,19 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
         return;
     }
 #endif /* NK_CONSOLE_FILE_SDL_NATIVE_DIALOG */
+
+    nk_console_file_open_browser(file);
+}
+
+/**
+ * Open the built-in file browser on the file widget.
+ * @internal
+ */
+static void nk_console_file_open_browser(nk_console* file) {
+    nk_console_file_data* data = (nk_console_file_data*)file->data;
+    if (data == NULL) {
+        return;
+    }
 
     if (data->starting_directory[0] != '\0') {
         int len = nk_strlen(data->starting_directory);

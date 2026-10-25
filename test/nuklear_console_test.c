@@ -266,6 +266,28 @@ int main() {
         static char textedit_buffer[256] = "brianwatling";
         nk_console* textedit = nk_console_textedit(console, "Textedit", textedit_buffer, textedit_buffer_size);
         assert(textedit != NULL);
+
+        // The on-screen keyboard defaults to QWERTY, unless NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL is defined.
+        const nk_console_textedit_key** layout = nk_console_textedit_layout_ascii;
+#ifdef NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+        assert(strcmp(layout[1][0].normal, "a") == 0);
+        assert(strcmp(layout[1][0].shifted, "A") == 0);
+#else
+        assert(strcmp(layout[1][0].normal, "q") == 0);
+        assert(strcmp(layout[1][0].shifted, "Q") == 0);
+#endif
+
+        // Every row, and the layout itself, is NULL-terminated like the keyboard build loop expects.
+        int layout_rows = 0;
+        while (layout[layout_rows] != NULL) {
+            int layout_keys = 0;
+            while (layout[layout_rows][layout_keys].normal != NULL) {
+                layout_keys++;
+            }
+            assert(layout_keys > 0);
+            layout_rows++;
+        }
+        assert(layout_rows == 4);
     }
 
     // nk_console_color()
@@ -281,6 +303,14 @@ int main() {
         static char file_path_buffer[256] = "";
         nk_console* file = nk_console_file(console, "File", file_path_buffer, file_path_buffer_size);
         assert(file != NULL);
+
+        // Backing out of the file browser keeps the widget's extension filter (regression for the
+        // filter being freed along with the browser's entries).
+        nk_console_file_set_filter(file, ".txt;.png");
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_BACK);
+        nk_console_render_window(console, "file_back_test", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        assert(nk_console_file_get_filter(file) != NULL);
+        assert(strcmp(nk_console_file_get_filter(file), ".txt;.png") == 0);
     }
 
     // nk_console_dir()
@@ -426,6 +456,42 @@ int main() {
         assert(nk_console_active_parent(nav) == submenu);
         assert(nk_console_navigate_to_path(nav, "Submenu/Leaf") == nk_true);
         assert(nk_console_get_active_widget(leaf) == leaf);
+
+        nk_console_free(nav);
+    }
+
+    // Scroll on parent switch (#265): switching to a parent with an active
+    // widget queues it as the render loop's scroll target instead of resetting
+    // the scroll to the top.
+    {
+        nk_console* nav = nk_console_init(ctx);
+        assert(nav != NULL);
+        nk_console* submenu = nk_console_button(nav, "Submenu");
+        nk_console* leaf_a = nk_console_button(submenu, "Leaf A");
+        nk_console* leaf_b = nk_console_button(submenu, "Leaf B");
+        assert(leaf_a != NULL && leaf_b != NULL);
+        nk_console_top_data* top_data = (nk_console_top_data*)nav->data;
+
+        // Without an active widget, no scroll target is queued.
+        nk_console_set_active_parent(submenu);
+        assert(top_data->scroll_to_widget == NULL);
+
+        // Navigating to a leaf queues the leaf itself, not the previously active widget.
+        nk_console_set_active_widget(leaf_a);
+        assert(nk_console_navigate_to_path(nav, "Submenu/Leaf B") == nk_true);
+        assert(top_data->scroll_to_widget == leaf_b);
+
+        // Re-entering a parent queues its remembered active widget.
+        nk_console_set_active_parent(nav);
+        top_data->scroll_to_widget = NULL;
+        nk_console_set_active_parent(submenu);
+        assert(top_data->scroll_to_widget == leaf_b);
+
+        // Freeing the queued widget clears the scroll target rather than leaving it dangling.
+        nk_console_set_active_widget(leaf_a);
+        submenu->children[1] = NULL; // Detach leaf_b, like a listing rebuild would.
+        nk_console_free(leaf_b);
+        assert(top_data->scroll_to_widget == NULL);
 
         nk_console_free(nav);
     }
@@ -637,6 +703,82 @@ int main() {
     nk_console* color_rgba = nk_console_color(console, "Color RGBA", &rgba_color, NK_RGBA);
     assert(color_rgba != NULL);
 
+    // nk_console_set_style() / nk_console_get_style() / nk_console_layout_height()
+    {
+        // The fonts and styles are shared by pointer, so they must outlive the widgets.
+        static struct nk_user_font big_font;
+        static struct nk_user_font small_font;
+        static struct nk_style big_style;
+        static struct nk_style small_style;
+
+        // NULL widgets are safe no-ops.
+        nk_console_set_style(NULL, NULL);
+        assert(nk_console_get_style(NULL) == NULL);
+        assert(nk_console_layout_height(NULL) == 0.0f);
+
+        // By default, no style is set: the context's own style is used.
+        nk_console* style_parent = nk_console_button(console, "Styles");
+        nk_console* style_child = nk_console_label(style_parent, "Style Label");
+        assert(style_parent->style == NULL);
+        assert(nk_console_get_style(style_parent) == NULL);
+        assert(nk_console_get_style(style_child) == NULL);
+
+        // Build the styles from the live context style, changing only what they need.
+        big_font = *ctx->style.font;
+        big_font.height *= 2.0f;
+        big_style = ctx->style;
+        big_style.font = &big_font;
+        big_style.text.color = nk_rgb(255, 0, 0);
+
+        small_font = *ctx->style.font;
+        small_font.height *= 0.5f;
+        small_style = ctx->style;
+        small_style.font = &small_font;
+
+        // Setting a style makes it the widget's effective style.
+        nk_console_set_style(style_parent, &big_style);
+        assert(style_parent->style == &big_style);
+        assert(nk_console_get_style(style_parent) == &big_style);
+
+        // Children inherit the closest ancestor's style...
+        assert(nk_console_get_style(style_child) == &big_style);
+
+        // ...unless they set their own.
+        nk_console_set_style(style_child, &small_style);
+        assert(style_child->style == &small_style);
+        assert(nk_console_get_style(style_child) == &small_style);
+
+        // Clearing a style restores inheritance.
+        nk_console_set_style(style_child, NULL);
+        assert(style_child->style == NULL);
+        assert(nk_console_get_style(style_child) == &big_style);
+
+        // nk_console_layout_height(): an explicit height wins.
+        nk_console_set_height(style_child, 100);
+        assert(nk_console_layout_height(style_child) == 100.0f);
+
+        // Otherwise the row height is derived from the effective style's font and paddings.
+        nk_console_set_height(style_child, 0);
+        float expected = big_font.height + big_style.text.padding.y * 2.0f + big_style.window.min_row_height_padding * 2.0f;
+        assert(nk_console_layout_height(style_child) == expected);
+
+        // With no style and no height, 0 defers to the window's minimum row height.
+        nk_console_set_style(style_parent, NULL);
+        assert(nk_console_layout_height(style_child) == 0.0f);
+
+        // Rows render their children directly, so style a row child to exercise that path.
+        {
+            nk_console* style_row = nk_console_row_begin(console);
+            assert(style_row != NULL);
+            nk_console_set_style(nk_console_label(style_row, "Styled Row Column"), &small_style);
+            nk_console_label(style_row, "Default Row Column");
+            nk_console_row_end(style_row);
+        }
+
+        // Leave the style set so the render passes below exercise the style swap.
+        nk_console_set_style(style_parent, &big_style);
+    }
+
     // Create the screen buffer
     pntr_image* screen = pntr_new_image(300, 800);
     assert(screen != NULL);
@@ -781,12 +923,13 @@ int main() {
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_BUTTON), "button") == 0);
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_LABEL), "label") == 0);
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_UNKNOWN), "unknown") == 0);
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_CHART), "chart") == 0);
 
         // Out-of-range values fall back to "unknown".
-        assert(strcmp(nk_console_widget_type_name((nk_console_widget_type)(NK_CONSOLE_LIST_VIEW + 1)), "unknown") == 0);
+        assert(strcmp(nk_console_widget_type_name((nk_console_widget_type)(NK_CONSOLE_CHART + 1)), "unknown") == 0);
 
         // Every widget type has a non-NULL name.
-        for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_LIST_VIEW; type++) {
+        for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_CHART; type++) {
             assert(nk_console_widget_type_name((nk_console_widget_type)type) != NULL);
         }
     }
