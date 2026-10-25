@@ -20,10 +20,15 @@ typedef struct nk_console_property_data {
 extern "C" {
 #endif
 
+/** Add an integer property widget (editable with left/right input). @return The new widget. */
 NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel);
+/** Add a float property widget (editable with left/right input). @return The new widget. */
 NK_API nk_console* nk_console_property_float(nk_console* parent, const char* label, float min, float* val, float max, float step, float inc_per_pixel);
+/** Add an integer slider widget (no text input). @return The new widget. */
 NK_API nk_console* nk_console_slider_int(nk_console* parent, const char* label, int min, int* val, int max, int step);
+/** Add a float slider widget (no text input). @return The new widget. */
 NK_API nk_console* nk_console_slider_float(nk_console* parent, const char* label, float min, float* val, float max, float step);
+/** Render the property/slider widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_property_render(nk_console* console);
 
 #if defined(__cplusplus)
@@ -246,6 +251,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
 NK_API nk_console* nk_console_property_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel) {
     // Create the property data.
     nk_console_property_data* data = (nk_console_property_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_property_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_property_data));
     data->min_int = min;
     data->val_int = val;
