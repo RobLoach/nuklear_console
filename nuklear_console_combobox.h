@@ -17,10 +17,15 @@ typedef struct nk_console_combobox_data {
 extern "C" {
 #endif
 
+/** Add a combobox widget with pipe-separated items. @return The new combobox widget. */
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected);
+/** Render the combobox widget. @return The bounding rect. */
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console);
+/** Internal: handle a click on a combobox option button. */
 NK_API void nk_console_combobox_button_click(nk_console* button, void* user_data);
+/** Internal: handle a click on the combobox's main (label) button. */
 NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user_data);
+/** Replace the items and selected pointer on an existing combobox widget. */
 NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, const char* items_separated_by_separator, int separator, int* selected);
 
 #if defined(__cplusplus)
@@ -112,6 +117,14 @@ NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, 
     nk_console* backbutton = nk_console_button_onclick(combobox, label, &nk_console_combobox_button_click);
     nk_console_button_set_symbol(backbutton, NK_SYMBOL_TRIANGLE_UP);
 
+    // NULL items: clamp selected and leave only the back button.
+    if (items_separated_by_separator == NULL) {
+        if (selected != NULL) {
+            *selected = 0;
+        }
+        return;
+    }
+
     // Add new items as children
     const char* button_text_start = items_separated_by_separator;
     int text_length = 0;
@@ -145,6 +158,7 @@ NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, 
 NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
     // Create the widget data.
     nk_console_combobox_data* data = (nk_console_combobox_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_combobox_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_combobox_data));
 
     // Set up the combobox

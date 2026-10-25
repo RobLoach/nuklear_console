@@ -32,7 +32,6 @@ extern "C" {
 extern "C" {
 #endif
 
-// TODO: Allow disabling tinydir
 #ifndef NK_CONSOLE_FILE_ADD_FILES
 #ifdef NK_CONSOLE_ENABLE_TINYDIR
 
@@ -142,7 +141,8 @@ static SDL_EnumerationResult SDLCALL nk_console_file_add_files_sdl3_callback(voi
     size_t dirlen = SDL_strlen(dirname);
     if (dirlen > 0 && dirname[dirlen - 1] == '/') {
         SDL_snprintf(fullpath, sizeof(fullpath), "%s%s", dirname, fname);
-    } else {
+    }
+    else {
         SDL_snprintf(fullpath, sizeof(fullpath), "%s/%s", dirname, fname);
     }
 
