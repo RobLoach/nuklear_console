@@ -43,6 +43,7 @@ extern "C" {
 NK_API nk_console* nk_console_knob_int(nk_console* parent, const char* label, int min, int* val, int max, int step, float inc_per_pixel) {
     // Create the property data.
     nk_console_knob_data* data = (nk_console_knob_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_knob_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_knob_data));
     data->property.min_int = min;
     data->property.val_int = val;

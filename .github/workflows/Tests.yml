@@ -12,6 +12,16 @@ on:
   workflow_dispatch:
 
 jobs:
+  clang-format:
+    name: clang-format
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - name: Check formatting
+      run: |
+        clang-format --version
+        clang-format --dry-run --Werror *.h
+
   build:
     name: ${{ matrix.platform.os }} ${{ matrix.config.name }} ${{ matrix.type.name }}
     runs-on: ${{ matrix.platform.os }}
@@ -23,6 +33,7 @@ jobs:
         # - { name: Windows VS2019, os: windows-2019 }
         # - { name: Windows VS2022, os: windows-2022 }
         - { name: Linux GCC,      os: ubuntu-22.04, flags: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_STANDARD=17 }
+        - { name: Linux GCC ASAN, os: ubuntu-22.04, flags: "-DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_C_FLAGS=-fsanitize=address,undefined -DCMAKE_EXE_LINKER_FLAGS=-fsanitize=address,undefined" }
         #- { name: Linux Clang,    os: ubuntu-22.04, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_STANDARD=17 }
         #- { name: Linux GCC,      os: ubuntu-18.04, flags: -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DCMAKE_CXX_STANDARD=14 }
         #- { name: Linux Clang,    os: ubuntu-18.04, flags: -DCMAKE_C_COMPILER=clang -DCMAKE_CXX_COMPILER=clang++ -DCMAKE_CXX_STANDARD=14 }
