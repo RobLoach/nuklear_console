@@ -55,7 +55,7 @@ list(APPEND test_resources ${resources})
 file(COPY ${test_resources} DESTINATION "resources/")
 
 # Set up the test
-list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure")
+list(APPEND CMAKE_CTEST_ARGUMENTS "--output-on-failure" "--verbose")
 add_test(NAME nuklear_console_test
     COMMAND nuklear_console_test
 )
