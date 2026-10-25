@@ -43,8 +43,7 @@ typedef struct nk_console_file_data {
     char dir_label_buf[NK_CONSOLE_FILE_PATH_MAX + 2]; /** Scratch buffer for appending "/" to directory labels in the list view. */
     nk_console_file_entry* entries; /** cvector of file/directory entries for the list view. */
     char* filter; /** Optional semicolon-separated extension filter, e.g. ".png;.jpg". NULL means no filter. */
-    void* sdl_filters; /** SDL_DialogFileFilter array for the SDL native dialog. Kept alive until the next dialog opens or the widget is destroyed. */
-    char* sdl_pending_path; /** Path selected in the SDL native dialog, SDL_strdup'd off-thread and applied on the main thread. */
+    void* sdl_dialog; /** The SDL native dialog open for the widget, if any. It owns its filters and result, and outlives the widget, which only detaches from it when destroyed. */
 } nk_console_file_data;
 
 #if defined(__cplusplus)
@@ -401,6 +400,24 @@ static void nk_console_file_entries_clear(nk_console_file_data* data) {
     cvector_clear(data->entries);
 }
 
+#if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
+/**
+ * A native file dialog open for a file widget.
+ *
+ * SDL can't cancel a dialog, so its callback may run after the widget is gone. The request
+ * outlives both: a destroyed widget only clears `file`, and the request is freed on the main
+ * thread once the dialog's result has been handled.
+ *
+ * @internal
+ */
+typedef struct nk_console_file_sdl_dialog {
+    nk_console* file; /** The widget the dialog is for, or NULL once the widget is destroyed. Only used on the main thread. */
+    SDL_DialogFileFilter* filters; /** The dialog's filters, which SDL requires to stay valid until its callback runs. */
+    char* path; /** The selected path, or NULL when the dialog was cancelled. */
+    nk_bool failed; /** True when the dialog couldn't be shown. */
+} nk_console_file_sdl_dialog;
+#endif
+
 /**
  * Event handler: Destroy the file widget.
  *
@@ -419,17 +436,11 @@ static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
         data->filter = NULL;
     }
 
-    // Free any SDL dialog filters.
-    if (data->sdl_filters != NULL) {
-        nk_console_mfree(nk_handle_id(0), data->sdl_filters);
-        data->sdl_filters = NULL;
-    }
-
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
-    // Free any staged dialog path that was never applied.
-    if (data->sdl_pending_path != NULL) {
-        SDL_free(data->sdl_pending_path);
-        data->sdl_pending_path = NULL;
+    // A dialog that's still open outlives the widget, so leave it nothing to report back to.
+    if (data->sdl_dialog != NULL) {
+        ((nk_console_file_sdl_dialog*)data->sdl_dialog)->file = NULL;
+        data->sdl_dialog = NULL;
     }
 #endif
 
@@ -956,14 +967,6 @@ static void nk_console_file_open_browser(nk_console* file);
  */
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
 /**
- * SDL_MainThreadCallback that opens the built-in file browser when the native dialog couldn't be shown.
- * @internal
- */
-static void nk_console_file_sdl_dialog_fallback(void* userdata) {
-    nk_console_file_open_browser((nk_console*)userdata);
-}
-
-/**
  * Whether a gamepad press activated the file widget this frame, rather than the mouse or keyboard.
  * @internal
  */
@@ -974,66 +977,73 @@ static nk_bool nk_console_file_gamepad_activated(nk_console* file) {
 }
 
 /**
- * SDL_MainThreadCallback that applies the staged dialog path to the file widget.
+ * SDL_MainThreadCallback that hands a finished dialog's result to its widget, when the widget
+ * still exists, and frees the dialog request.
+ *
+ * A dialog that couldn't be shown opens the built-in file browser instead.
+ *
  * @internal
  */
-static void nk_console_file_sdl_dialog_apply(void* userdata) {
-    nk_console* file = (nk_console*)userdata;
-    nk_console_file_data* data = (nk_console_file_data*)file->data;
-    if (data == NULL || data->sdl_pending_path == NULL) {
-        return;
+static void nk_console_file_sdl_dialog_finish(void* userdata) {
+    nk_console_file_sdl_dialog* dialog = (nk_console_file_sdl_dialog*)userdata;
+    nk_console* file = dialog->file;
+    nk_console_file_data* data = file != NULL ? (nk_console_file_data*)file->data : NULL;
+    if (data != NULL) {
+        if (data->sdl_dialog == dialog) {
+            data->sdl_dialog = NULL;
+        }
+        if (dialog->failed) {
+            nk_console_file_open_browser(file);
+        }
+        else if (dialog->path != NULL) {
+            int len = nk_strlen(dialog->path);
+            if (len < data->file_path_buffer_size) {
+                NK_MEMCPY(data->file_path_buffer, dialog->path, (nk_size)(len + 1));
+                nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+            }
+        }
     }
-    int len = nk_strlen(data->sdl_pending_path);
-    if (len < data->file_path_buffer_size) {
-        NK_MEMCPY(data->file_path_buffer, data->sdl_pending_path, (nk_size)(len + 1));
-        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
+
+    if (dialog->filters != NULL) {
+        NK_CONSOLE_FREE(nk_handle_id(0), dialog->filters);
     }
-    SDL_free(data->sdl_pending_path);
-    data->sdl_pending_path = NULL;
+    SDL_free(dialog->path);
+    SDL_free(dialog);
 }
 
 /**
  * SDL_DialogFileCallback fired when the native file/folder picker closes.
  *
  * SDL may invoke this from a different thread than the one that opened the
- * dialog, so it only stages the selected path in the widget data and defers
- * the console state changes to the main thread via SDL_RunOnMainThread().
- * No mutex is needed: only one dialog is open per widget at a time, and
- * SDL_RunOnMainThread() orders the staged write before the main-thread read.
+ * dialog, and after the widget is destroyed, so it only records the result in
+ * the dialog request and hands it to the main thread, which owns the widget,
+ * via SDL_RunOnMainThread(). That also orders these writes before the main
+ * thread reads them.
  *
  * @internal
  */
 static void nk_console_file_sdl_dialog_callback(void* userdata, const char* const* filelist, int filter) {
     NK_UNUSED(filter);
-    nk_console* file = (nk_console*)userdata;
-    nk_console_file_data* data = (nk_console_file_data*)file->data;
-    if (data == NULL) return;
+    nk_console_file_sdl_dialog* dialog = (nk_console_file_sdl_dialog*)userdata;
     if (filelist == NULL) {
         /* The dialog couldn't be shown, so browse with the built-in file browser instead. */
         SDL_LogWarn(SDL_LOG_CATEGORY_APPLICATION, "nk_console: file dialog failed, using the built-in browser: %s", SDL_GetError());
-        SDL_RunOnMainThread(nk_console_file_sdl_dialog_fallback, file, false);
-        return;
+        dialog->failed = nk_true;
     }
-    if (filelist[0] == NULL) return; /* dialog cancelled */
+    else if (filelist[0] != NULL) {
+        dialog->path = SDL_strdup(filelist[0]);
+    }
 
-    char* path = SDL_strdup(filelist[0]);
-    if (path == NULL) return;
-    if (data->sdl_pending_path != NULL) {
-        SDL_free(data->sdl_pending_path);
-    }
-    data->sdl_pending_path = path;
-
-    if (!SDL_RunOnMainThread(nk_console_file_sdl_dialog_apply, file, false)) {
-        SDL_free(data->sdl_pending_path);
-        data->sdl_pending_path = NULL;
-    }
+    // On the main thread this runs right away. Should SDL fail to queue it from another thread,
+    // the request is leaked rather than freed while the widget may still point at it.
+    SDL_RunOnMainThread(nk_console_file_sdl_dialog_finish, dialog, false);
 }
 
 /**
  * Build a heap-allocated array of SDL_DialogFileFilter from the semicolon-separated filter string.
  * Returns NULL if filter is NULL or empty. SDL requires the array to remain valid at least until
- * the dialog callback is invoked, so the caller stores it in data->sdl_filters, where it is freed
- * on the next dialog open, or when the widget is destroyed.
+ * the dialog callback is invoked, so the dialog request owns it, and frees it once the dialog
+ * has finished.
  * @internal
  */
 static SDL_DialogFileFilter* nk_console_file_build_sdl_filters(const char* filter, int* out_count) {
@@ -1132,29 +1142,32 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
 
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
     // A gamepad can't drive the native dialog, so gamepad users get the built-in browser.
-    if (!nk_console_file_gamepad_activated(file)) {
+    nk_console_file_sdl_dialog* dialog = nk_console_file_gamepad_activated(file) ? NULL : (nk_console_file_sdl_dialog*)SDL_calloc(1, sizeof(nk_console_file_sdl_dialog));
+    if (dialog != NULL) {
         nk_console_file_data* data = (nk_console_file_data*)file->data;
+
+        // A dialog that's still open finishes on its own; only the new one reports back.
+        if (data->sdl_dialog != NULL) {
+            ((nk_console_file_sdl_dialog*)data->sdl_dialog)->file = NULL;
+        }
+        dialog->file = file;
+        data->sdl_dialog = dialog;
 
         // Parent the dialog to the application's window so that it displays as a modal.
         SDL_Window* sdl_window = nk_console_file_sdl_dialog_window(file);
 
-        // Free the filters from any previous dialog; its callback has already run.
-        if (data->sdl_filters != NULL) {
-            NK_CONSOLE_FREE(nk_handle_id(0), data->sdl_filters);
-            data->sdl_filters = NULL;
-        }
-
         // SDL requires the filters to stay valid until the dialog callback is invoked,
-        // so keep them alive in the widget data rather than freeing them here.
+        // so the dialog request keeps them.
         int filter_count = 0;
-        SDL_DialogFileFilter* sdl_filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
-        data->sdl_filters = sdl_filters;
+        dialog->filters = nk_console_file_build_sdl_filters(data->filter, &filter_count);
         const char* starting = data->starting_directory[0] ? data->starting_directory : NULL;
+
+        // The dialog can finish, and free its request, before these return.
         if (data->select_directory) {
-            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, starting, false);
+            SDL_ShowOpenFolderDialog(nk_console_file_sdl_dialog_callback, dialog, sdl_window, starting, false);
         }
         else {
-            SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, file, sdl_window, sdl_filters, filter_count, starting, false);
+            SDL_ShowOpenFileDialog(nk_console_file_sdl_dialog_callback, dialog, sdl_window, dialog->filters, filter_count, starting, false);
         }
         return;
     }
