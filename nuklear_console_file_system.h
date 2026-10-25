@@ -32,7 +32,6 @@ extern "C" {
 extern "C" {
 #endif
 
-// TODO: Allow disabling tinydir
 #ifndef NK_CONSOLE_FILE_ADD_FILES
 #ifdef NK_CONSOLE_ENABLE_TINYDIR
 
@@ -93,7 +92,7 @@ static nk_bool nk_console_file_add_files_tinydir(nk_console* parent, const char*
 // Tell the file widget to use the tinydir file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_tinydir
 
-// Raylib support
+// Raylib
 #elif defined(NK_CONSOLE_ENABLE_RAYLIB) || defined(RAYLIB_VERSION)
 
 /**
@@ -133,7 +132,7 @@ static nk_bool nk_console_file_add_files_raylib(nk_console* console, const char*
 // Tell the file widget to use the raylib file system.
 #define NK_CONSOLE_FILE_ADD_FILES nk_console_file_add_files_raylib
 
-// SDL3 support
+// SDL3
 #elif defined(NK_CONSOLE_ENABLE_SDL3) || (defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION == 3)
 
 typedef struct {
@@ -149,7 +148,8 @@ static SDL_EnumerationResult SDLCALL nk_console_file_add_files_sdl3_callback(voi
     size_t dirlen = SDL_strlen(dirname);
     if (dirlen > 0 && dirname[dirlen - 1] == '/') {
         SDL_snprintf(fullpath, sizeof(fullpath), "%s%s", dirname, fname);
-    } else {
+    }
+    else {
         SDL_snprintf(fullpath, sizeof(fullpath), "%s/%s", dirname, fname);
     }
 

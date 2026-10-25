@@ -1,6 +1,8 @@
 #ifndef NK_CONSOLE_H__
 #define NK_CONSOLE_H__
 
+#include "nuklear_console_gamepad_stub.h"
+
 struct nk_console;
 struct nk_console_event_handler;
 
@@ -69,8 +71,7 @@ typedef enum {
     NK_CONSOLE_COLOR,
     NK_CONSOLE_INPUT,
     NK_CONSOLE_INPUT_ACTIVE,
-    NK_CONSOLE_KEY,
-    NK_CONSOLE_KEY_ACTIVE,
+
     NK_CONSOLE_RADIO,
     NK_CONSOLE_KNOB_INT,
     NK_CONSOLE_KNOB_FLOAT,
@@ -79,10 +80,37 @@ typedef enum {
     NK_CONSOLE_LIST_VIEW,
 } nk_console_widget_type;
 
+#ifndef NK_CONSOLE_MESSAGE_MAX_LENGTH
+/**
+ * Maximum number of characters stored per message (excluding null terminator).
+ * Define this before including nuklear_console.h to override the default.
+ */
+#define NK_CONSOLE_MESSAGE_MAX_LENGTH 255
+#endif
+
 typedef struct nk_console_message {
-    char text[256];
+    char text[NK_CONSOLE_MESSAGE_MAX_LENGTH + 1];
     float duration;
+    float scroll_x;
+    /**
+     * Whether this message slides in and out. Decided once, when the message is
+     * queued, so that it can never switch mid-flight and teleport across the screen.
+     */
+    nk_bool animate;
 } nk_console_message;
+
+/**
+ * Indicates which screen edge a message slides in from.
+ *
+ * @see nk_console_set_message_position()
+ * @see nk_console_get_message_position()
+ */
+typedef enum {
+    NK_CONSOLE_MESSAGE_POSITION_BOTTOM = 0, /** Slide in from the bottom of the screen (default). */
+    NK_CONSOLE_MESSAGE_POSITION_TOP, /** Slide in from the top edge. */
+    NK_CONSOLE_MESSAGE_POSITION_LEFT, /** Slide in from the left edge. */
+    NK_CONSOLE_MESSAGE_POSITION_RIGHT, /** Slide in from the right edge. */
+} nk_console_message_position;
 
 typedef struct nk_console {
     nk_console_widget_type type;
@@ -106,13 +134,16 @@ typedef struct nk_console {
     // Events
     nk_console_event_handler* events; /** Events handled for the widget. */
     nk_console_render_event render; /** Render the widget. */
+
+    // Styles
+    const struct nk_style* style; /** When set, the style used to render this widget and its children. NULL inherits the parent's style, falling back to the context's own ctx->style. The caller keeps ownership, and the style must outlive the widget. @see nk_console_set_style() */
 } nk_console;
 
 typedef struct nk_console_top_data {
     nk_console* active_parent; /** The parent that is currently being displayed. */
     nk_bool input_processed; /** Whether or not user input has been processed. */
     nk_bool scrollbar_required; /** True when the scrollbar is needed to be rendered. @see nk_console_render_window() */
-    nk_console* scroll_to_widget; /** When set by nk_console_navigate_back, the render loop scrolls the window to this widget's bounds. */
+    nk_console* scroll_to_widget; /** When set, the render loop scrolls the window to this widget's bounds. @see nk_console_set_active_parent() */
 
     /**
      * Message queue that is to be shown.
@@ -123,6 +154,23 @@ typedef struct nk_console_top_data {
      * When set, will determine where messages should appear on the screen.
      */
     struct nk_rect message_bounds;
+
+    /**
+     * Which screen edge messages slide in from.
+     *
+     * @see nk_console_set_message_position()
+     * @see nk_console_get_message_position()
+     */
+    nk_console_message_position message_position;
+
+    /**
+     * True once a positive delta time has been observed, meaning the backend
+     * provides timing and messages can animate. Keeps message positioning
+     * stable on frames that report a zero delta (e.g. SDL's millisecond tick
+     * resolution at high frame rates), and disables the slide animation
+     * entirely on backends without timing.
+     */
+    nk_bool message_time_observed;
 
     /**
      * The gamepad system to use for gamepad input.
@@ -163,54 +211,143 @@ typedef struct nk_console_top_data {
     nk_bool axis_right_fired; /** True this frame if an axis fired a right event. */
 
     nk_bool drag_scroll_active; /** True when a drag-scroll gesture is in progress. */
+    nk_bool drag_scroll_initiated; /** True when the drag started from the content area (not scrollbar). */
     struct nk_vec2 drag_scroll_origin; /** Mouse position when the drag started. */
     nk_uint drag_scroll_start_x; /** Window scroll X at drag start. */
     nk_uint drag_scroll_start_y; /** Window scroll Y at drag start. */
     nk_uint drag_scroll_max_x; /** Maximum scroll X, updated each frame after render. */
     nk_uint drag_scroll_max_y; /** Maximum scroll Y, updated each frame after render. */
+
+    float tooltip_scroll_x; /** Horizontal marquee offset for the active tooltip. */
+    const char* tooltip_last; /** Pointer to the last tooltip shown; used to detect tooltip changes and reset scroll. */
 } nk_console_top_data;
 
 #if defined(__cplusplus)
 extern "C" {
 #endif
 
-// Console
+/** @defgroup console Console lifecycle */
+/** Initialize a top-level console for the given Nuklear context. @return The root console widget. */
 NK_API nk_console* nk_console_init(struct nk_context* context);
+/** Free the console and all its children. */
 NK_API void nk_console_free(nk_console* console);
+/** Render the console inside the current Nuklear window. */
 NK_API void nk_console_render(nk_console* console);
+/** Render the console inside a new Nuklear window. @return The bounding rect of the rendered window. */
 NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags);
 
-// Utilities
+/** @defgroup utilities Widget utilities */
+/** Return the top-level console that owns @p widget. */
 NK_API nk_console* nk_console_get_top(nk_console* widget);
+/** Return the zero-based index of @p widget among its siblings. */
 NK_API int nk_console_get_widget_index(nk_console* widget);
+/** Draw the tooltip for the currently active widget, if any. */
 NK_API void nk_console_check_tooltip(nk_console* console);
+/** Handle keyboard/gamepad up and down navigation for @p widget. */
 NK_API void nk_console_check_up_down(nk_console* widget);
+/** Return nk_true if @p widget is the currently focused widget. */
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget);
+/** Return the currently active parent (the visible menu level). */
 NK_API nk_console* nk_console_active_parent(nk_console* console);
+/** Set the active parent, switching the visible menu level. */
 NK_API void nk_console_set_active_parent(nk_console* new_parent);
+/** Set the focused widget within the active parent. */
 NK_API void nk_console_set_active_widget(nk_console* widget);
+/** Return the currently focused widget, or NULL if none. */
 NK_API nk_console* nk_console_get_active_widget(nk_console* widget);
+/** Allocate memory using the console's allocator (compatible with nk_allocator). */
 NK_API void* nk_console_malloc(nk_handle unused, void* old, nk_size size);
+/** Free memory using the console's allocator (compatible with nk_allocator). */
 NK_API void nk_console_mfree(nk_handle unused, void* ptr);
+/** Return nk_true if @p button was just pressed this frame (rising edge). */
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button);
+/** Return nk_true if @p button is currently held down. */
 NK_API nk_bool nk_console_button_down(nk_console* console, int button);
+/** Attach a nk_gamepads context to the console for gamepad input. */
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads);
+/** Return the nk_gamepads context attached to the console. */
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console);
+/** Set the number of gamepads polled each frame. */
 NK_API void nk_console_set_gamepad_num(nk_console* console, int num);
+/** Return the number of gamepads polled each frame. */
 NK_API int nk_console_get_gamepad_num(nk_console* console);
+/** Set the tooltip string shown when @p widget is focused. */
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip);
+/** Replace the label of @p widget; pass -1 for @p label_length to auto-detect. */
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length);
+/** Return the current label of @p widget. */
 NK_API const char* nk_console_get_label(nk_console* widget);
+/** Destroy and free all child widgets of @p console. */
 NK_API void nk_console_free_children(nk_console* console);
+/** Emit the Nuklear row layout for @p widget (called internally before rendering). */
 NK_API void nk_console_layout_widget(nk_console* widget);
+/** Append @p child as a child of @p parent. */
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child);
+/** Override the row height of @p widget in pixels. */
 NK_API void nk_console_set_height(nk_console* widget, int height);
+/** Return the row height of @p widget in pixels. */
 NK_API int nk_console_height(nk_console* widget);
+/**
+ * Set the style used to render @p widget and its children.
+ *
+ * Styles are shared by pointer, so a single style can be assigned to any number of widgets.
+ * The caller keeps ownership of @p style, and it must outlive the widget.
+ *
+ * @param widget The widget to style.
+ * @param style The style to use, or NULL to clear it and inherit the parent's style.
+ */
+NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style);
+/**
+ * Get the style that @p widget will render with: its own style, or the closest ancestor's.
+ *
+ * @param widget The widget to query.
+ * @return The effective style, or NULL when the context's own style is used.
+ */
+NK_API const struct nk_style* nk_console_get_style(nk_console* widget);
+/**
+ * Determine the row height that @p widget is laid out with, in pixels.
+ *
+ * The explicit height when one is set, otherwise the minimum row height for the
+ * widget's effective style. 0 means the window's default minimum row height is used.
+ *
+ * @param widget The widget to measure.
+ * @return The row height in pixels, or 0 to use the window's default minimum row height.
+ */
+NK_API float nk_console_layout_height(nk_console* widget);
+/**
+ * Apply @p widget's effective style to its context, saving the style it replaces.
+ *
+ * Internal helper used by the render paths. Nuklear has no push/pop for a whole
+ * style, so the context's style is swapped by value and put back by
+ * nk_console_style_end().
+ *
+ * @param widget The widget that is about to be rendered.
+ * @param saved Where the context's current style is saved. Left untouched when nk_false is returned.
+ * @return nk_true when a style was applied and must be restored, nk_false otherwise.
+ */
+NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved);
+/**
+ * Restore the style that nk_console_style_begin() replaced.
+ *
+ * Internal helper used by the render paths.
+ *
+ * @param widget The widget that finished rendering.
+ * @param saved The style saved by nk_console_style_begin().
+ * @param began The value that nk_console_style_begin() returned.
+ */
+NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began);
+/** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
+/** Return a human-readable name for @p type (e.g. "button"), or "unknown" for unrecognized values. */
+NK_API const char* nk_console_widget_type_name(nk_console_widget_type type);
 
+/** Fire all handlers registered for @p type on @p widget. @return nk_true if any handler ran. */
 NK_API nk_bool nk_console_trigger_event(nk_console* widget, nk_console_event_type type);
+/** Register a simple callback for @p type on @p widget (no user data or destructor). */
 NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback);
+/** Register a callback with user data and an optional destructor for @p type on @p widget. */
 NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data, nk_console_event destructor);
+/** Unregister and free a specific event handler from @p widget. */
 NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_event_handler* handler);
 
 // Backwards compatibility
@@ -233,6 +370,21 @@ NK_API void* nk_console_user_data(nk_console* console);
  * @param user_data The custom user data to set.
  */
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data);
+
+/**
+ * Set whether the widget is disabled. A disabled widget is grayed out and cannot receive input.
+ *
+ * @param widget The widget to enable or disable.
+ * @param disabled nk_true to disable, nk_false to enable.
+ */
+NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled);
+
+/**
+ * Returns nk_true if the widget is currently disabled.
+ *
+ * @param widget The widget to query.
+ */
+NK_API nk_bool nk_console_is_disabled(nk_console* widget);
 
 /**
  * Navigate back from the given widget to its parent, triggering NK_CONSOLE_EVENT_BACK.
@@ -286,10 +438,10 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #include "nuklear_console_file_system.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
-#include "nuklear_console_key.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
+#include "nuklear_console_marquee.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
@@ -371,19 +523,67 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #endif
 #endif
 
+// When none of malloc/free/realloc are user-overridden, use a fat-pointer
+// scheme so all three route through Nuklear's allocator without stdlib.
+// Each allocation is prefixed by an nk_size storing the requested size so
+// that realloc can know how many bytes to copy when growing the block.
+#if !defined(cvector_clib_malloc) && !defined(cvector_clib_free) && !defined(cvector_clib_realloc)
+/**
+ * Allocate @p size bytes via NK_CONSOLE_MALLOC, prefixing the block with an
+ * nk_size header that records the requested size for use by
+ * nk_console_cvector_realloc().
+ * @param size Number of bytes to allocate.
+ * @return Pointer to the usable region, or NULL on failure.
+ */
+static void* nk_console_cvector_malloc(nk_size size) {
+    nk_size* block = (nk_size*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, size + sizeof(nk_size));
+    if (!block) return NULL;
+    *block = size;
+    return (void*)(block + 1);
+}
+/**
+ * Free a pointer previously returned by nk_console_cvector_malloc() or
+ * nk_console_cvector_realloc() via NK_CONSOLE_FREE.
+ * @param ptr Pointer to free, or NULL (no-op).
+ */
+static void nk_console_cvector_free(void* ptr) {
+    if (!ptr) return;
+    NK_CONSOLE_FREE(nk_handle_id(0), (nk_size*)ptr - 1);
+}
+/**
+ * Resize a block previously returned by nk_console_cvector_malloc().
+ * Copies the lesser of the old and new sizes, then frees the old block.
+ * @param old_ptr Existing allocation, or NULL to perform a fresh allocation.
+ * @param new_size Desired size in bytes.
+ * @return Pointer to the resized region, or NULL on allocation failure.
+ */
+static void* nk_console_cvector_realloc(void* old_ptr, nk_size new_size) {
+    void* new_ptr = nk_console_cvector_malloc(new_size);
+    if (!new_ptr) return NULL;
+    if (old_ptr) {
+        nk_size old_size = *((nk_size*)old_ptr - 1);
+        NK_MEMCPY(new_ptr, old_ptr, old_size < new_size ? old_size : new_size);
+        nk_console_cvector_free(old_ptr);
+    }
+    return new_ptr;
+}
+#define cvector_clib_malloc(size) nk_console_cvector_malloc(size)
+#define cvector_clib_free(ptr) nk_console_cvector_free(ptr)
+#define cvector_clib_realloc(ptr, size) nk_console_cvector_realloc(ptr, size)
+#else
 #ifndef cvector_clib_free
 #define cvector_clib_free(ptr) nk_console_mfree(nk_handle_id(0), ptr)
 #endif
 #ifndef cvector_clib_malloc
 #define cvector_clib_malloc(size) nk_console_malloc(nk_handle_id(0), NULL, size)
 #endif
-#ifndef cvector_clib_calloc
-#define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
-#endif
 #ifndef cvector_clib_realloc
-// TODO: Implement our own realloc() using Nuklear's allocator.
 #include <stdlib.h>
 #define cvector_clib_realloc(ptr, size) realloc(ptr, size)
+#endif
+#endif
+#ifndef cvector_clib_calloc
+#define cvector_clib_calloc(count, size) NK_ASSERT(0 && "cvector_clib_calloc is not supported")
 #endif
 #ifndef cvector_clib_assert
 #define cvector_clib_assert(expression) NK_ASSERT(expression)
@@ -392,13 +592,36 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #define cvector_clib_memcpy(dest, src, count) NK_MEMCPY(dest, src, count)
 #endif
 #ifndef cvector_clib_memmove
-// TODO: Implement our own memmove() using Nuklear's allocators
-// #define cvector_clib_memmove(dest, src, count) NK_ASSERT(0 && "cvector_clib_memmove is not supported")
+/**
+ * Move @p count bytes from @p src to @p dest, correctly handling overlapping
+ * regions by using a forward copy when dest <= src and a backward copy
+ * otherwise (Nuklear does not provide memmove).
+ * @param dest Destination buffer.
+ * @param src  Source buffer.
+ * @param count Number of bytes to move.
+ * @return @p dest.
+ */
+static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size count) {
+    unsigned char* d = (unsigned char*)dest;
+    const unsigned char* s = (const unsigned char*)src;
+    if (d == s || count == 0) return dest;
+    if (d < s) {
+        while (count--) *d++ = *s++;
+    }
+    else {
+        d += count;
+        s += count;
+        while (count--) *--d = *--s;
+    }
+    return dest;
+}
+#define cvector_clib_memmove(dest, src, count) nk_console_cvector_memmove(dest, src, count)
 #endif
 #ifndef CVECTOR_H
 #define CVECTOR_H "vendor/c-vector/cvector.h"
 #endif
 #include CVECTOR_H
+
 
 #ifdef __cplusplus
 extern "C" {
@@ -410,12 +633,13 @@ extern "C" {
 #include "nuklear_console_combobox.h"
 #include "nuklear_console_file.h"
 #include "nuklear_console_file_system.h"
+#include "nuklear_console_gamepad_stub.h"
 #include "nuklear_console_image.h"
 #include "nuklear_console_input.h"
-#include "nuklear_console_key.h"
 #include "nuklear_console_knob.h"
 #include "nuklear_console_label.h"
 #include "nuklear_console_list_view.h"
+#include "nuklear_console_marquee.h"
 #include "nuklear_console_message.h"
 #include "nuklear_console_progress.h"
 #include "nuklear_console_property.h"
@@ -568,12 +792,18 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
         return;
     }
 
-    // When switching parents, bring the window scroll to the top to that the window doesn't appear empty.
-    // TODO: Fix the scroll on the new window, since it may not be centered on the active widget.
-    nk_window_set_scroll(top->ctx, 0, 0);
-
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->active_parent = new_parent;
+
+    // When switching parents, scroll to the new parent's active widget so it stays in view.
+    // With no active widget, bring the window scroll to the top so that the window doesn't appear empty.
+    // Skipped when no window is current (outside a frame), where nk_window_set_scroll() would assert.
+    if (new_parent->activeWidget != NULL) {
+        data->scroll_to_widget = new_parent->activeWidget;
+    }
+    else if (top->ctx != NULL && top->ctx->current != NULL) {
+        nk_window_set_scroll(top->ctx, 0, 0);
+    }
 }
 
 /**
@@ -603,6 +833,70 @@ NK_API int nk_console_height(nk_console* widget) {
         return 0;
     }
     return widget->height;
+}
+
+NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style) {
+    if (widget == NULL) {
+        return;
+    }
+    widget->style = style;
+}
+
+NK_API const struct nk_style* nk_console_get_style(nk_console* widget) {
+    while (widget != NULL) {
+        if (widget->style != NULL) {
+            return widget->style;
+        }
+        widget = widget->parent;
+    }
+    return NULL;
+}
+
+NK_API float nk_console_layout_height(nk_console* widget) {
+    if (widget == NULL) {
+        return 0.0f;
+    }
+
+    if (widget->height > 0) {
+        return (float)widget->height;
+    }
+
+    const struct nk_style* style = nk_console_get_style(widget);
+    if (style == NULL || widget->ctx == NULL) {
+        return 0.0f;
+    }
+
+    const struct nk_user_font* font = style->font != NULL ? style->font : widget->ctx->style.font;
+    if (font == NULL) {
+        return 0.0f;
+    }
+
+    // Match Nuklear's minimum row height, but for the widget's own style.
+    return font->height + style->text.padding.y * 2.0f + style->window.min_row_height_padding * 2.0f;
+}
+
+NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved) {
+    if (widget == NULL || widget->ctx == NULL || saved == NULL) {
+        return nk_false;
+    }
+
+    // Applying the context's own style would be a no-op.
+    const struct nk_style* style = nk_console_get_style(widget);
+    if (style == NULL || style == &widget->ctx->style) {
+        return nk_false;
+    }
+
+    // Nuklear has no push/pop for a whole style, so swap it by value.
+    *saved = widget->ctx->style;
+    widget->ctx->style = *style;
+    return nk_true;
+}
+
+NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began) {
+    if (began == nk_false || widget == NULL || widget->ctx == NULL || saved == NULL) {
+        return;
+    }
+    widget->ctx->style = *saved;
 }
 
 /**
@@ -780,36 +1074,80 @@ NK_API nk_bool nk_console_selectable(nk_console* widget) {
 }
 
 /**
+ * Get a human-readable name for the given widget type.
+ *
+ * @param type The widget type to name.
+ *
+ * @return A static string naming the type (e.g. "button"), or "unknown" for unrecognized values.
+ */
+NK_API const char* nk_console_widget_type_name(nk_console_widget_type type) {
+    switch (type) {
+        case NK_CONSOLE_UNKNOWN: return "unknown";
+        case NK_CONSOLE_PARENT: return "parent";
+        case NK_CONSOLE_LABEL: return "label";
+        case NK_CONSOLE_BUTTON: return "button";
+        case NK_CONSOLE_CHECKBOX: return "checkbox";
+        case NK_CONSOLE_PROGRESS: return "progress";
+        case NK_CONSOLE_COMBOBOX: return "combobox";
+        case NK_CONSOLE_PROPERTY_INT: return "property_int";
+        case NK_CONSOLE_PROPERTY_FLOAT: return "property_float";
+        case NK_CONSOLE_SLIDER_INT: return "slider_int";
+        case NK_CONSOLE_SLIDER_FLOAT: return "slider_float";
+        case NK_CONSOLE_ROW: return "row";
+        case NK_CONSOLE_TEXTEDIT: return "textedit";
+        case NK_CONSOLE_TEXTEDIT_TEXT: return "textedit_text";
+        case NK_CONSOLE_FILE: return "file";
+        case NK_CONSOLE_IMAGE: return "image";
+        case NK_CONSOLE_SPACING: return "spacing";
+        case NK_CONSOLE_COLOR: return "color";
+        case NK_CONSOLE_INPUT: return "input";
+        case NK_CONSOLE_INPUT_ACTIVE: return "input_active";
+        case NK_CONSOLE_RADIO: return "radio";
+        case NK_CONSOLE_KNOB_INT: return "knob_int";
+        case NK_CONSOLE_KNOB_FLOAT: return "knob_float";
+        case NK_CONSOLE_RULE_HORIZONTAL: return "rule_horizontal";
+        case NK_CONSOLE_TREE: return "tree";
+        case NK_CONSOLE_LIST_VIEW: return "list_view";
+        default: return "unknown";
+    }
+}
+
+#ifndef NK_CONSOLE_TOOLTIP_SCROLL_SPEED
+#define NK_CONSOLE_TOOLTIP_SCROLL_SPEED NK_CONSOLE_MARQUEE_SCROLL_SPEED
+#endif
+#ifndef NK_CONSOLE_TOOLTIP_SCROLL_PAUSE
+#define NK_CONSOLE_TOOLTIP_SCROLL_PAUSE NK_CONSOLE_MARQUEE_SCROLL_PAUSE
+#endif
+
+/**
  * Display a tooltip with the given text.
  *
  * @see nk_tooltip()
- * @todo Support multiline tooltips with nk_text_calculate_text_bounds()
  */
-static void nk_console_tooltip_display(struct nk_context* ctx, const char* text) {
-    const struct nk_style* style;
-    struct nk_vec2 padding;
-    struct nk_vec2 zero;
-    nk_zero_struct(zero);
-
-    style = &ctx->style;
-    padding = style->window.padding;
-
-    float text_height = (style->font->height + padding.y);
+static void nk_console_tooltip_display(nk_console* console, const char* text) {
+    struct nk_context* ctx = console->ctx;
+    const struct nk_style* style = &ctx->style;
+    float text_height = style->font->height + style->window.padding.y;
     float x = ctx->input.mouse.pos.x;
     float y = ctx->input.mouse.pos.y;
 
-    // Display the tooltip at the bottom of the window, manipulating the mouse position
     struct nk_rect windowbounds = nk_window_get_bounds(ctx);
     ctx->input.mouse.pos.x = windowbounds.x;
-    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - padding.y * 2.0f - ctx->style.window.border;
+    ctx->input.mouse.pos.y = windowbounds.y + windowbounds.h - text_height - style->window.padding.y * 2.0f - style->window.border;
 
-    if (nk_tooltip_begin_offset(ctx, windowbounds.w - ctx->style.window.border, NK_TOP_LEFT, zero)) {
-        nk_layout_row_dynamic(ctx, text_height, 1);
-        nk_text_wrap(ctx, text, nk_strlen(text));
-        nk_tooltip_end(ctx);
+    nk_console_top_data* data = (nk_console_top_data*)nk_console_get_top(console)->data;
+
+    // Reset scroll on tooltip change. Relies on pointer identity — works for string
+    // literals and persistent pointers; resets every frame for stack-allocated strings.
+    if (data->tooltip_last != text) {
+        data->tooltip_last = text;
+        data->tooltip_scroll_x = 0.0f;
     }
 
-    // Restore the mouse x/y positions.
+    int text_len = nk_strlen(text);
+    float full_text_width = style->font->width(style->font->userdata, style->font->height, text, text_len);
+    nk_console_marquee_tooltip_render(ctx, text, text_len, full_text_width, windowbounds.w - style->window.border, text_height, NK_CONSOLE_TOOLTIP_SCROLL_SPEED, NK_CONSOLE_TOOLTIP_SCROLL_PAUSE, &data->tooltip_scroll_x);
+
     ctx->input.mouse.pos.x = x;
     ctx->input.mouse.pos.y = y;
 }
@@ -823,7 +1161,7 @@ NK_API void nk_console_check_tooltip(nk_console* console) {
     }
 
     if (console->tooltip != NULL) {
-        nk_console_tooltip_display(console->ctx, console->tooltip);
+        nk_console_tooltip_display(console, console->tooltip);
     }
 }
 
@@ -913,27 +1251,116 @@ static void nk_console_axis_update(nk_console* console) {
 static void nk_console_window_touch_drag(nk_console* console, nk_console_top_data* top_data) {
     struct nk_input* in = &console->ctx->input;
     if (nk_window_is_hovered(console->ctx) && nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT)) {
-        top_data->drag_scroll_origin = in->mouse.pos;
-        nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
-        top_data->drag_scroll_active = nk_false;
+        struct nk_rect content = nk_window_get_content_region(console->ctx);
+        top_data->drag_scroll_initiated = nk_input_is_mouse_hovering_rect(in, content);
+        if (top_data->drag_scroll_initiated) {
+            top_data->drag_scroll_origin = in->mouse.pos;
+            nk_window_get_scroll(console->ctx, &top_data->drag_scroll_start_x, &top_data->drag_scroll_start_y);
+            top_data->drag_scroll_active = nk_false;
+        }
     }
     if (nk_input_is_mouse_down(in, NK_BUTTON_LEFT)) {
-        float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
-        float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
-        if (!top_data->drag_scroll_active &&
-            (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
-            top_data->drag_scroll_active = nk_true;
-        }
-        if (top_data->drag_scroll_active) {
-            nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
-            nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
-            nk_window_set_scroll(console->ctx, sx, sy);
-            top_data->input_processed = nk_true;
+        if (top_data->drag_scroll_initiated) {
+            float dy = top_data->drag_scroll_origin.y - in->mouse.pos.y;
+            float dx = top_data->drag_scroll_origin.x - in->mouse.pos.x;
+            if (!top_data->drag_scroll_active &&
+                (dy * dy + dx * dx) > NK_CONSOLE_DRAG_THRESHOLD * NK_CONSOLE_DRAG_THRESHOLD) {
+                top_data->drag_scroll_active = nk_true;
+            }
+            if (top_data->drag_scroll_active) {
+                nk_uint sx = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_x + dx, (float)top_data->drag_scroll_max_x);
+                nk_uint sy = (nk_uint)NK_CLAMP(0.0f, (float)top_data->drag_scroll_start_y + dy, (float)top_data->drag_scroll_max_y);
+                nk_window_set_scroll(console->ctx, sx, sy);
+                top_data->input_processed = nk_true;
+            }
         }
     }
     else {
         top_data->drag_scroll_active = nk_false;
+        top_data->drag_scroll_initiated = nk_false;
     }
+}
+
+/**
+ * Ensures a selectable active widget exists in parent, picking the first selectable if needed.
+ *
+ * @param parent The parent console widget whose active widget should be validated.
+ */
+static void nk_console_ensure_active_widget(nk_console* parent) {
+    if (parent->activeWidget == NULL) {
+        nk_console_set_active_widget(nk_console_find_first_selectable(parent));
+        return;
+    }
+    for (size_t i = 0; i < cvector_size(parent->children); ++i) {
+        if (parent->children[i] == parent->activeWidget) {
+            if (nk_console_selectable(parent->activeWidget)) {
+                return;
+            }
+            break;
+        }
+    }
+    nk_console_set_active_widget(nk_console_find_first_selectable(parent));
+}
+
+/**
+ * Invokes and erases all one-shot post-render events on the given console.
+ *
+ * @param console The top-level console whose post-render event queue should be processed.
+ */
+static void nk_console_process_post_render_events(nk_console* console) {
+    size_t count = cvector_size(console->events);
+    if (count == 0) {
+        return;
+    }
+    for (size_t i = count; i-- > 0;) {
+        if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
+            if (console->events[i].callback != NULL) {
+                console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
+            }
+            cvector_erase(console->events, i);
+        }
+    }
+}
+
+/**
+ * Recomputes drag-scroll bounds from the current window layout.
+ *
+ * @param console The top-level console widget.
+ * @param data The top-level data associated with the console.
+ */
+static void nk_console_update_drag_scroll(nk_console* console, nk_console_top_data* data) {
+    if (console->ctx->current == NULL) {
+        return;
+    }
+    struct nk_rect content = nk_window_get_content_region(console->ctx);
+    float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
+    data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
+    data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
+}
+
+/**
+ * Renders the top-level console: processes input, renders children, and handles post-render events.
+ *
+ * @param console The top-level console widget to render.
+ */
+static void nk_console_render_top(nk_console* console) {
+    nk_console_top_data* data = (nk_console_top_data*)console->data;
+    data->input_processed = nk_false;
+    nk_console_axis_update(console);
+    nk_console_window_touch_drag(console, data);
+    nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
+    nk_console_render_message(console);
+
+    if (data->active_parent->children != NULL) {
+        nk_console_ensure_active_widget(data->active_parent);
+        for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
+            nk_console_render(data->active_parent->children[i]);
+        }
+    }
+
+    nk_console_process_post_render_events(console);
+    // Update drag scroll bounds so they're valid when called directly (e.g. SDL/GLFW) rather than via nk_console_render_window.
+    nk_console_update_drag_scroll(console, data);
 }
 
 NK_API void nk_console_render(nk_console* console) {
@@ -941,117 +1368,54 @@ NK_API void nk_console_render(nk_console* console) {
         return;
     }
 
-    // First run on this game loop
+    // Push any styles. Skip the push when the effective style is already active.
+    struct nk_style saved_style;
+    nk_bool style_pushed = nk_console_style_begin(console, &saved_style);
+
     if (console->parent == NULL) {
-        nk_console_top_data* data = (nk_console_top_data*)console->data;
+        nk_console_render_top(console);
 
-        // Reset the input state and calculate new axis data.
-        data->input_processed = nk_false;
-        nk_console_axis_update(console);
-        nk_console_window_touch_drag(console, data);
-
-        nk_console_trigger_event(data->active_parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER);
-
-        // Render the active message.
-        nk_console_render_message(console);
-
-        // Render all of the parent's children.
-        if (data->active_parent->children != NULL) {
-            // Make sure there's an active widget selected.
-            if (data->active_parent->activeWidget == NULL) {
-                nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
-            }
-            else {
-                // Make sure the widget actually exists and can be selected.
-                nk_bool widgetFound = nk_false;
-                for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
-                    if (data->active_parent->children[i] == data->active_parent->activeWidget) {
-                        // Ensure the widget is still selectable.
-                        if (nk_console_selectable(data->active_parent->activeWidget)) {
-                            widgetFound = nk_true;
-                        }
-                        break;
-                    }
-                }
-                if (widgetFound == nk_false) {
-                    nk_console_set_active_widget(nk_console_find_first_selectable(data->active_parent));
-                }
-            }
-
-            // Render all the children
-            for (size_t i = 0; i < cvector_size(data->active_parent->children); ++i) {
-                nk_console_render(data->active_parent->children[i]);
-            }
-        }
-
-        // Invoke the post-render events.
-        size_t count = cvector_size(console->events);
-        if (count > 0) {
-            nk_bool can_erase = nk_true;
-            for (size_t i = 0; i < count; i++) {
-                if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
-                    // Call the callback if it's set.
-                    if (console->events[i].callback != NULL) {
-                        console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
-                        console->events[i].callback = NULL;
-                    }
-                }
-                else {
-                    can_erase = nk_false;
-                }
-            }
-            if (can_erase) {
-                cvector_clear(console->events);
-            }
-        }
-
-        // Update drag scroll bounds so they're valid when nk_console_render is called directly (e.g. SDL/GLFW demos) rather than via nk_console_render_window.
-        if (console->ctx->current != NULL) {
-            struct nk_rect content = nk_window_get_content_region(console->ctx);
-            float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
-            data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
-            data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
-        }
-
+        // Finish the styles.
+        nk_console_style_end(console, &saved_style, style_pushed);
         return;
     }
 
-    // Render the widget and get its bounds.
     struct nk_rect widget_bounds = console->render != NULL ? console->render(console) : nk_rect(0, 0, 0, 0);
 
-    // When nk_console_navigate_back targeted this widget, scroll the window to show it.
-    if (widget_bounds.w > 0 && widget_bounds.h > 0) {
-        nk_console* top = nk_console_get_top(console);
-        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
-        if (top_data->scroll_to_widget == console) {
-            struct nk_rect content_region = nk_window_get_content_region(console->ctx);
-            nk_uint offsetx, offsety;
-            nk_window_get_scroll(console->ctx, &offsetx, &offsety);
-            if (widget_bounds.y + widget_bounds.h > content_region.y + content_region.h + (float)offsety) {
-                nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y + widget_bounds.h - content_region.y - content_region.h));
-            }
-            else if (widget_bounds.y < content_region.y + (float)offsety) {
-                nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y - content_region.y));
-            }
-            top_data->scroll_to_widget = NULL;
+    // Finish the styles.
+    nk_console_style_end(console, &saved_style, style_pushed);
+
+    if (widget_bounds.w <= 0 || widget_bounds.h <= 0) {
+        return;
+    }
+
+    nk_console* top = nk_console_get_top(console);
+    nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+
+    // When navigation targeted this widget, scroll the window to show it.
+    if (top_data->scroll_to_widget == console) {
+        struct nk_rect content_region = nk_window_get_content_region(console->ctx);
+        nk_uint offsetx, offsety;
+        nk_window_get_scroll(console->ctx, &offsetx, &offsety);
+        if (widget_bounds.y + widget_bounds.h > content_region.y + content_region.h + (float)offsety) {
+            nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y + widget_bounds.h - content_region.y - content_region.h));
         }
+        else if (widget_bounds.y < content_region.y + (float)offsety) {
+            nk_window_set_scroll(console->ctx, offsetx, (nk_uint)(widget_bounds.y - content_region.y));
+        }
+        top_data->scroll_to_widget = NULL;
     }
 
     // Allow the mouse to switch focus to the widget.
-    if (widget_bounds.w > 0 && widget_bounds.h > 0 && nk_input_is_mouse_moved(&console->ctx->input)) {
-        // Make sure we consider the active scroll position of the window.
+    if (nk_input_is_mouse_moved(&console->ctx->input)) {
         nk_uint window_scroll_x, window_scroll_y;
         nk_window_get_scroll(console->ctx, &window_scroll_x, &window_scroll_y);
         widget_bounds.x -= (float)window_scroll_x;
         widget_bounds.y -= (float)window_scroll_y;
-
-        nk_console* top = nk_console_get_top(console);
-        nk_console_top_data* data = (nk_console_top_data*)top->data;
-        if (data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
-            // Select the widget, if possible.
+        if (top_data->input_processed == nk_false && nk_input_is_mouse_hovering_rect(&console->ctx->input, widget_bounds)) {
             if (nk_console_selectable(console)) {
                 nk_console_set_active_widget(console);
-                data->input_processed = nk_true;
+                top_data->input_processed = nk_true;
             }
         }
     }
@@ -1149,9 +1513,8 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
         float rendered_h = console->ctx->current->layout->at_y - console->ctx->current->layout->bounds.y + console->ctx->current->layout->row.height;
         window_bounds = nk_window_get_bounds(console->ctx);
         window_bounds.h = window_bounds.h - content.h + rendered_h;
-        top_data->drag_scroll_max_y = (nk_uint)NK_MAX(0.0f, rendered_h - content.h);
-        top_data->drag_scroll_max_x = (nk_uint)NK_MAX(0.0f, console->ctx->current->layout->max_x - console->ctx->current->layout->bounds.x - content.w);
     }
+    nk_console_update_drag_scroll(console, top_data);
 
     // Finish the window processing.
     nk_end(console->ctx);
@@ -1166,6 +1529,15 @@ NK_API void nk_console_free(nk_console* console) {
         return;
     }
     nk_handle handle = {0};
+
+    // Make sure the top doesn't keep a dangling scroll target to this widget.
+    nk_console* top = nk_console_get_top(console);
+    if (top != console && top->data != NULL) {
+        nk_console_top_data* top_data = (nk_console_top_data*)top->data;
+        if (top_data->scroll_to_widget == console) {
+            top_data->scroll_to_widget = NULL;
+        }
+    }
 
     // Clean up the events
     if (console->events != NULL) {
@@ -1220,6 +1592,16 @@ NK_API void nk_console_set_user_data(nk_console* console, void* user_data) {
     data->user_data = user_data;
 }
 
+NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled) {
+    if (widget == NULL) return;
+    widget->disabled = disabled;
+}
+
+NK_API nk_bool nk_console_is_disabled(nk_console* widget) {
+    if (widget == NULL) return nk_false;
+    return widget->disabled;
+}
+
 NK_API void nk_console_free_children(nk_console* console) {
     if (console == NULL || console->children == NULL) {
         return;
@@ -1264,7 +1646,7 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
     }
 
     // Since we're not within a row, the widget owns the whole row.
-    nk_layout_row_dynamic(widget->ctx, (float)widget->height, widget->columns);
+    nk_layout_row_dynamic(widget->ctx, nk_console_layout_height(widget), widget->columns);
 }
 
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads) {
@@ -1323,15 +1705,34 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
         return;
     }
     nk_console* top = nk_console_get_top(leaving_parent);
+    nk_console_top_data* data = (nk_console_top_data*)top->data;
     if (leaving_parent == top) {
+        // Still trigger the back event if we're trying to leave the top.
+        nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
+        data->input_processed = nk_true;
         return;
     }
-    nk_console* destination = (leaving_parent->parent != NULL) ? leaving_parent->parent : top;
+
+    // Traverse up until we're not on a row or tree. Rows and trees can't act as
+    // active parents (their children render through the container, not directly),
+    // so keep skipping them and let target track the direct child of the
+    // destination, so focus lands on a navigable widget.
+    nk_console* target = leaving_parent;
+    while (target != top && (target->type == NK_CONSOLE_ROW || target->type == NK_CONSOLE_TREE)) {
+        target = (target->parent != NULL) ? target->parent : top;
+    }
+
+    // Verify the destination, and find the target.
+    nk_console* destination = (target->parent != NULL) ? target->parent : top;
+    while (destination != top && (destination->type == NK_CONSOLE_ROW || destination->type == NK_CONSOLE_TREE)) {
+        target = destination;
+        destination = (destination->parent != NULL) ? destination->parent : top;
+    }
+
     nk_console_set_active_parent(destination);
-    nk_console_set_active_widget(leaving_parent);
-    nk_console_top_data* data = (nk_console_top_data*)top->data;
+    nk_console_set_active_widget(target);
     if (data != NULL) {
-        data->scroll_to_widget = leaving_parent;
+        data->scroll_to_widget = target;
         data->input_processed = nk_true;
     }
     nk_console_trigger_event(leaving_parent, NK_CONSOLE_EVENT_BACK);
@@ -1402,10 +1803,11 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
         nk_console_set_active_parent(target);
     }
     else {
+        // Focus the target before switching parents, so that the parent switch scrolls to it.
+        nk_console_set_active_widget(target);
         if (target->parent != NULL) {
             nk_console_set_active_parent(target->parent);
         }
-        nk_console_set_active_widget(target);
     }
     return nk_true;
 }

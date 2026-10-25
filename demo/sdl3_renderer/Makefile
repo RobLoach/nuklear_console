@@ -1,6 +1,6 @@
 BIN = nuklear_console_demo_sdl3
 
-CFLAGS += -std=c11 -pedantic -O0 -g
+CFLAGS += -std=c11 -Wall -Wextra -pedantic -O0 -g
 CFLAGS += $(shell pkg-config --cflags sdl3)
 
 SRC = main.c
