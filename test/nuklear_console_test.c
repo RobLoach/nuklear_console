@@ -644,6 +644,18 @@ int main() {
         nk_console_chart_update(chart, chart_values, 6, 0.0f, 1.0f);
         nk_console* chart_col = nk_console_chart(console, NULL, NK_CHART_COLUMN, chart_values, 6, 0.0f, 1.0f);
         assert(chart_col != NULL);
+        assert(chart->columns == 2);
+        assert(chart_col->columns == 1);
+        nk_console_chart_data* chart_data = (nk_console_chart_data*)chart->data;
+        assert(chart_data->min_value == 0.0f && chart_data->max_value == 1.0f);
+        nk_console_chart_update(chart, chart_values, 3, 0.0f, 100.0f);
+        assert(chart_data->count == 3);
+        assert(chart_data->max_value == 100.0f);
+
+        // Taller chart
+        nk_console_set_height(chart_col, 120);
+        assert(nk_console_height(chart_col) == 120);
+        assert(nk_console_layout_height(chart_col) == 120.0f);
     }
 
     // nk_console_rule_horizontal()

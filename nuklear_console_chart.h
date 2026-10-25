@@ -13,7 +13,14 @@ typedef struct nk_console_chart_data {
 extern "C" {
 #endif
 
-/** Add a chart widget displaying @p values of the given @p type. @return The new widget. */
+/**
+ * Add a chart widget displaying @p values of the given @p type, scaled between @p min_value and @p max_value.
+ *
+ * When @p label is provided, it is displayed in a column next to the chart.
+ * Use nk_console_set_height() to make the chart taller than a regular row.
+ *
+ * @return The new widget.
+ */
 NK_API nk_console* nk_console_chart(nk_console* parent, const char* label, enum nk_chart_type type, const float* values, int count, float min_value, float max_value);
 /** Update the data of an existing chart widget. */
 NK_API void nk_console_chart_update(nk_console* chart, const float* values, int count, float min_value, float max_value);
@@ -53,7 +60,13 @@ NK_API struct nk_rect nk_console_chart_render(nk_console* console) {
         nk_widget_disable_begin(console->ctx);
     }
 
-    nk_plot(console->ctx, data->type, data->values, data->count, 0);
+    // Use the given range so the chart doesn't auto-scale to its values.
+    if (nk_chart_begin(console->ctx, data->type, data->count, data->min_value, data->max_value)) {
+        for (int i = 0; i < data->count; i++) {
+            nk_chart_push(console->ctx, data->values[i]);
+        }
+        nk_chart_end(console->ctx);
+    }
 
     if (console->disabled) {
         nk_widget_disable_end(console->ctx);

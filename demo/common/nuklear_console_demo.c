@@ -68,6 +68,8 @@ static nk_bool checkbox6 = nk_true;
 // Chart
 static const float chart_line_values[] = {0.1f, 0.5f, 0.3f, 0.9f, 0.4f, 0.7f, 0.2f, 0.8f};
 static const float chart_col_values[] = {0.6f, 0.3f, 0.8f, 0.1f, 0.5f, 0.9f, 0.4f, 0.7f};
+static const float chart_cpu_values[] = {12.0f, 25.0f, 18.0f, 42.0f, 65.0f, 38.0f, 55.0f, 30.0f};
+static const float chart_fps_values[] = {60.0f, 58.0f, 59.0f, 45.0f, 52.0f, 60.0f, 57.0f, 60.0f};
 
 // Messages
 static int message_count = 0;
@@ -358,6 +360,12 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_chart(chart_button, NULL, NK_CHART_LINES, chart_line_values, 8, 0.0f, 1.0f);
             nk_console_label(chart_button, "Column Chart");
             nk_console_chart(chart_button, NULL, NK_CHART_COLUMN, chart_col_values, 8, 0.0f, 1.0f);
+            nk_console_label(chart_button, "Labeled Charts");
+            nk_console_chart(chart_button, "CPU Usage (%)", NK_CHART_LINES, chart_cpu_values, 8, 0.0f, 100.0f);
+            nk_console_chart(chart_button, "FPS", NK_CHART_COLUMN, chart_fps_values, 8, 0.0f, 60.0f);
+            nk_console_label(chart_button, "Tall Chart");
+            struct nk_console* tall_chart = nk_console_chart(chart_button, NULL, NK_CHART_LINES, chart_line_values, 8, 0.0f, 1.0f);
+            nk_console_set_height(tall_chart, 120);
             nk_console_button_onclick(chart_button, "Back", &nk_console_button_back);
         }
 
