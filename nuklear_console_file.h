@@ -436,27 +436,18 @@ static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
         data->filter = NULL;
     }
 
-    // Clear all the file entries.
-    nk_console_file_entries_clear(data);
-    cvector_free(data->entries);
-    data->entries = NULL;
-}
-
-/**
- * Event handler: The file widget is being freed.
- *
- * @internal
- */
-static void nk_console_file_event_destroyed(nk_console* file, void* user_data) {
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
     // A dialog that's still open outlives the widget, so leave it nothing to report back to.
-    nk_console_file_data* data = file != NULL ? (nk_console_file_data*)file->data : NULL;
-    if (data != NULL && data->sdl_dialog != NULL) {
+    if (data->sdl_dialog != NULL) {
         ((nk_console_file_sdl_dialog*)data->sdl_dialog)->file = NULL;
         data->sdl_dialog = NULL;
     }
 #endif
-    nk_console_file_event_destroy(file, user_data);
+
+    // Clear all the file entries.
+    nk_console_file_entries_clear(data);
+    cvector_free(data->entries);
+    data->entries = NULL;
 }
 
 #ifdef NK_CONSOLE_FILE_ADD_FILES
@@ -1045,9 +1036,7 @@ static void nk_console_file_sdl_dialog_callback(void* userdata, const char* cons
 
     // On the main thread this runs right away. Should SDL fail to queue it from another thread,
     // the request is leaked rather than freed while the widget may still point at it.
-    if (!SDL_RunOnMainThread(nk_console_file_sdl_dialog_finish, dialog, false) && SDL_IsMainThread()) {
-        nk_console_file_sdl_dialog_finish(dialog);
-    }
+    SDL_RunOnMainThread(nk_console_file_sdl_dialog_finish, dialog, false);
 }
 
 /**
@@ -1336,7 +1325,7 @@ NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* 
 
     nk_console_add_event(widget, NK_CONSOLE_EVENT_CLICKED, &nk_console_file_event_clicked);
     nk_console_add_event(widget, NK_CONSOLE_EVENT_BACK, &nk_console_file_event_back);
-    nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_event_destroyed);
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_file_event_destroy);
 
     return widget;
 }
