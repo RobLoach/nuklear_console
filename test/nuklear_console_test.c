@@ -240,6 +240,16 @@ int main() {
         assert(combobox != NULL);
     }
 
+    // nk_console_combobox() with NULL items must not crash
+    {
+        static int value_null_combobox = 5;
+        nk_console* combobox_null = nk_console_combobox(console, "NullComboBox", NULL, '|', &value_null_combobox);
+        assert(combobox_null != NULL);
+        assert(value_null_combobox == 0);
+        // Only the back button should be a child (no item children).
+        assert(cvector_size(combobox_null->children) == 1);
+    }
+
     // nk_console_property_int/float()
     {
         static int property_int_test = 10;
