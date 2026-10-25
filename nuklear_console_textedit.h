@@ -12,16 +12,24 @@
 /**
  * Maximum number of characters shown in the textedit button preview.
  */
-#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 10
+#define NK_CONSOLE_TEXTEDIT_PREVIEW_LENGTH 12
 #endif
+
+/**
+ * @def NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+ *
+ * Define to lay out the on-screen keyboard's letter keys in alphabetical order (ABCDEF).
+ *
+ * When it is not defined, the on-screen keyboard uses the default QWERTY order.
+ */
 
 /**
  * A key entry in a keyboard layout row.
  * A row is a NULL-terminated array of these; the last entry has normal == NULL.
  */
 typedef struct nk_console_textedit_key {
-    const char* normal;   /**< Label when shift is off; NULL terminates a row. */
-    const char* shifted;  /**< Label when shift is on; NULL means same as normal. */
+    const char* normal; /**< Label when shift is off; NULL terminates a row. */
+    const char* shifted; /**< Label when shift is on; NULL means same as normal. */
 } nk_console_textedit_key;
 
 typedef struct nk_console_textedit_data {
@@ -87,32 +95,96 @@ extern "C" {
 
 /* Default ASCII keyboard layout rows (NULL-terminated; last row gets Shift+Backspace). */
 static const nk_console_textedit_key nk_console_textedit_ascii_row0[] = {
-    {"1","!"}, {"2","@"}, {"3","#"}, {"4","$"}, {"5","%"},
-    {"6","^"}, {"7","&"}, {"8","*"}, {"9","("}, {"0",")"},
-    {NULL, NULL}
-};
+    {"1", "!"},
+    {"2", "@"},
+    {"3", "#"},
+    {"4", "$"},
+    {"5", "%"},
+    {"6", "^"},
+    {"7", "&"},
+    {"8", "*"},
+    {"9", "("},
+    {"0", ")"},
+    {NULL, NULL}};
+#ifdef NK_CONSOLE_TEXTEDIT_KEYBOARD_ALPHABETICAL
+/* Letter rows in alphabetical order. */
 static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
-    {"q","Q"}, {"w","W"}, {"e","E"}, {"r","R"}, {"t","T"},
-    {"y","Y"}, {"u","U"}, {"i","I"}, {"o","O"}, {"p","P"},
-    {NULL, NULL}
-};
+    {"a", "A"},
+    {"b", "B"},
+    {"c", "C"},
+    {"d", "D"},
+    {"e", "E"},
+    {"f", "F"},
+    {"g", "G"},
+    {"h", "H"},
+    {"i", "I"},
+    {"j", "J"},
+    {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
-    {"a","A"}, {"s","S"}, {"d","D"}, {"f","F"}, {"g","G"},
-    {"h","H"}, {"j","J"}, {"k","K"}, {"l","L"}, {".",">"},
-    {NULL, NULL}
-};
+    {"k", "K"},
+    {"l", "L"},
+    {"m", "M"},
+    {"n", "N"},
+    {"o", "O"},
+    {"p", "P"},
+    {"q", "Q"},
+    {"r", "R"},
+    {"s", "S"},
+    {"t", "T"},
+    {NULL, NULL}};
 static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
-    {"z","Z"}, {"x","X"}, {"c","C"}, {"v","V"}, {"b","B"},
-    {"n","N"}, {"m","M"}, {",","<"},
-    {NULL, NULL}
-};
+    {"u", "U"},
+    {"v", "V"},
+    {"w", "W"},
+    {"x", "X"},
+    {"y", "Y"},
+    {"z", "Z"},
+    {".", ">"},
+    {",", "<"},
+    {NULL, NULL}};
+#else
+/* Letter rows in QWERTY order. */
+static const nk_console_textedit_key nk_console_textedit_ascii_row1[] = {
+    {"q", "Q"},
+    {"w", "W"},
+    {"e", "E"},
+    {"r", "R"},
+    {"t", "T"},
+    {"y", "Y"},
+    {"u", "U"},
+    {"i", "I"},
+    {"o", "O"},
+    {"p", "P"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row2[] = {
+    {"a", "A"},
+    {"s", "S"},
+    {"d", "D"},
+    {"f", "F"},
+    {"g", "G"},
+    {"h", "H"},
+    {"j", "J"},
+    {"k", "K"},
+    {"l", "L"},
+    {".", ">"},
+    {NULL, NULL}};
+static const nk_console_textedit_key nk_console_textedit_ascii_row3[] = {
+    {"z", "Z"},
+    {"x", "X"},
+    {"c", "C"},
+    {"v", "V"},
+    {"b", "B"},
+    {"n", "N"},
+    {"m", "M"},
+    {",", "<"},
+    {NULL, NULL}};
+#endif
 static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
     nk_console_textedit_ascii_row0,
     nk_console_textedit_ascii_row1,
     nk_console_textedit_ascii_row2,
     nk_console_textedit_ascii_row3,
-    NULL
-};
+    NULL};
 
 /**
  * Frees all the children for the given textedit as an event.
@@ -319,6 +391,7 @@ NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user
 NK_API nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size) {
     // Create the widget data.
     nk_console_textedit_data* data = (nk_console_textedit_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_textedit_data));
+    if (data == NULL) return NULL;
     nk_zero(data, sizeof(nk_console_textedit_data));
 
     // Create the textedit widget.
