@@ -635,6 +635,29 @@ int main() {
         assert(radio3 != NULL);
     }
 
+    // nk_console_chart()
+    {
+        static const float chart_values[] = {0.1f, 0.5f, 0.3f, 0.8f, 0.2f, 0.9f};
+        nk_console* chart = nk_console_chart(console, "Chart", NK_CHART_LINES, chart_values, 6, 0.0f, 1.0f);
+        assert(chart != NULL);
+        assert(chart->type == NK_CONSOLE_CHART);
+        nk_console_chart_update(chart, chart_values, 6, 0.0f, 1.0f);
+        nk_console* chart_col = nk_console_chart(console, NULL, NK_CHART_COLUMN, chart_values, 6, 0.0f, 1.0f);
+        assert(chart_col != NULL);
+        assert(chart->columns == 2);
+        assert(chart_col->columns == 1);
+        nk_console_chart_data* chart_data = (nk_console_chart_data*)chart->data;
+        assert(chart_data->min_value == 0.0f && chart_data->max_value == 1.0f);
+        nk_console_chart_update(chart, chart_values, 3, 0.0f, 100.0f);
+        assert(chart_data->count == 3);
+        assert(chart_data->max_value == 100.0f);
+
+        // Taller chart
+        nk_console_set_height(chart_col, 120);
+        assert(nk_console_height(chart_col) == 120);
+        assert(nk_console_layout_height(chart_col) == 120.0f);
+    }
+
     // nk_console_rule_horizontal()
     {
         static struct nk_color rule_color = {200, 200, 200, 255};
@@ -986,12 +1009,13 @@ int main() {
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_BUTTON), "button") == 0);
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_LABEL), "label") == 0);
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_UNKNOWN), "unknown") == 0);
+        assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_CHART), "chart") == 0);
 
         // Out-of-range values fall back to "unknown".
-        assert(strcmp(nk_console_widget_type_name((nk_console_widget_type)(NK_CONSOLE_LIST_VIEW + 1)), "unknown") == 0);
+        assert(strcmp(nk_console_widget_type_name((nk_console_widget_type)(NK_CONSOLE_CHART + 1)), "unknown") == 0);
 
         // Every widget type has a non-NULL name.
-        for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_LIST_VIEW; type++) {
+        for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_CHART; type++) {
             assert(nk_console_widget_type_name((nk_console_widget_type)type) != NULL);
         }
     }
