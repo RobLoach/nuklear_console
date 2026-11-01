@@ -12,8 +12,9 @@
 /**
  * NK_CONSOLE_FILE_SDL_NATIVE_DIALOG: When enabled in SDL3, will enable file widgets to use the native file dialogs.
  * Auto-enabled when SDL3 is detected. Define NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG to disable.
- * A gamepad can't drive the native dialog, so widgets activated with a gamepad, or whose dialog fails to open
- * (for example, with no portal or zenity on Linux), use the built-in file browser instead.
+ * The native dialog only opens when the widget is clicked with the mouse. Widgets activated with the keyboard or a
+ * gamepad, or whose dialog fails to open (for example, with no portal or zenity on Linux), use the built-in file
+ * browser instead.
  */
 #if !defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && !defined(NK_CONSOLE_FILE_NO_SDL_NATIVE_DIALOG) && defined(SDL_MAJOR_VERSION) && SDL_MAJOR_VERSION >= 3
 #define NK_CONSOLE_FILE_SDL_NATIVE_DIALOG
@@ -967,13 +968,15 @@ static void nk_console_file_open_browser(nk_console* file);
  */
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
 /**
- * Whether a gamepad press activated the file widget this frame, rather than the mouse or keyboard.
+ * Whether a mouse click activated the file widget this frame, rather than the keyboard or a gamepad.
  * @internal
  */
-static nk_bool nk_console_file_gamepad_activated(nk_console* file) {
-    nk_console* top = nk_console_get_top(file);
-    nk_console_top_data* top_data = top != NULL ? (nk_console_top_data*)top->data : NULL;
-    return top_data != NULL && nk_gamepad_is_button_released(top_data->gamepads, top_data->gamepad_num, NK_GAMEPAD_BUTTON_A);
+static nk_bool nk_console_file_mouse_activated(nk_console* file) {
+    if (file->ctx == NULL || nk_console_button_pushed(file, NK_GAMEPAD_BUTTON_A)) {
+        return nk_false;
+    }
+    const struct nk_input* in = &file->ctx->input;
+    return nk_input_is_mouse_pressed(in, NK_BUTTON_LEFT) || nk_input_is_mouse_released(in, NK_BUTTON_LEFT);
 }
 
 /**
@@ -1141,8 +1144,8 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     }
 
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
-    // A gamepad can't drive the native dialog, so gamepad users get the built-in browser.
-    nk_console_file_sdl_dialog* dialog = nk_console_file_gamepad_activated(file) ? NULL : (nk_console_file_sdl_dialog*)SDL_calloc(1, sizeof(nk_console_file_sdl_dialog));
+    // Only mouse users get the native dialog; keyboard and gamepad users get the built-in browser.
+    nk_console_file_sdl_dialog* dialog = !nk_console_file_mouse_activated(file) ? NULL : (nk_console_file_sdl_dialog*)SDL_calloc(1, sizeof(nk_console_file_sdl_dialog));
     if (dialog != NULL) {
         nk_console_file_data* data = (nk_console_file_data*)file->data;
 
