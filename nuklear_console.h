@@ -138,6 +138,7 @@ typedef struct nk_console {
 
     // Styles
     const struct nk_style* style; /** When set, the style used to render this widget and its children. NULL inherits the parent's style, falling back to the context's own ctx->style. The caller keeps ownership, and the style must outlive the widget. @see nk_console_set_style() */
+    nk_bool style_inherits; /** When true, the widget's children inherit its style. When false, the style applies to the widget only. Defaults to true. @see nk_console_set_style_inherits() */
 } nk_console;
 
 typedef struct nk_console_top_data {
@@ -305,6 +306,23 @@ NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* styl
  * @return The effective style, or NULL when the context's own style is used.
  */
 NK_API const struct nk_style* nk_console_get_style(nk_console* widget);
+/**
+ * Set whether @p widget's children inherit its style.
+ *
+ * When disabled, the style set with nk_console_set_style() applies to @p widget only, and its
+ * children skip it, inheriting from a further ancestor or the context's own style instead.
+ *
+ * @param widget The widget to change.
+ * @param inherits nk_true (the default) to let children inherit the style, nk_false to keep it to the widget.
+ */
+NK_API void nk_console_set_style_inherits(nk_console* widget, nk_bool inherits);
+/**
+ * Get whether @p widget's children inherit its style.
+ *
+ * @param widget The widget to query.
+ * @return nk_true when children inherit the widget's style, nk_false otherwise.
+ */
+NK_API nk_bool nk_console_get_style_inherits(nk_console* widget);
 /**
  * Determine the row height that @p widget is laid out with, in pixels.
  *
@@ -846,13 +864,35 @@ NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* styl
 }
 
 NK_API const struct nk_style* nk_console_get_style(nk_console* widget) {
-    while (widget != NULL) {
-        if (widget->style != NULL) {
+    // The widget's own style always applies to itself.
+    if (widget == NULL) {
+        return NULL;
+    }
+    if (widget->style != NULL) {
+        return widget->style;
+    }
+
+    // Inherit the closest ancestor's style, skipping ancestors that don't pass theirs on.
+    for (widget = widget->parent; widget != NULL; widget = widget->parent) {
+        if (widget->style != NULL && widget->style_inherits) {
             return widget->style;
         }
-        widget = widget->parent;
     }
     return NULL;
+}
+
+NK_API void nk_console_set_style_inherits(nk_console* widget, nk_bool inherits) {
+    if (widget == NULL) {
+        return;
+    }
+    widget->style_inherits = inherits;
+}
+
+NK_API nk_bool nk_console_get_style_inherits(nk_console* widget) {
+    if (widget == NULL) {
+        return nk_false;
+    }
+    return widget->style_inherits;
 }
 
 NK_API float nk_console_layout_height(nk_console* widget) {
@@ -1449,6 +1489,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
     console->ctx = context;
     console->alignment = NK_TEXT_ALIGN_CENTERED;
     console->visible = nk_true;
+    console->style_inherits = nk_true;
 
     nk_console_top_data* data = (nk_console_top_data*)nk_console_malloc(handle, NULL, sizeof(nk_console_top_data));
     nk_zero(data, sizeof(nk_console_top_data));

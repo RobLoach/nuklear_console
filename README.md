@@ -100,6 +100,8 @@ int nk_console_height(nk_console* widget);
 void nk_console_set_height(nk_console* widget, int height);
 const struct nk_style* nk_console_get_style(nk_console* widget);
 void nk_console_set_style(nk_console* widget, const struct nk_style* style);
+nk_bool nk_console_get_style_inherits(nk_console* widget);
+void nk_console_set_style_inherits(nk_console* widget, nk_bool inherits);
 nk_bool nk_console_is_active_widget(nk_console* widget);
 nk_bool nk_console_selectable(nk_console* widget);
 void nk_console_set_active_parent(nk_console* new_parent);

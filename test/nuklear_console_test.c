@@ -775,6 +775,32 @@ int main() {
         assert(style_child->style == NULL);
         assert(nk_console_get_style(style_child) == &big_style);
 
+        // Styles are inherited by default.
+        assert(style_parent->style_inherits == nk_true);
+        assert(nk_console_get_style_inherits(style_parent) == nk_true);
+        assert(nk_console_get_style_inherits(NULL) == nk_false);
+        nk_console_set_style_inherits(NULL, nk_false);
+
+        // Disabling inheritance keeps the style to the widget itself.
+        nk_console_set_style_inherits(style_parent, nk_false);
+        assert(nk_console_get_style_inherits(style_parent) == nk_false);
+        assert(nk_console_get_style(style_parent) == &big_style);
+        assert(nk_console_get_style(style_child) == NULL);
+
+        // A child's own style still applies.
+        nk_console_set_style(style_child, &small_style);
+        assert(nk_console_get_style(style_child) == &small_style);
+        nk_console_set_style(style_child, NULL);
+
+        // Children fall back to a further ancestor's style.
+        nk_console_set_style(style_parent->parent, &small_style);
+        assert(nk_console_get_style(style_child) == &small_style);
+        nk_console_set_style(style_parent->parent, NULL);
+
+        // Re-enabling inheritance restores it.
+        nk_console_set_style_inherits(style_parent, nk_true);
+        assert(nk_console_get_style(style_child) == &big_style);
+
         // nk_console_layout_height(): an explicit height wins.
         nk_console_set_height(style_child, 100);
         assert(nk_console_layout_height(style_child) == 100.0f);
