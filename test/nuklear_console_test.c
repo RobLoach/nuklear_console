@@ -560,10 +560,6 @@ int main() {
         msg.duration = 0.0f;
         assert(nk_console_message_slide_fraction(top_data, &msg) == 1.0f);
 
-        // NULL safety.
-        assert(nk_console_message_slide_fraction(NULL, &msg) == 0.0f);
-        assert(nk_console_message_slide_fraction(top_data, NULL) == 0.0f);
-
         // Whether a message animates is decided when it is queued, so it can never
         // flip mid-flight and teleport from its resting spot to off screen (#301).
         top_data->message_time_observed = nk_false;
@@ -733,11 +729,6 @@ int main() {
         static struct nk_style big_style;
         static struct nk_style small_style;
 
-        // NULL widgets are safe no-ops.
-        nk_console_set_style(NULL, NULL);
-        assert(nk_console_get_style(NULL) == NULL);
-        assert(nk_console_layout_height(NULL) == 0.0f);
-
         // By default, no style is set: the context's own style is used.
         nk_console* style_parent = nk_console_button(console, "Styles");
         nk_console* style_child = nk_console_label(style_parent, "Style Label");
@@ -778,8 +769,6 @@ int main() {
         // Styles are inherited by default.
         assert(style_parent->style_inherits == nk_true);
         assert(nk_console_get_style_inherits(style_parent) == nk_true);
-        assert(nk_console_get_style_inherits(NULL) == nk_false);
-        nk_console_set_style_inherits(NULL, nk_false);
 
         // Disabling inheritance keeps the style to the widget itself.
         nk_console_set_style_inherits(style_parent, nk_false);

@@ -47,44 +47,37 @@ extern "C" {
 #endif
 
 NK_API enum nk_symbol_type nk_console_button_get_symbol(nk_console* button) {
-    if (button == NULL || button->data == NULL) {
-        return NK_SYMBOL_NONE;
-    }
+    NK_ASSERT(button != NULL);
+    NK_ASSERT(button->data != NULL);
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     return data->symbol;
 }
 
 NK_API void nk_console_button_set_symbol(nk_console* button, enum nk_symbol_type symbol) {
-    if (button == NULL || button->data == NULL) {
-        return;
-    }
+    NK_ASSERT(button != NULL);
+    NK_ASSERT(button->data != NULL);
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     data->symbol = symbol;
 }
 
 NK_API void nk_console_button_set_image(nk_console* button, struct nk_image image) {
-    if (button == NULL || button->data == NULL) {
-        return;
-    }
+    NK_ASSERT(button != NULL);
+    NK_ASSERT(button->data != NULL);
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     data->image = image;
     data->has_image = nk_true;
 }
 
 NK_API struct nk_image nk_console_button_get_image(nk_console* button) {
-    if (button == NULL || button->data == NULL) {
-        struct nk_image output = {0};
-        return output;
-    }
+    NK_ASSERT(button != NULL);
+    NK_ASSERT(button->data != NULL);
     nk_console_button_data* data = (nk_console_button_data*)button->data;
     return data->image;
 }
 
 NK_API struct nk_rect nk_console_button_render(nk_console* console) {
     nk_console_button_data* data = (nk_console_button_data*)console->data;
-    if (data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data != NULL);
 
     nk_console* top = nk_console_get_top(console);
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
@@ -208,9 +201,7 @@ NK_API nk_console* nk_console_button(nk_console* parent, const char* text) {
  */
 NK_API void nk_console_button_back(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
-    if (button == NULL) {
-        return;
-    }
+    NK_ASSERT(button != NULL);
     nk_console_navigate_back(button->parent);
 }
 

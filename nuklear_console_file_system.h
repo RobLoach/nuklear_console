@@ -63,9 +63,8 @@ extern "C" {
  * @see nk_console_file_add_entry()
  */
 static nk_bool nk_console_file_add_files_tinydir(nk_console* parent, const char* directory) {
-    if (parent == NULL || directory == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(directory != NULL);
 
     tinydir_dir dir;
     if (tinydir_open_sorted(&dir, directory) == -1) {
@@ -178,9 +177,8 @@ static SDL_EnumerationResult SDLCALL nk_console_file_add_files_sdl3_callback(voi
  * @see nk_console_file_add_entry()
  */
 static nk_bool nk_console_file_add_files_sdl3(nk_console* console, const char* path) {
-    if (console == NULL || path == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(console != NULL);
+    NK_ASSERT(path != NULL);
 
     nk_console_file_add_files_sdl3_userdata data = {console, nk_false};
     SDL_EnumerateDirectory(path, nk_console_file_add_files_sdl3_callback, &data);

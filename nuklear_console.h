@@ -673,26 +673,20 @@ extern "C" {
 #include "nuklear_console_tree.h"
 
 NK_API const char* nk_console_get_label(nk_console* widget) {
-    if (widget == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(widget != NULL);
 
     return widget->label;
 }
 
 NK_API void nk_console_set_label(nk_console* widget, const char* label, int label_length) {
-    if (widget == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
 
     widget->label = label;
     widget->label_length = label_length;
 }
 
 NK_API void nk_console_set_tooltip(nk_console* widget, const char* tooltip) {
-    if (widget == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
 
     widget->tooltip = tooltip;
 }
@@ -710,9 +704,7 @@ NK_API inline void nk_console_add_event(nk_console* widget, nk_console_event_typ
 }
 
 NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data, nk_console_event destructor) {
-    if (widget == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
 
     // Manage the top level events.
     if (type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
@@ -777,26 +769,20 @@ NK_API void nk_console_set_active_widget(nk_console* widget) {
  * Retrieves the given widget's parent's active widget.
  */
 NK_API nk_console* nk_console_get_active_widget(nk_console* widget) {
-    if (widget == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(widget != NULL);
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
     return parent->activeWidget;
 }
 
 NK_API nk_bool nk_console_is_active_widget(nk_console* widget) {
-    if (widget == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(widget != NULL);
 
     nk_console* parent = widget->parent == NULL ? widget : widget->parent;
     return parent->activeWidget == widget;
 }
 
 NK_API nk_console* nk_console_active_parent(nk_console* console) {
-    if (console == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(console != NULL);
 
     nk_console* top = nk_console_get_top(console);
     nk_console* active_parent = ((nk_console_top_data*)top->data)->active_parent;
@@ -804,14 +790,10 @@ NK_API nk_console* nk_console_active_parent(nk_console* console) {
 }
 
 NK_API void nk_console_set_active_parent(nk_console* new_parent) {
-    if (new_parent == NULL) {
-        return;
-    }
+    NK_ASSERT(new_parent != NULL);
 
     nk_console* top = nk_console_get_top(new_parent);
-    if (top == NULL) {
-        return;
-    }
+    NK_ASSERT(top != NULL);
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->active_parent = new_parent;
@@ -831,9 +813,7 @@ NK_API void nk_console_set_active_parent(nk_console* new_parent) {
  * Get the top parent from a given widget.
  */
 NK_API nk_console* nk_console_get_top(nk_console* widget) {
-    if (widget == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(widget != NULL);
 
     while (widget->parent != NULL) {
         widget = widget->parent;
@@ -843,31 +823,23 @@ NK_API nk_console* nk_console_get_top(nk_console* widget) {
 }
 
 NK_API void nk_console_set_height(nk_console* widget, int height) {
-    if (widget == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
     widget->height = height < 0 ? 0 : height;
 }
 
 NK_API int nk_console_height(nk_console* widget) {
-    if (widget == NULL) {
-        return 0;
-    }
+    NK_ASSERT(widget != NULL);
     return widget->height;
 }
 
 NK_API void nk_console_set_style(nk_console* widget, const struct nk_style* style) {
-    if (widget == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
     widget->style = style;
 }
 
 NK_API const struct nk_style* nk_console_get_style(nk_console* widget) {
     // The widget's own style always applies to itself.
-    if (widget == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(widget != NULL);
     if (widget->style != NULL) {
         return widget->style;
     }
@@ -882,23 +854,17 @@ NK_API const struct nk_style* nk_console_get_style(nk_console* widget) {
 }
 
 NK_API void nk_console_set_style_inherits(nk_console* widget, nk_bool inherits) {
-    if (widget == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
     widget->style_inherits = inherits;
 }
 
 NK_API nk_bool nk_console_get_style_inherits(nk_console* widget) {
-    if (widget == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(widget != NULL);
     return widget->style_inherits;
 }
 
 NK_API float nk_console_layout_height(nk_console* widget) {
-    if (widget == NULL) {
-        return 0.0f;
-    }
+    NK_ASSERT(widget != NULL);
 
     if (widget->height > 0) {
         return (float)widget->height;
@@ -919,7 +885,9 @@ NK_API float nk_console_layout_height(nk_console* widget) {
 }
 
 NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved) {
-    if (widget == NULL || widget->ctx == NULL || saved == NULL) {
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(saved != NULL);
+    if (widget->ctx == NULL) {
         return nk_false;
     }
 
@@ -936,9 +904,12 @@ NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved
 }
 
 NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began) {
-    if (began == nk_false || widget == NULL || widget->ctx == NULL || saved == NULL) {
+    if (began == nk_false) {
         return;
     }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->ctx != NULL);
+    NK_ASSERT(saved != NULL);
     widget->ctx->style = *saved;
 }
 
@@ -948,9 +919,7 @@ NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* save
  * @return The index of the widget, or -1 on error
  */
 NK_API int nk_console_get_widget_index(nk_console* widget) {
-    if (widget == NULL) {
-        return -1;
-    }
+    NK_ASSERT(widget != NULL);
 
     nk_console* parent = widget->parent;
     if (parent == NULL) {
@@ -1089,7 +1058,8 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
  * @internal
  */
 static nk_console* nk_console_find_first_selectable(nk_console* parent) {
-    if (parent == NULL || parent->children == NULL) {
+    NK_ASSERT(parent != NULL);
+    if (parent->children == NULL) {
         return NULL;
     }
 
@@ -1109,9 +1079,7 @@ static nk_console* nk_console_find_first_selectable(nk_console* parent) {
  * Gets whether or not the given widget can be selected.
  */
 NK_API nk_bool nk_console_selectable(nk_console* widget) {
-    if (widget == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(widget != NULL);
 
     return widget->selectable && widget->visible && !widget->disabled;
 }
@@ -1200,9 +1168,7 @@ static void nk_console_tooltip_display(nk_console* console, const char* text) {
  * Sees if there's an active tooltip, and displays it as needed.
  */
 NK_API void nk_console_check_tooltip(nk_console* console) {
-    if (console == NULL) {
-        return;
-    }
+    NK_ASSERT(console != NULL);
 
     if (console->tooltip != NULL) {
         nk_console_tooltip_display(console, console->tooltip);
@@ -1408,7 +1374,8 @@ static void nk_console_render_top(nk_console* console) {
 }
 
 NK_API void nk_console_render(nk_console* console) {
-    if (console == NULL || console->visible == nk_false) {
+    NK_ASSERT(console != NULL);
+    if (console->visible == nk_false) {
         return;
     }
 
@@ -1517,13 +1484,7 @@ NK_API nk_console* nk_console_init(struct nk_context* context) {
 NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* title, struct nk_rect bounds, nk_uint flags) {
     nk_console_top_data* top_data;
     struct nk_rect window_bounds;
-    if (console == NULL) {
-        window_bounds.x = 0;
-        window_bounds.y = 0;
-        window_bounds.w = 0;
-        window_bounds.h = 0;
-        return window_bounds;
-    }
+    NK_ASSERT(console != NULL);
 
     // Determine if the scrollbar is needed.
     top_data = (nk_console_top_data*)console->data;
@@ -1620,35 +1581,32 @@ NK_API void nk_console_free(nk_console* console) {
 
 NK_API void* nk_console_user_data(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(top != NULL);
 
     return ((nk_console_top_data*)top->data)->user_data;
 }
 
 NK_API void nk_console_set_user_data(nk_console* console, void* user_data) {
     nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return;
-    }
+    NK_ASSERT(top != NULL);
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     data->user_data = user_data;
 }
 
 NK_API void nk_console_set_disabled(nk_console* widget, nk_bool disabled) {
-    if (widget == NULL) return;
+    NK_ASSERT(widget != NULL);
     widget->disabled = disabled;
 }
 
 NK_API nk_bool nk_console_is_disabled(nk_console* widget) {
-    if (widget == NULL) return nk_false;
+    NK_ASSERT(widget != NULL);
     return widget->disabled;
 }
 
 NK_API void nk_console_free_children(nk_console* console) {
-    if (console == NULL || console->children == NULL) {
+    NK_ASSERT(console != NULL);
+    if (console->children == NULL) {
         return;
     }
 
@@ -1675,8 +1633,10 @@ NK_API void nk_console_free_children(nk_console* console) {
  * @see nk_console::columns
  */
 NK_API void nk_console_layout_widget(nk_console* widget) {
+    NK_ASSERT(widget != NULL);
+
     // If the widget has 0 columns, don't do anything.
-    if (widget == NULL || widget->columns <= 0) {
+    if (widget->columns <= 0) {
         return;
     }
 
@@ -1696,59 +1656,41 @@ NK_API void nk_console_layout_widget(nk_console* widget) {
 
 NK_API void nk_console_set_gamepads(nk_console* console, struct nk_gamepads* gamepads) {
     nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return;
-    }
+    NK_ASSERT(top != NULL);
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
 
     data->gamepads = gamepads;
 }
 
 NK_API struct nk_gamepads* nk_console_get_gamepads(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(top != NULL);
 
     nk_console_top_data* data = (nk_console_top_data*)top->data;
-    if (data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(data != NULL);
     return data->gamepads;
 }
 
 NK_API void nk_console_set_gamepad_num(nk_console* console, int num) {
     nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return;
-    }
+    NK_ASSERT(top != NULL);
     nk_console_top_data* data = (nk_console_top_data*)top->data;
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
     data->gamepad_num = num;
 }
 
 NK_API int nk_console_get_gamepad_num(nk_console* console) {
     nk_console* top = nk_console_get_top(console);
-    if (top == NULL) {
-        return -1;
-    }
+    NK_ASSERT(top != NULL);
     nk_console_top_data* data = (nk_console_top_data*)top->data;
-    if (data == NULL) {
-        return -1;
-    }
+    NK_ASSERT(data != NULL);
     return data->gamepad_num;
 }
 
 NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
-    if (leaving_parent == NULL) {
-        return;
-    }
+    NK_ASSERT(leaving_parent != NULL);
     nk_console* top = nk_console_get_top(leaving_parent);
     nk_console_top_data* data = (nk_console_top_data*)top->data;
     if (leaving_parent == top) {
@@ -1784,9 +1726,8 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
 }
 
 NK_API nk_console* nk_console_find_by_path(nk_console* console, const char* path) {
-    if (console == NULL || path == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(console != NULL);
+    NK_ASSERT(path != NULL);
 
     nk_console* current = nk_console_get_top(console);
     if (path[0] == '\0') {
@@ -1858,9 +1799,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 }
 
 NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
-    if (console == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(console != NULL);
 
     // Get the top console.
     if (console->parent != NULL) {
@@ -1898,9 +1837,7 @@ NK_API nk_bool nk_console_button_pushed(nk_console* console, int button) {
 }
 
 NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
-    if (console == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(console != NULL);
 
     if (console->parent != NULL) {
         console = nk_console_get_top(console);
@@ -1924,9 +1861,8 @@ NK_API nk_bool nk_console_button_down(nk_console* console, int button) {
 }
 
 NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
-    if (parent == NULL || child == NULL) {
-        return;
-    }
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(child != NULL);
 
     // If we are adding it to a TREE, insert child as a sibling so navigation works naturally.
     if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL && parent->data != NULL) {

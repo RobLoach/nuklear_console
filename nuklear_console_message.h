@@ -90,14 +90,13 @@ extern "C" {
 #endif // NK_CONSOLE_MESSAGE_DURATION
 
 NK_API void nk_console_show_message(nk_console* console, const char* text) {
-    if (console == NULL || text == NULL || text[0] == '\0') {
+    NK_ASSERT(console != NULL);
+    if (text == NULL || text[0] == '\0') {
         return;
     }
 
     nk_console_top_data* data = (nk_console_top_data*)(nk_console_get_top(console)->data);
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
 
     // Only add the message if it's not already in the queue.
     nk_console_message* end = (nk_console_message*)cvector_end(data->messages);
@@ -145,7 +144,9 @@ NK_API void nk_console_show_message(nk_console* console, const char* text) {
  * yet) never jumps off screen once time starts flowing.
  */
 static float nk_console_message_slide_fraction(nk_console_top_data* data, nk_console_message* message) {
-    if (data == NULL || message == NULL || message->animate == nk_false) {
+    NK_ASSERT(data != NULL);
+    NK_ASSERT(message != NULL);
+    if (message->animate == nk_false) {
         return 0.0f;
     }
     float t = 0.0f;
@@ -165,9 +166,8 @@ static float nk_console_message_slide_fraction(nk_console_top_data* data, nk_con
 }
 
 NK_API void nk_console_message_render(nk_console* console, nk_console_message* message) {
-    if (message == NULL || console->data == NULL) {
-        return;
-    }
+    NK_ASSERT(message != NULL);
+    NK_ASSERT(console->data != NULL);
 
     // Retrieve style sizes.
     nk_console_top_data* data = (nk_console_top_data*)console->data;
@@ -250,47 +250,30 @@ NK_API void nk_console_render_message(nk_console* console) {
 }
 
 NK_API void nk_console_set_message_bounds(nk_console* console, struct nk_rect bounds) {
-    if (console == NULL) {
-        return;
-    }
+    NK_ASSERT(console != NULL);
     nk_console_top_data* data = (nk_console_top_data*)(nk_console_get_top(console)->data);
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
     data->message_bounds = bounds;
 }
 
 NK_API struct nk_rect nk_console_get_message_bounds(nk_console* console) {
-    struct nk_rect zero = {0, 0, 0, 0};
-    if (console == NULL) {
-        return zero;
-    }
+    NK_ASSERT(console != NULL);
     nk_console_top_data* data = (nk_console_top_data*)(nk_console_get_top(console)->data);
-    if (data == NULL) {
-        return zero;
-    }
+    NK_ASSERT(data != NULL);
     return data->message_bounds;
 }
 
 NK_API void nk_console_set_message_position(nk_console* console, nk_console_message_position position) {
-    if (console == NULL) {
-        return;
-    }
+    NK_ASSERT(console != NULL);
     nk_console_top_data* data = (nk_console_top_data*)(nk_console_get_top(console)->data);
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
     data->message_position = position;
 }
 
 NK_API nk_console_message_position nk_console_get_message_position(nk_console* console) {
-    if (console == NULL) {
-        return NK_CONSOLE_MESSAGE_POSITION_BOTTOM;
-    }
+    NK_ASSERT(console != NULL);
     nk_console_top_data* data = (nk_console_top_data*)(nk_console_get_top(console)->data);
-    if (data == NULL) {
-        return NK_CONSOLE_MESSAGE_POSITION_BOTTOM;
-    }
+    NK_ASSERT(data != NULL);
     return data->message_position;
 }
 

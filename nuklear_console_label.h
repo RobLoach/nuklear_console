@@ -72,9 +72,7 @@ NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_label(nk_console* parent, const char* text) {
-    if (parent == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
 
     nk_handle handle;
     nk_console* label = (nk_console*)nk_console_malloc(handle, NULL, sizeof(nk_console));

@@ -43,7 +43,8 @@ extern "C" {
 
 NK_API struct nk_rect nk_console_chart_render(nk_console* console) {
     nk_console_chart_data* data = (nk_console_chart_data*)console->data;
-    if (data == NULL || data->values == NULL || data->count <= 0) {
+    NK_ASSERT(data != NULL);
+    if (data->values == NULL || data->count <= 0) {
         return nk_rect(0, 0, 0, 0);
     }
 
@@ -103,7 +104,8 @@ NK_API nk_console* nk_console_chart(nk_console* parent, const char* label, enum 
 }
 
 NK_API void nk_console_chart_update(nk_console* chart, const float* values, int count, float min_value, float max_value) {
-    if (chart == NULL || chart->data == NULL) return;
+    NK_ASSERT(chart != NULL);
+    NK_ASSERT(chart->data != NULL);
     nk_console_chart_data* data = (nk_console_chart_data*)chart->data;
     data->values = values;
     data->count = count;

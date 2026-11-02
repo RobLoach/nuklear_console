@@ -260,9 +260,7 @@ extern "C" {
  * @internal
  */
 static const char* nk_console_file_basename(const char* path) {
-    if (path == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(path != NULL);
 
     int len = nk_strlen(path);
     for (int i = len - 1; i > 0; i--) {
@@ -317,9 +315,8 @@ static nk_bool nk_console_file_matches_filter(const char* basename, const char* 
 }
 
 NK_API struct nk_rect nk_console_file_render(nk_console* console) {
-    if (console == NULL || console->data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(console != NULL);
+    NK_ASSERT(console->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)console->data;
 
     nk_console_layout_widget(console);
@@ -367,9 +364,7 @@ NK_API struct nk_rect nk_console_file_render(nk_console* console) {
  * @internal
  */
 static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
-    if (button == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(button != NULL);
     if (button->type == NK_CONSOLE_FILE) {
         return button;
     }
@@ -389,9 +384,7 @@ static nk_console* nk_console_file_button_get_file_widget(nk_console* button) {
  * @internal
  */
 static void nk_console_file_entries_clear(nk_console_file_data* data) {
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
     for (size_t i = 0; i < cvector_size(data->entries); i++) {
         if (data->entries[i].label != NULL) {
             nk_console_mfree(nk_handle_id(0), data->entries[i].label);
@@ -426,9 +419,8 @@ typedef struct nk_console_file_sdl_dialog {
  */
 static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
     NK_UNUSED(user_data);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
     // Free the extension filter.
@@ -459,9 +451,8 @@ static void nk_console_file_event_destroy(nk_console* file, void* user_data) {
  */
 static const char* nk_console_file_list_view_get_label(struct nk_console* list_view, nk_uint index) {
     nk_console* file = nk_console_file_button_get_file_widget(list_view);
-    if (file == NULL || file->data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (cvector_empty(data->entries)) {
         return "(Empty directory)";
@@ -485,7 +476,8 @@ static const char* nk_console_file_list_view_get_label(struct nk_console* list_v
 #endif
 
 NK_API void nk_console_file_normalize_path(char* buf, int size) {
-    if (buf == NULL || size <= 0 || buf[0] == '\0') return;
+    NK_ASSERT(buf != NULL);
+    if (size <= 0 || buf[0] == '\0') return;
 
     char tmp[NK_CONSOLE_FILE_PATH_MAX];
     int tmp_len = 0;
@@ -588,9 +580,8 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
 static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_data) {
     NK_UNUSED(user_data);
     nk_console* file = nk_console_file_button_get_file_widget(list_view);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
     nk_console_list_view_data* lv_data = (nk_console_list_view_data*)list_view->data;
@@ -636,9 +627,8 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
 static void nk_console_file_select_dir_onclick(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
     nk_console* file = nk_console_file_button_get_file_widget(button);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
     int desired_length = nk_strlen(data->directory);
@@ -663,14 +653,14 @@ static void nk_console_file_select_dir_onclick(nk_console* button, void* user_da
  */
 static void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
-    if (button == NULL || button->label == NULL) {
+    NK_ASSERT(button != NULL);
+    if (button->label == NULL) {
         return;
     }
 
     nk_console* file = nk_console_file_button_get_file_widget(button);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
 
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (!nk_console_file_append_to_directory(data, file, button->label)) {
@@ -690,13 +680,13 @@ static void nk_console_file_entry_onclick(nk_console* button, void* user_data) {
  */
 static void nk_console_file_button_file_onclick(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
-    if (button == NULL || button->label == NULL) {
+    NK_ASSERT(button != NULL);
+    if (button->label == NULL) {
         return;
     }
     nk_console* file = nk_console_file_button_get_file_widget(button);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (!nk_console_file_append_to_directory(data, file, button->label)) {
         return;
@@ -716,14 +706,15 @@ static void nk_console_file_button_file_onclick(nk_console* button, void* user_d
 #endif
 
 NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* path, nk_bool is_directory) {
-    if (parent == NULL || path == NULL || path[0] == '\0') {
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(path != NULL);
+    if (path[0] == '\0') {
         return NULL;
     }
 
     nk_console* file = nk_console_file_button_get_file_widget(parent);
-    if (file == NULL || file->data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
 
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
@@ -772,9 +763,7 @@ NK_API nk_console* nk_console_file_add_entry(nk_console* parent, const char* pat
  * @internal
  */
 static int nk_console_file_get_directory_len(const char* file_path) {
-    if (file_path == NULL) {
-        return 0;
-    }
+    NK_ASSERT(file_path != NULL);
     int len = nk_strlen(file_path);
     for (int i = len - 1; i > 0; i--) {
         if (file_path[i] == '\\' || file_path[i] == '/') {
@@ -806,9 +795,8 @@ static int nk_console_file_entry_compare(const void* a, const void* b) {
 NK_API void nk_console_file_refresh(nk_console* widget, void* user_data) {
     NK_UNUSED(user_data);
     widget = nk_console_file_button_get_file_widget(widget);
-    if (widget == NULL || widget->data == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
 
     nk_console_file_data* data = (nk_console_file_data*)widget->data;
 
@@ -1134,14 +1122,12 @@ static SDL_Window* nk_console_file_sdl_dialog_window(nk_console* file) {
 
 static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
-    if (button == NULL || button->data == NULL) {
-        return;
-    }
+    NK_ASSERT(button != NULL);
+    NK_ASSERT(button->data != NULL);
 
     nk_console* file = nk_console_file_button_get_file_widget(button);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
 
 #if defined(NK_CONSOLE_FILE_SDL_NATIVE_DIALOG) && SDL_MAJOR_VERSION >= 3
     // Only mouse users get the native dialog; keyboard and gamepad users get the built-in browser.
@@ -1185,9 +1171,7 @@ static void nk_console_file_event_clicked(nk_console* button, void* user_data) {
  */
 static void nk_console_file_open_browser(nk_console* file) {
     nk_console_file_data* data = (nk_console_file_data*)file->data;
-    if (data == NULL) {
-        return;
-    }
+    NK_ASSERT(data != NULL);
 
     if (data->starting_directory[0] != '\0') {
         int len = nk_strlen(data->starting_directory);
@@ -1212,45 +1196,40 @@ static void nk_console_file_open_browser(nk_console* file) {
 
 NK_API void nk_console_file_set_list_view(nk_console* file, nk_bool use_list_view) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     data->use_list_view = use_list_view;
 }
 
 NK_API nk_bool nk_console_file_get_list_view(nk_console* file) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     return data->use_list_view;
 }
 
 NK_API void nk_console_file_set_file_user_data(nk_console* file, void* user_data) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     data->file_user_data = user_data;
 }
 
 NK_API void* nk_console_file_get_file_user_data(nk_console* file) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     return data->file_user_data;
 }
 
 NK_API void nk_console_file_set_directory(nk_console* file, const char* directory) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     if (directory == NULL || directory[0] == '\0') {
         data->starting_directory[0] = '\0';
@@ -1266,18 +1245,16 @@ NK_API void nk_console_file_set_directory(nk_console* file, const char* director
 
 NK_API const char* nk_console_file_get_directory(nk_console* file) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return "";
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     return data->starting_directory;
 }
 
 NK_API void nk_console_file_set_filter(nk_console* file, const char* filter) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
     // Free any existing filter.
@@ -1299,17 +1276,16 @@ NK_API void nk_console_file_set_filter(nk_console* file, const char* filter) {
 
 NK_API const char* nk_console_file_get_filter(nk_console* file) {
     file = nk_console_file_button_get_file_widget(file);
-    if (file == NULL || file->data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(file != NULL);
+    NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
     return data->filter;
 }
 
 NK_API nk_console* nk_console_file(nk_console* parent, const char* label, char* file_path_buffer, int file_path_buffer_size) {
-    if (parent == NULL || file_path_buffer == NULL || file_path_buffer_size <= 0) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(file_path_buffer != NULL);
+    NK_ASSERT(file_path_buffer_size > 0);
 
     // Create the widget data.
     nk_console_file_data* data = (nk_console_file_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_file_data));

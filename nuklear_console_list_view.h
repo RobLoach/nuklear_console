@@ -237,17 +237,17 @@ static void nk_console_list_view_scroll_into_view_down(nk_console_list_view_data
 }
 
 NK_API nk_uint nk_console_list_view_item_count(nk_console* list_view) {
-    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
-        return 0;
-    }
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     return data->row_count;
 }
 
 NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint item_count) {
-    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
-        return;
-    }
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     data->row_count = item_count;
     data->selected = 0;
@@ -258,25 +258,23 @@ NK_API void nk_console_list_view_set_item_count(nk_console* list_view, nk_uint i
 }
 
 NK_API nk_flags nk_console_list_view_flags(nk_console* list_view) {
-    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
-        return 0;
-    }
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     return data->flags;
 }
 
 NK_API void nk_console_list_view_set_flags(nk_console* list_view, nk_flags flags) {
-    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
-        return;
-    }
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     data->flags = flags;
 }
 
 NK_API float nk_console_list_view_row_height(nk_console* list_view) {
-    if (list_view == NULL) {
-        return 0;
-    }
+    NK_ASSERT(list_view != NULL);
     float height = list_view->ctx->style.font->height + list_view->ctx->style.button.border * 2.0f + list_view->ctx->style.button.padding.y * 2.0f;
     // Round up to a whole pixel. nk_list_view_begin() casts the row height to int
     // for its visible-row count, while the rows themselves are laid out at this
@@ -286,15 +284,17 @@ NK_API float nk_console_list_view_row_height(nk_console* list_view) {
 }
 
 NK_API nk_uint nk_console_list_view_selected(nk_console* list_view) {
-    if (!list_view || !list_view->data || list_view->type != NK_CONSOLE_LIST_VIEW)
-        return 0;
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     return data->selected;
 }
 
 NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
-    if (!list_view || !list_view->data || list_view->type != NK_CONSOLE_LIST_VIEW)
-        return NULL;
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     if (data->selected >= (nk_uint)data->row_count)
         return NULL;
@@ -309,7 +309,9 @@ NK_API const char* nk_console_list_view_selected_label(nk_console* list_view) {
 }
 
 NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint index) {
-    if (!list_view || !list_view->data || list_view->type != NK_CONSOLE_LIST_VIEW) return;
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     if (data->row_count == 0) return;
     if (index >= data->row_count) index = data->row_count - 1;
@@ -328,9 +330,9 @@ NK_API void nk_console_list_view_set_selected(nk_console* list_view, nk_uint ind
 }
 
 NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL || widget->type != NK_CONSOLE_LIST_VIEW) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
+    NK_ASSERT(widget->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)widget->data;
 
     nk_console* top = nk_console_get_top(widget);
@@ -604,9 +606,8 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, nk_uint item_count, nk_console_list_view_get_label get_label_callback) {
-    if (parent == NULL || get_label_callback == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(get_label_callback != NULL);
 
     nk_console_list_view_data* data = (nk_console_list_view_data*)nk_console_malloc(nk_handle_ptr(NULL), NULL, sizeof(nk_console_list_view_data));
     if (data == NULL) {
@@ -633,9 +634,9 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
 }
 
 NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool searchable) {
-    if (list_view == NULL || list_view->data == NULL || list_view->type != NK_CONSOLE_LIST_VIEW) {
-        return;
-    }
+    NK_ASSERT(list_view != NULL);
+    NK_ASSERT(list_view->data != NULL);
+    NK_ASSERT(list_view->type == NK_CONSOLE_LIST_VIEW);
     nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
     if (data->searchable == searchable) {
         return;

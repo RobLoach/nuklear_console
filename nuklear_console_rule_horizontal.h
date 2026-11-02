@@ -40,9 +40,8 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_rule_horizontal_render(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
     nk_console_layout_widget(widget);
     nk_console_rule_horizontal_data* data = (nk_console_rule_horizontal_data*)widget->data;
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
@@ -52,9 +51,7 @@ NK_API struct nk_rect nk_console_rule_horizontal_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_rule_horizontal(nk_console* parent, struct nk_color color, nk_bool rounding) {
-    if (parent == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
     nk_console_rule_horizontal_data* data =
         (nk_console_rule_horizontal_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_rule_horizontal_data));
     if (data == NULL) return NULL;
