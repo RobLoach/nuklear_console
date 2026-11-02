@@ -97,7 +97,8 @@ NK_API void nk_console_combobox_button_main_click(nk_console* button, void* user
  * Update the combobox with new label, items, separator, and selected value.
  */
 NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, const char* items_separated_by_separator, int separator, int* selected) {
-    if (!combobox || !combobox->data) return;
+    NK_ASSERT(combobox != NULL);
+    NK_ASSERT(combobox->data != NULL);
     nk_console_combobox_data* data = (nk_console_combobox_data*)combobox->data;
 
     // Update data fields
@@ -180,9 +181,7 @@ NK_API nk_console* nk_console_combobox(nk_console* parent, const char* label, co
 
 NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     nk_console_combobox_data* data = (nk_console_combobox_data*)console->data;
-    if (data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data != NULL);
 
     nk_console* top = nk_console_get_top(console);
 

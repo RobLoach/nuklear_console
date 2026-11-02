@@ -29,9 +29,7 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_textedit_text_render(nk_console* widget) {
-    if (widget == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(widget != NULL);
 
     struct nk_rect widget_bounds = nk_layout_widget_bounds(widget->ctx);
 

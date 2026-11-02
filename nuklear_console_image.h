@@ -35,44 +35,36 @@ extern "C" {
 #endif
 
 NK_API void nk_console_image_set_image(nk_console* widget, struct nk_image image) {
-    if (widget == NULL || widget->data == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
     nk_console_image_data* data = (nk_console_image_data*)widget->data;
     data->image = image;
 }
 
 NK_API struct nk_image nk_console_image_get_image(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) {
-        struct nk_image output = {0};
-        return output;
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
     nk_console_image_data* data = (nk_console_image_data*)widget->data;
     return data->image;
 }
 
 NK_API void nk_console_image_set_color(nk_console* widget, struct nk_color color) {
-    if (widget == NULL || widget->data == NULL) {
-        return;
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
     nk_console_image_data* data = (nk_console_image_data*)widget->data;
     data->color = color;
 }
 
 NK_API struct nk_color nk_console_image_get_color(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) {
-        struct nk_color output = {0};
-        return output;
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
     nk_console_image_data* data = (nk_console_image_data*)widget->data;
     return data->color;
 }
 
 NK_API struct nk_rect nk_console_image_render(nk_console* widget) {
     nk_console_image_data* data = (nk_console_image_data*)widget->data;
-    if (data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data != NULL);
 
     nk_console_layout_widget(widget);
 

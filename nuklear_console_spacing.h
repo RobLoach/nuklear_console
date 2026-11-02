@@ -23,9 +23,7 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_spacing_render(nk_console* widget) {
-    if (widget == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(widget != NULL);
 
     // Set up the layout for the widget.
     nk_console_layout_widget(widget);

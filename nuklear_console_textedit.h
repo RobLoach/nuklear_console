@@ -225,7 +225,9 @@ static const nk_console_textedit_key* nk_console_textedit_layout_ascii[] = {
  * @internal
  */
 static nk_bool nk_console_textedit_filter_text(nk_console* textedit, const char* text) {
-    if (textedit == NULL || textedit->data == NULL || text == NULL) {
+    NK_ASSERT(textedit != NULL);
+    NK_ASSERT(textedit->data != NULL);
+    if (text == NULL) {
         return nk_true;
     }
 
@@ -278,9 +280,7 @@ static void nk_console_textedit_text_event_back(struct nk_console* widget, void*
  * Handle the click event for textedit's children items.
  */
 NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user_data) {
-    if (button == NULL) {
-        return;
-    }
+    NK_ASSERT(button != NULL);
     NK_UNUSED(user_data);
 
     // Make sure we're not going back to a row.
@@ -294,9 +294,7 @@ NK_API void nk_console_textedit_button_back_click(nk_console* button, void* user
 
 NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
     NK_UNUSED(user_data);
-    if (key == NULL) {
-        return;
-    }
+    NK_ASSERT(key != NULL);
 
     // Find the textedit widget, and make sure it's not the row.
     nk_console* textedit = key->parent;
@@ -401,9 +399,8 @@ NK_API void nk_console_textedit_key_click(nk_console* key, void* user_data) {
  */
 NK_API void nk_console_textedit_button_main_click(nk_console* button, void* user_data) {
     NK_UNUSED(user_data);
-    if (button == NULL || button->data == NULL) {
-        return;
-    }
+    NK_ASSERT(button != NULL);
+    NK_ASSERT(button->data != NULL);
 
     // Make sure there aren't any children to recreate the keyboard.
     nk_console_free_children(button);
@@ -521,33 +518,30 @@ NK_API nk_console* nk_console_textedit_action(nk_console* parent, const char* la
 }
 
 NK_API void nk_console_textedit_set_keyboard_layout(nk_console* textedit, const nk_console_textedit_key** layout) {
-    if (!textedit || !textedit->data) return;
+    NK_ASSERT(textedit != NULL);
+    NK_ASSERT(textedit->data != NULL);
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
     data->keyboard_layout = layout != NULL ? layout : nk_console_textedit_layout_ascii;
 }
 
 NK_API void nk_console_textedit_set_filter(nk_console* textedit, nk_plugin_filter filter) {
-    if (textedit == NULL || textedit->data == NULL) {
-        return;
-    }
+    NK_ASSERT(textedit != NULL);
+    NK_ASSERT(textedit->data != NULL);
 
     nk_console_textedit_data* data = (nk_console_textedit_data*)textedit->data;
     data->filter = filter != NULL ? filter : nk_filter_ascii;
 }
 
 NK_API nk_plugin_filter nk_console_textedit_get_filter(nk_console* textedit) {
-    if (textedit == NULL || textedit->data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(textedit != NULL);
+    NK_ASSERT(textedit->data != NULL);
 
     return ((nk_console_textedit_data*)textedit->data)->filter;
 }
 
 NK_API struct nk_rect nk_console_textedit_render(nk_console* console) {
     nk_console_textedit_data* data = (nk_console_textedit_data*)console->data;
-    if (data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data != NULL);
 
     nk_console_layout_widget(console);
 

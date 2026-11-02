@@ -55,7 +55,8 @@ NK_API nk_console* nk_console_progress(nk_console* parent, const char* text, nk_
 }
 
 NK_API void nk_console_progress_update(nk_console* progress, const char* label, nk_size* current, nk_size max) {
-    if (!progress || !progress->data) return;
+    NK_ASSERT(progress != NULL);
+    NK_ASSERT(progress->data != NULL);
     nk_console_progress_data* data = (nk_console_progress_data*)progress->data;
 
     progress->label = label;
@@ -71,9 +72,7 @@ NK_API void nk_console_progress_update(nk_console* progress, const char* label, 
 
 NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     nk_console_progress_data* data = (nk_console_progress_data*)console->data;
-    if (data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data != NULL);
 
     nk_console_layout_widget(console);
 

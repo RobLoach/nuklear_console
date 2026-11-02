@@ -63,14 +63,14 @@ extern "C" {
 #endif
 
 NK_API int nk_console_radio_index(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL || widget->parent == NULL || widget->parent->children == NULL) {
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
+    if (widget->parent == NULL || widget->parent->children == NULL) {
         return -1;
     }
 
     nk_console_radio_data* data = (nk_console_radio_data*)widget->data;
-    if (data->selected == NULL) {
-        return -1;
-    }
+    NK_ASSERT(data->selected != NULL);
 
     int index = 0;
     for (size_t i = 0; i < cvector_size(widget->parent->children); i++) {
@@ -90,22 +90,21 @@ NK_API int nk_console_radio_index(nk_console* widget) {
 }
 
 NK_API nk_bool nk_console_radio_is_selected(nk_console* widget) {
-    if (widget == NULL || widget->data == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
     int index = nk_console_radio_index(widget);
     if (index < 0) {
         return nk_false;
     }
     nk_console_radio_data* data = (nk_console_radio_data*)widget->data;
-    if (data->selected == NULL) {
-        return nk_false;
-    }
+    NK_ASSERT(data->selected != NULL);
     return *data->selected == index;
 }
 
 NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
-    if (widget == NULL || widget->label == NULL || widget->data == NULL) {
+    NK_ASSERT(widget != NULL);
+    NK_ASSERT(widget->data != NULL);
+    if (widget->label == NULL) {
         return nk_recti(0, 0, 0, 0);
     }
 
@@ -113,9 +112,7 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
     nk_console_top_data* top_data = (nk_console_top_data*)top->data;
     nk_console_radio_data* data = (nk_console_radio_data*)widget->data;
 
-    if (data->selected == NULL) {
-        return nk_recti(0, 0, 0, 0);
-    }
+    NK_ASSERT(data->selected != NULL);
 
     // Set up the layout
     nk_console_layout_widget(widget);
@@ -220,9 +217,8 @@ NK_API struct nk_rect nk_console_radio_render(nk_console* widget) {
 }
 
 NK_API nk_console* nk_console_radio(nk_console* parent, const char* label, int* selected) {
-    if (parent == NULL || selected == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(selected != NULL);
 
     nk_console_radio_data* data = (nk_console_radio_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_radio_data));
     if (data == NULL) return NULL;

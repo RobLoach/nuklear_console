@@ -53,9 +53,9 @@ extern "C" {
 #endif
 
 NK_API nk_bool nk_console_tree_expanded(nk_console* tree) {
-    if (tree == NULL || tree->data == NULL || tree->type != NK_CONSOLE_TREE) {
-        return nk_false;
-    }
+    NK_ASSERT(tree != NULL);
+    NK_ASSERT(tree->data != NULL);
+    NK_ASSERT(tree->type == NK_CONSOLE_TREE);
     nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
     return (data->button.symbol == NK_SYMBOL_TRIANGLE_DOWN) ? nk_true : nk_false;
 }
@@ -88,9 +88,9 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
 }
 
 NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded) {
-    if (tree == NULL || tree->data == NULL || tree->type != NK_CONSOLE_TREE) {
-        return nk_false;
-    }
+    NK_ASSERT(tree != NULL);
+    NK_ASSERT(tree->data != NULL);
+    NK_ASSERT(tree->type == NK_CONSOLE_TREE);
 
     nk_bool current = nk_console_tree_expanded(tree);
     nk_console_tree_apply_expanded(tree, expanded);
@@ -101,18 +101,16 @@ NK_API nk_bool nk_console_tree_set_expanded(nk_console* tree, nk_bool expanded) 
 }
 
 static void nk_console_tree_event_clicked(nk_console* tree, void* user_data) {
-    if (tree == NULL || tree->data == NULL) {
-        return;
-    }
+    NK_ASSERT(tree != NULL);
+    NK_ASSERT(tree->data != NULL);
     NK_UNUSED(user_data);
     nk_console_tree_apply_expanded(tree, !nk_console_tree_expanded(tree));
     nk_console_trigger_event(tree, NK_CONSOLE_EVENT_CHANGED);
 }
 
 static struct nk_rect nk_console_tree_render(nk_console* tree) {
-    if (tree == NULL || tree->data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(tree != NULL);
+    NK_ASSERT(tree->data != NULL);
 
     // Delegate rendering to the button renderer.
     struct nk_rect bounds = nk_console_button_render(tree);
@@ -139,9 +137,8 @@ static struct nk_rect nk_console_tree_render(nk_console* tree) {
 }
 
 static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
-    if (tree == NULL || tree->data == NULL) {
-        return;
-    }
+    NK_ASSERT(tree != NULL);
+    NK_ASSERT(tree->data != NULL);
     NK_UNUSED(user_data);
     nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
     if (data->referenced_children == NULL) {
@@ -171,9 +168,7 @@ static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
 }
 
 NK_API nk_console* nk_console_tree(nk_console* parent, const char* label, nk_bool expanded) {
-    if (parent == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
     // Create the widget data.
     nk_console_tree_data* data = (nk_console_tree_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_tree_data));
     if (data == NULL) {

@@ -41,9 +41,8 @@ extern "C" {
 #endif
 
 static nk_console* nk_console_row_active_child(nk_console* row) {
-    if (row == NULL || row->data == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(row != NULL);
+    NK_ASSERT(row->data != NULL);
 
     int row_children_size = (int)cvector_size(row->children);
     if (row_children_size == 0) {
@@ -84,7 +83,9 @@ static int nk_console_row_next_selectable_child(nk_console* row, int direction) 
  */
 static nk_bool nk_console_row_pick_nearest_selectable_child(nk_console* row) {
     // Ensure there is actually a possible active child.
-    if (row == NULL || row->data == NULL || nk_console_row_active_child(row) == NULL) {
+    NK_ASSERT(row != NULL);
+    NK_ASSERT(row->data != NULL);
+    if (nk_console_row_active_child(row) == NULL) {
         return nk_false;
     }
 
@@ -177,9 +178,8 @@ static void nk_console_row_check_left_right(nk_console* row, nk_console* top) {
 }
 
 NK_API struct nk_rect nk_console_row_render(nk_console* console) {
-    if (console == NULL || console->data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(console != NULL);
+    NK_ASSERT(console->data != NULL);
 
     nk_console_row_data* data = (nk_console_row_data*)console->data;
     nk_console* top = nk_console_get_top(console);

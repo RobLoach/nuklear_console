@@ -42,13 +42,10 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_color_render(nk_console* console) {
-    if (console == NULL || console->data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(console != NULL);
+    NK_ASSERT(console->data != NULL);
     nk_console_color_data* data = (nk_console_color_data*)console->data;
-    if (data->color == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data->color != NULL);
 
     nk_console_layout_widget(console);
 
@@ -100,17 +97,15 @@ NK_API struct nk_rect nk_console_color_render(nk_console* console) {
 }
 
 static void nk_console_color_event_changed(nk_console* property, void* user_data) {
-    if (property == NULL || property->parent == NULL) {
-        return;
-    }
+    NK_ASSERT(property != NULL);
+    NK_ASSERT(property->parent != NULL);
     NK_UNUSED(user_data);
     nk_console_trigger_event(property->parent, NK_CONSOLE_EVENT_CHANGED);
 }
 
 NK_API nk_console* nk_console_color(nk_console* parent, const char* label, struct nk_colorf* color, enum nk_color_format format) {
-    if (parent == NULL || color == NULL) {
-        return NULL;
-    }
+    NK_ASSERT(parent != NULL);
+    NK_ASSERT(color != NULL);
 
     // Create the widget data.
     nk_console_color_data* data = (nk_console_color_data*)NK_CONSOLE_MALLOC(nk_handle_id(0), NULL, sizeof(nk_console_color_data));

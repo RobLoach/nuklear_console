@@ -31,9 +31,7 @@ extern "C" {
 
 NK_API struct nk_rect nk_console_checkbox_render(nk_console* console) {
     nk_console_checkbox_data* data = (nk_console_checkbox_data*)console->data;
-    if (data == NULL) {
-        return nk_rect(0, 0, 0, 0);
-    }
+    NK_ASSERT(data != NULL);
 
     nk_console_layout_widget(console);
 
