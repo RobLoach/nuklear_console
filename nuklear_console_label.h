@@ -25,7 +25,7 @@ extern "C" {
 #endif
 
 NK_API struct nk_rect nk_console_label_render(nk_console* widget) {
-    if (nk_strlen(widget->label) <= 0) {
+    if (widget->label == NULL || nk_strlen(widget->label) <= 0) {
         return nk_rect(0, 0, 0, 0);
     }
 

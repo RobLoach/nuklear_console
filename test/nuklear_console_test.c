@@ -620,6 +620,32 @@ int main() {
         assert(knob_float != NULL);
     }
 
+    // NULL labels on progress, property, slider, knob and combobox widgets must render without crashing
+    {
+        nk_console* nolabels = nk_console_init(ctx);
+        assert(nolabels != NULL);
+        static nk_size progress_val = 10;
+        static int int_val = 5;
+        static float float_val = 0.5f;
+        static int combobox_val = 0;
+        nk_console* progress = nk_console_progress(nolabels, NULL, &progress_val, 100);
+        assert(progress != NULL);
+        nk_console_progress_update(progress, NULL, &progress_val, 50);
+        assert(progress->label_length == 0);
+        assert(progress->columns == 1);
+        assert(nk_console_property_int(nolabels, NULL, 0, &int_val, 10, 1, 1) != NULL);
+        assert(nk_console_property_float(nolabels, NULL, 0.0f, &float_val, 1.0f, 0.1f, 1) != NULL);
+        assert(nk_console_slider_int(nolabels, NULL, 0, &int_val, 10, 1) != NULL);
+        assert(nk_console_slider_float(nolabels, NULL, 0.0f, &float_val, 1.0f, 0.1f) != NULL);
+        assert(nk_console_knob_int(nolabels, NULL, 0, &int_val, 10, 1, 1.0f) != NULL);
+        assert(nk_console_knob_float(nolabels, NULL, 0.0f, &float_val, 1.0f, 0.1f, 1.0f) != NULL);
+        assert(nk_console_combobox(nolabels, NULL, "A|B", '|', &combobox_val) != NULL);
+        assert(nk_console_label(nolabels, NULL) != NULL);
+        nk_console_render_window(nolabels, "nolabels", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        nk_console_free(nolabels);
+    }
+
     // nk_console_radio()
     {
         static int radio_selected = 1;

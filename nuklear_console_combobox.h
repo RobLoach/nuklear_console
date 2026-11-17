@@ -109,7 +109,7 @@ NK_API void nk_console_combobox_update(nk_console* combobox, const char* label, 
 
     // Update combobox label
     combobox->label = label;
-    combobox->label_length = nk_strlen(label);
+    combobox->label_length = label != NULL ? nk_strlen(label) : 0;
 
     // Clear out any existing children
     nk_console_free_children(combobox);
@@ -211,7 +211,7 @@ NK_API struct nk_rect nk_console_combobox_render(nk_console* console) {
     }
 
     // Display the label
-    if (nk_strlen(data->label) > 0) {
+    if (data->label != NULL && nk_strlen(data->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->ctx);
         }
