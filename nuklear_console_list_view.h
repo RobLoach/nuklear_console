@@ -605,6 +605,26 @@ NK_API struct nk_rect nk_console_list_view_render(nk_console* widget) {
     return widget_bounds;
 }
 
+/**
+ * Destroyed event for the list view: removes and frees its sibling search field.
+ */
+static void nk_console_list_view_event_destroyed(nk_console* widget, void* user_data) {
+    NK_UNUSED(user_data);
+    nk_console_list_view_set_searchable(widget, nk_false);
+}
+
+/**
+ * Destroyed event for the search field: clears the list view's reference to it.
+ */
+static void nk_console_list_view_search_event_destroyed(nk_console* widget, void* user_data) {
+    NK_UNUSED(widget);
+    nk_console* list_view = (nk_console*)user_data;
+    nk_console_list_view_data* data = (nk_console_list_view_data*)list_view->data;
+    if (data != NULL) {
+        data->search = NULL;
+    }
+}
+
 NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int rows_visible, nk_uint item_count, nk_console_list_view_get_label get_label_callback) {
     NK_ASSERT(parent != NULL);
     NK_ASSERT(get_label_callback != NULL);
@@ -629,6 +649,7 @@ NK_API nk_console* nk_console_list_view(nk_console* parent, const char* id, int 
     widget->type = NK_CONSOLE_LIST_VIEW;
     widget->render = &nk_console_list_view_render;
     widget->data = data;
+    nk_console_add_event(widget, NK_CONSOLE_EVENT_DESTROYED, &nk_console_list_view_event_destroyed);
 
     return widget;
 }
@@ -655,6 +676,7 @@ NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool s
                     cvector_insert(list_view->parent->children, (size_t)lv_idx, search);
                 }
                 data->search = search;
+                nk_console_add_event_handler(search, NK_CONSOLE_EVENT_DESTROYED, &nk_console_list_view_search_event_destroyed, list_view, NULL);
             }
         }
     }
