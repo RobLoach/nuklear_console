@@ -8,6 +8,10 @@
 #define PNTR_IMPLEMENTATION
 #include "pntr.h"
 
+// Nuklear's text editing moves overlapping memory with NK_MEMCPY, which pntr_nuklear maps to memcpy.
+#include <string.h>
+#define NK_MEMCPY memmove
+
 #define NK_INCLUDE_FIXED_TYPES
 #define NK_INCLUDE_STANDARD_VARARGS
 #define NK_INCLUDE_DEFAULT_ALLOCATOR
@@ -38,6 +42,38 @@ static const char* list_view_get_label(struct nk_console* list_view, nk_uint ind
         return items[index];
     }
     return NULL;
+}
+
+/**
+ * Render one frame of the given console, typing the UTF-8 text and pressing the key.
+ */
+static void test_render_frame(nk_console* console, const char* text, enum nk_keys key) {
+    struct nk_context* ctx = console->ctx;
+    nk_input_begin(ctx);
+    if (text != NULL) {
+        int len = (int)strlen(text);
+        int i = 0;
+        while (i < len) {
+            nk_rune unicode = 0;
+            int glyph_len = nk_utf_decode(text + i, &unicode, len - i);
+            assert(glyph_len > 0);
+            nk_input_unicode(ctx, unicode);
+            i += glyph_len;
+        }
+    }
+    if (key != NK_KEY_NONE) {
+        nk_input_key(ctx, key, nk_true);
+    }
+    nk_input_end(ctx);
+    nk_console_render_window(console, "masked_test", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+    nk_clear(ctx);
+
+    // Release the key so the next frame doesn't see it pressed.
+    if (key != NK_KEY_NONE) {
+        nk_input_begin(ctx);
+        nk_input_key(ctx, key, nk_false);
+        nk_input_end(ctx);
+    }
 }
 
 int main() {
@@ -1016,6 +1052,109 @@ int main() {
         // Restore the console state for the remaining tests.
         nk_console_free_children(filtered);
         nk_console_set_active_parent(console);
+    }
+
+    // nk_console_textedit_masked() edits, driven through real render passes.
+    {
+        struct nk_console* masked_console = nk_console_init(ctx);
+        assert(masked_console != NULL);
+
+        // A masked buffer holding more than 1024 characters isn't truncated by rendering.
+        static char big_buffer[2048];
+        for (int i = 0; i < 1500; i++) {
+            big_buffer[i] = (char)('a' + i % 26);
+        }
+        big_buffer[1500] = '\0';
+        nk_console* big = nk_console_textedit_masked(masked_console, "Big", big_buffer, (int)sizeof(big_buffer));
+        assert(big != NULL);
+        nk_console_textedit_button_main_click(big, NULL);
+        assert(big->children[0]->type == NK_CONSOLE_TEXTEDIT_TEXT);
+        nk_console_set_active_widget(big->children[0]);
+        for (int frame = 0; frame < 3; frame++) {
+            test_render_frame(masked_console, NULL, NK_KEY_NONE);
+        }
+        assert(strlen(big_buffer) == 1500);
+        assert(big_buffer[1499] == (char)('a' + 1499 % 26));
+        assert(((nk_console_textedit_data*)big->data)->changed == nk_false);
+
+        // Typing past 1024 characters appends to the real buffer.
+        test_render_frame(masked_console, NULL, NK_KEY_TEXT_END);
+        test_render_frame(masked_console, "Z", NK_KEY_NONE);
+        assert(strlen(big_buffer) == 1501);
+        assert(big_buffer[1500] == 'Z');
+        assert(((nk_console_textedit_data*)big->data)->changed == nk_true);
+        nk_console_free_children(big);
+        nk_console_set_active_parent(masked_console);
+
+        // Edits are applied at the cursor, not at the end of the real buffer.
+        static char edit_buffer[32] = "abcd";
+        nk_console* edit = nk_console_textedit_masked(masked_console, "Edit", edit_buffer, (int)sizeof(edit_buffer));
+        assert(edit != NULL);
+        nk_console_textedit_button_main_click(edit, NULL);
+        nk_console_set_active_widget(edit->children[0]);
+        test_render_frame(masked_console, NULL, NK_KEY_NONE);
+        assert(strcmp(edit_buffer, "abcd") == 0);
+        test_render_frame(masked_console, NULL, NK_KEY_TEXT_END);
+        test_render_frame(masked_console, NULL, NK_KEY_LEFT);
+        test_render_frame(masked_console, NULL, NK_KEY_LEFT);
+        test_render_frame(masked_console, "X", NK_KEY_NONE);
+        assert(strcmp(edit_buffer, "abXcd") == 0);
+
+        // Typing '*' is inserted at the cursor too.
+        test_render_frame(masked_console, "*", NK_KEY_NONE);
+        assert(strcmp(edit_buffer, "abX*cd") == 0);
+
+        // Backspace removes the character before the cursor.
+        test_render_frame(masked_console, NULL, NK_KEY_BACKSPACE);
+        assert(strcmp(edit_buffer, "abXcd") == 0);
+        test_render_frame(masked_console, NULL, NK_KEY_BACKSPACE);
+        assert(strcmp(edit_buffer, "abcd") == 0);
+
+        // Delete removes the character after the cursor.
+        test_render_frame(masked_console, NULL, NK_KEY_DEL);
+        assert(strcmp(edit_buffer, "abd") == 0);
+
+        // Typing at the start inserts at the start.
+        test_render_frame(masked_console, NULL, NK_KEY_TEXT_START);
+        test_render_frame(masked_console, "Y", NK_KEY_NONE);
+        assert(strcmp(edit_buffer, "Yabd") == 0);
+        nk_console_free_children(edit);
+        nk_console_set_active_parent(masked_console);
+
+        // Multi-byte UTF-8 characters are masked and deleted as whole glyphs.
+        static char utf8_buffer[32] = "a\xc3\xa9\xe2\x82\xac"; // "a", U+00E9, U+20AC
+        nk_console* utf8 = nk_console_textedit_masked(masked_console, "UTF-8", utf8_buffer, (int)sizeof(utf8_buffer));
+        assert(utf8 != NULL);
+        nk_console_textedit_set_filter(utf8, nk_filter_default);
+        nk_console_textedit_button_main_click(utf8, NULL);
+        nk_console_set_active_widget(utf8->children[0]);
+        test_render_frame(masked_console, NULL, NK_KEY_NONE);
+        assert(strcmp(utf8_buffer, "a\xc3\xa9\xe2\x82\xac") == 0);
+        test_render_frame(masked_console, NULL, NK_KEY_TEXT_END);
+        test_render_frame(masked_console, NULL, NK_KEY_BACKSPACE);
+        assert(strcmp(utf8_buffer, "a\xc3\xa9") == 0);
+        test_render_frame(masked_console, "\xc3\xb1", NK_KEY_NONE); // U+00F1
+        assert(strcmp(utf8_buffer, "a\xc3\xa9\xc3\xb1") == 0);
+        test_render_frame(masked_console, NULL, NK_KEY_LEFT);
+        test_render_frame(masked_console, NULL, NK_KEY_BACKSPACE);
+        assert(strcmp(utf8_buffer, "a\xc3\xb1") == 0);
+        nk_console_free_children(utf8);
+        nk_console_set_active_parent(masked_console);
+
+        // A full buffer with multi-byte characters can't overflow through the mask.
+        static char full_buffer[6] = "\xc3\xa9\xc3\xa9"; // Two U+00E9, 4 bytes plus terminator.
+        nk_console* full = nk_console_textedit_masked(masked_console, "Full", full_buffer, (int)sizeof(full_buffer));
+        assert(full != NULL);
+        nk_console_textedit_set_filter(full, nk_filter_default);
+        nk_console_textedit_button_main_click(full, NULL);
+        nk_console_set_active_widget(full->children[0]);
+        test_render_frame(masked_console, NULL, NK_KEY_TEXT_END);
+        test_render_frame(masked_console, "x\xc3\xb1", NK_KEY_NONE);
+        assert(strcmp(full_buffer, "\xc3\xa9\xc3\xa9x") == 0);
+        test_render_frame(masked_console, "\xc3\xb1", NK_KEY_NONE);
+        assert(strcmp(full_buffer, "\xc3\xa9\xc3\xa9x") == 0);
+
+        nk_console_free(masked_console);
     }
 
     // nk_console_widget_type_name()
