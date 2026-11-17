@@ -914,6 +914,55 @@ int main() {
         assert(strcmp(nk_console_list_view_selected_label(lv), "Cherry") == 0);
     }
 
+    // Row navigation skips disabled and hidden children.
+    {
+        nk_console* nav = nk_console_init(ctx);
+        assert(nav != NULL);
+        #ifndef NK_CONSOLE_NO_GAMEPAD
+        nk_console_set_gamepads(nav, &gamepads);
+        #endif
+        nk_console* row = nk_console_row_begin(nav);
+        nk_console* first = nk_console_button(row, "First");
+        nk_console* disabled = nk_console_button(row, "Disabled");
+        nk_console* hidden = nk_console_button(row, "Hidden");
+        nk_console* last = nk_console_button(row, "Last");
+        nk_console_set_disabled(disabled, nk_true);
+        hidden->visible = nk_false;
+        nk_console_row_end(row);
+        nk_console_row_data* row_data = (nk_console_row_data*)row->data;
+        nk_console_set_active_widget(row);
+        assert(row_data->activeChild == 0);
+
+        // Pressing Right from the first child lands on the last, skipping the disabled and hidden ones.
+        nk_input_begin(ctx);
+        nk_input_key(ctx, NK_KEY_RIGHT, nk_true);
+        nk_input_key(ctx, NK_KEY_RIGHT, nk_false);
+        nk_input_end(ctx);
+        nk_console_render_window(nav, "row_nav_right", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        assert(row->children[row_data->activeChild] == last);
+
+        // Pressing Left goes back to the first child.
+        nk_input_begin(ctx);
+        nk_input_key(ctx, NK_KEY_LEFT, nk_true);
+        nk_input_key(ctx, NK_KEY_LEFT, nk_false);
+        nk_input_end(ctx);
+        nk_console_render_window(nav, "row_nav_left", nk_rect(0, 0, (float)screen->width, (float)screen->height), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        assert(row->children[row_data->activeChild] == first);
+
+        // A row starting on a disabled child picks the nearest navigable one.
+        nk_console* row2 = nk_console_row_begin(nav);
+        nk_console_set_disabled(nk_console_button(row2, "Disabled"), nk_true);
+        nk_console* enabled = nk_console_button(row2, "Enabled");
+        nk_console_row_end(row2);
+        assert(row2->children[((nk_console_row_data*)row2->data)->activeChild] == enabled);
+
+        nk_input_begin(ctx);
+        nk_input_end(ctx);
+        nk_console_free(nav);
+    }
+
     // nk_console_marquee_slice()
     {
         const char* text = "Hello, Marquee!";
