@@ -1,6 +1,6 @@
 # pntr
 find_package(pntr QUIET)
-if (NOT pntr)
+if (NOT pntr_FOUND)
     include(FetchContent)
     FetchContent_Declare(
         pntr
@@ -8,7 +8,7 @@ if (NOT pntr)
         GIT_TAG master
     )
     FetchContent_GetProperties(pntr)
-    if (NOT pntr) # Have we downloaded raylib yet?
+    if (NOT pntr_POPULATED) # Have we downloaded raylib yet?
         set(FETCHCONTENT_QUIET NO)
         FetchContent_Populate(pntr)
         add_subdirectory(${pntr_SOURCE_DIR} ${pntr_BINARY_DIR})
@@ -17,7 +17,7 @@ endif()
 
 # pntr_nuklear
 find_package(pntr_nuklear QUIET)
-if (NOT pntr_nuklear)
+if (NOT pntr_nuklear_FOUND)
     include(FetchContent)
     FetchContent_Declare(
         pntr_nuklear

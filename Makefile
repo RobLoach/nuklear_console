@@ -1,6 +1,11 @@
+.PHONY: build test clean raylib glfw sdl sdl3 pntr web clang
+
 build: glfw raylib sdl pntr
 
-test: clean test-sdl
+test:
+	cmake -B build -S .
+	cmake --build build
+	ctest --test-dir build --output-on-failure
 
 clean:
 	$(MAKE) -C demo/sdl_renderer clean
