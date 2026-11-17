@@ -551,7 +551,6 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
 
     int dir_len_after_slash = (len == 1 && data->directory[0] == '.') ? 0 : (len > 0 ? len + 1 : 0);
     if (dir_len_after_slash + label_len + 1 > NK_CONSOLE_FILE_PATH_MAX) {
-        NK_ASSERT(0); // Path too long
         nk_console_show_message(file, "Error: File path is too long.");
         return nk_false;
     }
@@ -569,6 +568,23 @@ static nk_bool nk_console_file_append_to_directory(nk_console_file_data* data, n
     NK_MEMCPY(data->directory + len, label, (nk_size)(label_len + 1));
     nk_console_file_normalize_path(data->directory, NK_CONSOLE_FILE_PATH_MAX);
     return nk_true;
+}
+
+/**
+ * Copies data->directory into the file path buffer and triggers the changed event.
+ * Shows the given error message instead if it doesn't fit.
+ *
+ * @internal
+ */
+static void nk_console_file_copy_directory_to_buffer(nk_console_file_data* data, nk_console* file, const char* error) {
+    int desired_length = nk_strlen(data->directory);
+    if (desired_length >= data->file_path_buffer_size) {
+        nk_console_show_message(file, error);
+        return;
+    }
+    NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
+    data->file_path_buffer[desired_length] = '\0';
+    nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
 }
 
 #ifdef NK_CONSOLE_FILE_ADD_FILES
@@ -602,16 +618,7 @@ static void nk_console_file_list_view_onclick(nk_console* list_view, void* user_
     }
     else {
         // Copy the path to the file buffer.
-        int desired_length = nk_strlen(data->directory);
-        if (desired_length >= data->file_path_buffer_size) {
-            NK_ASSERT(0); // File path is too long
-            nk_console_show_message(file, "Error: File path is too long.");
-        }
-        else {
-            NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
-            data->file_path_buffer[desired_length] = '\0';
-            nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-        }
+        nk_console_file_copy_directory_to_buffer(data, file, "Error: File path is too long.");
 
         // Exit the file browser.
         nk_console_navigate_back(file);
@@ -631,16 +638,7 @@ static void nk_console_file_select_dir_onclick(nk_console* button, void* user_da
     NK_ASSERT(file->data != NULL);
     nk_console_file_data* data = (nk_console_file_data*)file->data;
 
-    int desired_length = nk_strlen(data->directory);
-    if (desired_length >= data->file_path_buffer_size) {
-        NK_ASSERT(0); // Directory path is too long
-        nk_console_show_message(file, "Error: Directory path is too long.");
-    }
-    else {
-        NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
-        data->file_path_buffer[desired_length] = '\0';
-        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-    }
+    nk_console_file_copy_directory_to_buffer(data, file, "Error: Directory path is too long.");
 
     // Exit the file browser.
     nk_console_navigate_back(file);
@@ -691,16 +689,7 @@ static void nk_console_file_button_file_onclick(nk_console* button, void* user_d
     if (!nk_console_file_append_to_directory(data, file, button->label)) {
         return;
     }
-    int desired_length = nk_strlen(data->directory);
-    if (desired_length >= data->file_path_buffer_size) {
-        NK_ASSERT(0);
-        nk_console_show_message(file, "Error: File path is too long.");
-    }
-    else {
-        NK_MEMCPY(data->file_path_buffer, data->directory, (nk_size)desired_length);
-        data->file_path_buffer[desired_length] = '\0';
-        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CHANGED);
-    }
+    nk_console_file_copy_directory_to_buffer(data, file, "Error: File path is too long.");
     nk_console_navigate_back(file);
 }
 #endif
@@ -1179,6 +1168,11 @@ static void nk_console_file_open_browser(nk_console* file) {
     }
     else {
         int directory_len = nk_console_file_get_directory_len(data->file_path_buffer);
+        if (directory_len >= NK_CONSOLE_FILE_PATH_MAX) {
+            // Too long to browse; fall back to the current working directory.
+            nk_console_show_message(file, "Error: File path is too long.");
+            directory_len = 0;
+        }
         NK_MEMCPY(data->directory, data->file_path_buffer, (nk_size)directory_len);
         data->directory[directory_len] = '\0';
 
