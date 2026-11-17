@@ -151,7 +151,7 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     }
 
     // Display the label
-    if (nk_strlen(console->label) > 0) {
+    if (console->label != NULL && nk_strlen(console->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->ctx);
         }
@@ -174,25 +174,29 @@ NK_API struct nk_rect nk_console_property_render(nk_console* console) {
     switch (console->type) {
         case NK_CONSOLE_PROPERTY_INT: {
             char name[NK_MAX_NUMBER_BUFFER];
-            int label_len = nk_strlen(console->label);
+            int label_len = console->label != NULL ? nk_strlen(console->label) : 0;
             if (label_len > NK_MAX_NUMBER_BUFFER - 3) {
                 label_len = NK_MAX_NUMBER_BUFFER - 3;
             }
             name[0] = '#';
             name[1] = '#';
-            NK_MEMCPY(name + 2, console->label, (nk_size)label_len);
+            if (label_len > 0) {
+                NK_MEMCPY(name + 2, console->label, (nk_size)label_len);
+            }
             name[label_len + 2] = '\0';
             nk_property_int(console->ctx, name, data->min_int, data->val_int, data->max_int, data->step_int, data->inc_per_pixel);
         } break;
         case NK_CONSOLE_PROPERTY_FLOAT: {
             char name[NK_MAX_NUMBER_BUFFER];
-            int label_len = nk_strlen(console->label);
+            int label_len = console->label != NULL ? nk_strlen(console->label) : 0;
             if (label_len > NK_MAX_NUMBER_BUFFER - 3) {
                 label_len = NK_MAX_NUMBER_BUFFER - 3;
             }
             name[0] = '#';
             name[1] = '#';
-            NK_MEMCPY(name + 2, console->label, (nk_size)label_len);
+            if (label_len > 0) {
+                NK_MEMCPY(name + 2, console->label, (nk_size)label_len);
+            }
             name[label_len + 2] = '\0';
             nk_property_float(console->ctx, name, data->min_float, data->val_float, data->max_float, data->step_float, data->inc_per_pixel);
         } break;

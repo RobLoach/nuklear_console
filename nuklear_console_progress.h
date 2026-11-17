@@ -60,7 +60,7 @@ NK_API void nk_console_progress_update(nk_console* progress, const char* label, 
     nk_console_progress_data* data = (nk_console_progress_data*)progress->data;
 
     progress->label = label;
-    progress->label_length = nk_strlen(label);
+    progress->label_length = label != NULL ? nk_strlen(label) : 0;
     progress->columns = label != NULL ? 2 : 1;
     data->value_size = current;
     data->max_size = max;
@@ -103,7 +103,7 @@ NK_API struct nk_rect nk_console_progress_render(nk_console* console) {
     }
 
     // Display the label
-    if (nk_strlen(console->label) > 0) {
+    if (console->label != NULL && nk_strlen(console->label) > 0) {
         if (!nk_console_is_active_widget(console)) {
             nk_widget_disable_begin(console->ctx);
         }
