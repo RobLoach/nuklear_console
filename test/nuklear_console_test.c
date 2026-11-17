@@ -506,6 +506,101 @@ int main() {
         nk_console_free(nav);
     }
 
+    // nk_console_free() on a child leaves no dangling pointers (#86).
+    {
+        nk_console* nav = nk_console_init(ctx);
+        nk_console* submenu = nk_console_button(nav, "Submenu");
+        nk_console* leaf_a = nk_console_button(submenu, "Leaf A");
+        nk_console* leaf_b = nk_console_button(submenu, "Leaf B");
+        nk_console* leaf_c = nk_console_button(submenu, "Leaf C");
+        nk_console* other = nk_console_button(nav, "Other");
+        nk_console_set_tooltip(leaf_b, "Tooltip");
+        nk_console_top_data* top_data = (nk_console_top_data*)nav->data;
+
+        // Freeing the active widget removes it and focuses the sibling that took its place.
+        assert(nk_console_navigate_to_path(nav, "Submenu/Leaf B") == nk_true);
+        top_data->tooltip_last = leaf_b->tooltip;
+        nk_console_free(leaf_b);
+        assert(cvector_size(submenu->children) == 2);
+        assert(submenu->children[0] == leaf_a && submenu->children[1] == leaf_c);
+        assert(submenu->activeWidget == leaf_c);
+        assert(top_data->scroll_to_widget == NULL);
+        assert(top_data->tooltip_last == NULL);
+
+        // Freeing the last widget falls back to the previous sibling.
+        nk_console_free(leaf_c);
+        assert(submenu->activeWidget == leaf_a);
+
+        // Render and navigate after freeing a child.
+        nk_console_render_window(nav, "free_child_test_1", nk_rect(0, 0, 300, 400), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        nk_input_begin(ctx);
+        nk_input_key(ctx, NK_KEY_DOWN, nk_true);
+        nk_input_key(ctx, NK_KEY_DOWN, nk_false);
+        nk_input_end(ctx);
+        nk_console_render_window(nav, "free_child_test_1", nk_rect(0, 0, 300, 400), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        nk_input_begin(ctx);
+        nk_input_end(ctx);
+        assert(nk_console_active_parent(nav) == submenu);
+        assert(submenu->activeWidget == leaf_a);
+
+        // Freeing the active parent switches back to its parent.
+        nk_console_set_active_widget(submenu);
+        nk_console_free(submenu);
+        assert(nk_console_active_parent(nav) == nav);
+        assert(cvector_size(nav->children) == 1);
+        assert(nav->activeWidget == other);
+        nk_console_render_window(nav, "free_child_test_2", nk_rect(0, 0, 300, 400), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        nk_input_begin(ctx);
+        nk_input_key(ctx, NK_KEY_UP, nk_true);
+        nk_input_key(ctx, NK_KEY_UP, nk_false);
+        nk_input_end(ctx);
+        nk_console_render_window(nav, "free_child_test_2", nk_rect(0, 0, 300, 400), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+        nk_input_begin(ctx);
+        nk_input_end(ctx);
+        assert(nav->activeWidget == other);
+
+        // Freeing an ancestor of the active parent switches to the ancestor's parent.
+        nk_console* outer = nk_console_button(nav, "Outer");
+        nk_console* inner = nk_console_button(outer, "Inner");
+        nk_console_button(inner, "Deep");
+        assert(nk_console_navigate_to_path(nav, "Outer/Inner/Deep") == nk_true);
+        assert(nk_console_active_parent(nav) == inner);
+        nk_console_free(outer);
+        assert(nk_console_active_parent(nav) == nav);
+        assert(cvector_size(nav->children) == 1);
+        nk_console_render_window(nav, "free_child_test_3", nk_rect(0, 0, 300, 400), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+
+        // Freeing a widget within a row keeps the row's active child index in range.
+        nk_console* row = nk_console_row_begin(nav);
+        nk_console* row_a = nk_console_button(row, "A");
+        nk_console* row_b = nk_console_button(row, "B");
+        nk_console* row_c = nk_console_button(row, "C");
+        nk_console_row_end(row);
+        ((nk_console_row_data*)row->data)->activeChild = 2;
+        nk_console_free(row_a);
+        assert(((nk_console_row_data*)row->data)->activeChild == 1);
+        assert(row->children[1] == row_c);
+        (void)row_b;
+
+        // Freeing a tree also frees and detaches the children it references.
+        size_t before_tree = cvector_size(nav->children);
+        nk_console* tree = nk_console_tree(nav, "Tree", nk_true);
+        nk_console_label(tree, "Tree Child A");
+        nk_console_label(tree, "Tree Child B");
+        assert(cvector_size(nav->children) == before_tree + 3);
+        nk_console_free(tree);
+        assert(cvector_size(nav->children) == before_tree);
+        nk_console_render_window(nav, "free_child_test_4", nk_rect(0, 0, 300, 400), NK_WINDOW_TITLE);
+        nk_clear(ctx);
+
+        nk_console_free(nav);
+    }
+
     // nk_console_image()
     pntr_image* image_value = pntr_load_image("resources/image.png");
     assert(image_value != NULL);

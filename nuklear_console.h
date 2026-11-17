@@ -1536,12 +1536,67 @@ NK_API void nk_console_free(nk_console* console) {
     }
     nk_handle handle = {0};
 
-    // Make sure the top doesn't keep a dangling scroll target to this widget.
+    // Detach from the parent. When freed through nk_console_free_children(), the parent's children are already detached.
+    nk_console* parent = console->parent;
+    if (parent != NULL) {
+        for (size_t i = 0; i < cvector_size(parent->children); ++i) {
+            if (parent->children[i] != console) {
+                continue;
+            }
+            cvector_erase(parent->children, i);
+
+            // Keep the row's active child index pointing at the same widget.
+            if (parent->type == NK_CONSOLE_ROW && parent->data != NULL) {
+                nk_console_row_data* row_data = (nk_console_row_data*)parent->data;
+                if (row_data->activeChild > (int)i) {
+                    row_data->activeChild--;
+                }
+            }
+
+            // Move focus to the nearest selectable sibling, preferring the one that took its place.
+            if (parent->activeWidget == console) {
+                parent->activeWidget = NULL;
+                nk_console* replacement = NULL;
+                for (size_t j = i; j < cvector_size(parent->children) && replacement == NULL; ++j) {
+                    if (parent->children[j] != NULL && nk_console_selectable(parent->children[j])) {
+                        replacement = parent->children[j];
+                    }
+                }
+                for (size_t j = i; j-- > 0 && replacement == NULL;) {
+                    if (parent->children[j] != NULL && nk_console_selectable(parent->children[j])) {
+                        replacement = parent->children[j];
+                    }
+                }
+                nk_console_set_active_widget(replacement);
+            }
+            break;
+        }
+        if (parent->activeWidget == console) {
+            parent->activeWidget = NULL;
+        }
+    }
+
+    // Make sure the top doesn't keep dangling pointers to this widget.
     nk_console* top = nk_console_get_top(console);
     if (top != console && top->data != NULL) {
         nk_console_top_data* top_data = (nk_console_top_data*)top->data;
         if (top_data->scroll_to_widget == console) {
             top_data->scroll_to_widget = NULL;
+        }
+        if (top_data->tooltip_last != NULL && top_data->tooltip_last == console->tooltip) {
+            top_data->tooltip_last = NULL;
+        }
+
+        // When the active parent is this widget or one of its descendants, switch to the closest navigable ancestor.
+        for (nk_console* p = top_data->active_parent; p != NULL; p = p->parent) {
+            if (p == console) {
+                nk_console* destination = parent;
+                while (destination != top && (destination->type == NK_CONSOLE_ROW || destination->type == NK_CONSOLE_TREE)) {
+                    destination = destination->parent != NULL ? destination->parent : top;
+                }
+                nk_console_set_active_parent(destination);
+                break;
+            }
         }
     }
 
@@ -1613,16 +1668,19 @@ NK_API void nk_console_free_children(nk_console* console) {
     // Since there won't be any children, make sure to unselect any active child.
     console->activeWidget = NULL;
 
+    // Detach the children first so that nk_console_free() doesn't erase them while iterating.
+    struct nk_console** children = console->children;
+    console->children = NULL;
+
     // Clear them all.
-    for (struct nk_console** it = cvector_begin(console->children); it != cvector_end(console->children); ++it) {
+    for (struct nk_console** it = cvector_begin(children); it != cvector_end(children); ++it) {
         if (*it != NULL) {
             nk_console_free(*it);
             *it = NULL;
         }
     }
 
-    cvector_free(console->children);
-    console->children = NULL;
+    cvector_free(children);
 }
 
 /**
