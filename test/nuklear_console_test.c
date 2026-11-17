@@ -796,6 +796,23 @@ int main() {
         assert((int)cvector_size(console->children) == before);
     }
 
+    // nk_console_free() on a searchable list view also removes its search field.
+    {
+        int before = (int)cvector_size(console->children);
+        nk_console* lv = nk_console_list_view(console, "free_searchable_lv", 3, 5, list_view_get_label);
+        assert(lv != NULL);
+        nk_console_list_view_set_searchable(lv, nk_true);
+        assert((int)cvector_size(console->children) == before + 2);
+
+        // Detach the list view from its parent and free it alone.
+        int lv_idx = nk_console_get_widget_index(lv);
+        assert(lv_idx >= 0);
+        cvector_erase(console->children, (size_t)lv_idx);
+        nk_console_free(lv);
+        assert((int)cvector_size(console->children) == before);
+        nk_console_render_window(console, "free_searchable_lv_test", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+    }
+
     // nk_console_color() - RGB and RGBA modes
     struct nk_colorf rgb_color = {1.0f, 0.0f, 0.0f, 1.0f};
     struct nk_colorf rgba_color = {0.0f, 1.0f, 0.0f, 0.5f};
