@@ -323,6 +323,43 @@ int main() {
         assert(strcmp(nk_console_file_get_filter(file), ".txt;.png") == 0);
     }
 
+    // nk_console_file() with paths longer than NK_CONSOLE_FILE_PATH_MAX
+    {
+        nk_console_top_data* top_data = (nk_console_top_data*)(nk_console_get_top(console)->data);
+        cvector_clear(top_data->messages);
+
+        // Opening the browser with an over-long selected file falls back to "." with an error message.
+        static char long_file_path[NK_CONSOLE_FILE_PATH_MAX * 2 + 16];
+        memset(long_file_path, 'a', sizeof(long_file_path) - 1);
+        long_file_path[NK_CONSOLE_FILE_PATH_MAX + 4] = '/';
+        long_file_path[sizeof(long_file_path) - 1] = '\0';
+        nk_console* file = nk_console_file(console, "Long File", long_file_path, (int)sizeof(long_file_path));
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CLICKED);
+        nk_console_file_data* file_data = (nk_console_file_data*)file->data;
+        assert(strcmp(file_data->directory, ".") == 0);
+        assert(cvector_size(top_data->messages) == 1);
+        assert(strcmp(top_data->messages[0].text, "Error: File path is too long.") == 0);
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_BACK);
+        nk_console_render_window(console, "file_long_path_test_1", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        cvector_clear(top_data->messages);
+
+        // Navigating to ".." from a directory at the length limit shows an error rather than aborting.
+        static char long_dir[NK_CONSOLE_FILE_PATH_MAX - 1];
+        memset(long_dir, 'b', sizeof(long_dir) - 1);
+        long_dir[sizeof(long_dir) - 1] = '\0';
+        nk_console_file_set_directory(file, long_dir);
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_CLICKED);
+        nk_console_render_window(console, "file_long_path_test_2", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        assert(cvector_size(file->children) > 2);
+        nk_console_trigger_event(file->children[2], NK_CONSOLE_EVENT_CLICKED); // ".."
+        assert(strcmp(file_data->directory, long_dir) == 0);
+        assert(cvector_size(top_data->messages) > 0);
+        assert(strcmp(top_data->messages[cvector_size(top_data->messages) - 1].text, "Error: File path is too long.") == 0);
+        nk_console_trigger_event(file, NK_CONSOLE_EVENT_BACK);
+        nk_console_render_window(console, "file_long_path_test_3", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        cvector_clear(top_data->messages);
+    }
+
     // nk_console_dir()
     {
         static const int dir_buffer_size = 256;
