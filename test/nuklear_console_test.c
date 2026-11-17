@@ -31,6 +31,26 @@ static void test_event_counter(nk_console* widget, void* user_data) {
     }
 }
 
+typedef struct test_post_render_once_data {
+    nk_console* widget;
+    int callback_count;
+    int destructor_count;
+} test_post_render_once_data;
+
+static void test_post_render_once_callback(nk_console* widget, void* user_data) {
+    test_post_render_once_data* data = (test_post_render_once_data*)user_data;
+    assert(data != NULL);
+    assert(widget == data->widget);
+    data->callback_count++;
+}
+
+static void test_post_render_once_destructor(nk_console* widget, void* user_data) {
+    test_post_render_once_data* data = (test_post_render_once_data*)user_data;
+    assert(data != NULL);
+    assert(widget == data->widget);
+    data->destructor_count++;
+}
+
 static const char* list_view_get_label(struct nk_console* list_view, nk_uint index) {
     (void)list_view;
     static const char* items[] = {"Apple", "Banana", "Cherry", "Date", "Elderberry"};
@@ -1059,6 +1079,23 @@ int main() {
         for (int type = NK_CONSOLE_UNKNOWN; type <= NK_CONSOLE_CHART; type++) {
             assert(nk_console_widget_type_name((nk_console_widget_type)type) != NULL);
         }
+    }
+
+    // NK_CONSOLE_EVENT_POST_RENDER_ONCE
+    {
+        nk_console* label = nk_console_label(console, "Post Render Once");
+        test_post_render_once_data data = {label, 0, 0};
+        nk_console_add_event_handler(label, NK_CONSOLE_EVENT_POST_RENDER_ONCE, test_post_render_once_callback, &data, test_post_render_once_destructor);
+
+        // The handler receives the widget and the caller's user_data, then is destroyed.
+        nk_console_render_window(console, "post_render_once_1", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        assert(data.callback_count == 1);
+        assert(data.destructor_count == 1);
+
+        // It only runs once.
+        nk_console_render_window(console, "post_render_once_2", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
+        assert(data.callback_count == 1);
+        assert(data.destructor_count == 1);
     }
 
     // Unload
