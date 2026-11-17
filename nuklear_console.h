@@ -39,6 +39,7 @@ typedef struct nk_console_event_handler {
     nk_console_event callback; /** Invoked when this handler is triggered. */
     void* user_data; /** Passed to both 'callback' and 'destructor'. */
     nk_console_event destructor; /** Invoked when this handler is destroyed or overwritten. */
+    struct nk_console* widget; /** The widget passed to 'callback' for NK_CONSOLE_EVENT_POST_RENDER_ONCE, which is stored on the top-level console. */
 } nk_console_event_handler;
 
 /**
@@ -699,7 +700,7 @@ NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_even
     handler->callback = NULL;
 }
 
-NK_API inline void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback) {
+NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback) {
     nk_console_add_event_handler(widget, type, callback, NULL, NULL);
 }
 
@@ -711,8 +712,9 @@ NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_ty
         nk_console_event_handler handler = (nk_console_event_handler){
             .type = type,
             .callback = callback,
-            .user_data = (void*)widget,
+            .user_data = user_data,
             .destructor = destructor,
+            .widget = widget,
         };
         cvector_push_back(nk_console_get_top(widget)->events, handler);
         return;
@@ -1324,10 +1326,15 @@ static void nk_console_process_post_render_events(nk_console* console) {
     }
     for (size_t i = count; i-- > 0;) {
         if (console->events[i].type == NK_CONSOLE_EVENT_POST_RENDER_ONCE) {
-            if (console->events[i].callback != NULL) {
-                console->events[i].callback((nk_console*)console->events[i].user_data, NULL);
-            }
+            // Copy and erase the handler first, as the callback may add new events.
+            nk_console_event_handler handler = console->events[i];
             cvector_erase(console->events, i);
+            if (handler.callback != NULL) {
+                handler.callback(handler.widget, handler.user_data);
+            }
+            if (handler.destructor != NULL) {
+                handler.destructor(handler.widget, handler.user_data);
+            }
         }
     }
 }
