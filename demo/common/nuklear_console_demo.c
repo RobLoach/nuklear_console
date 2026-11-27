@@ -460,7 +460,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
         // Tabs
         struct nk_console* tabs_button = nk_console_button(widgets, "Tabs");
         {
-            nk_console_label(tabs_button, "Press LB/RB to switch tabs");
+            nk_console_label(tabs_button, "LB/RB to switch tabs, B to go back");
             struct nk_console* tabs = nk_console_tabs(tabs_button);
 
             struct nk_console* video = nk_console_tab(tabs, "Video");
@@ -474,8 +474,7 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_radio(game, "Easy", &tabs_difficulty);
             nk_console_radio(game, "Medium", &tabs_difficulty);
             nk_console_radio(game, "Hard", &tabs_difficulty);
-
-            nk_console_button_onclick(tabs_button, "Back", &nk_console_button_back);
+            nk_console_button_onclick(game, "Back", &nk_console_button_back);
         }
 
         // List View

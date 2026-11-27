@@ -995,17 +995,8 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
 
     // Only process an active input once.
     if (data->input_processed == nk_false) {
-        nk_bool lb_pushed = nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB);
-        nk_bool rb_pushed = nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB);
-
-        // When the tab headers or a widget within the tabs is focused, LB/RB switch tabs rather than paging.
-        nk_console* tabs = (lb_pushed || rb_pushed) ? nk_console_tabs_find_for(widget) : NULL;
-        if (tabs != NULL) {
-            nk_console_tabs_step(tabs, lb_pushed ? -1 : 1);
-            data->input_processed = nk_true;
-        }
         // Page Up
-        else if (lb_pushed) {
+        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             nk_console* target = NULL;
             int count = 0;
@@ -1025,7 +1016,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             data->input_processed = nk_true;
         }
         // Page Down
-        else if (rb_pushed) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             nk_console* target = NULL;
             int count = 0;
@@ -1573,6 +1564,21 @@ NK_API struct nk_rect nk_console_render_window(nk_console* console, const char* 
 }
 
 /**
+ * Whether the widget's children render through it rather than as their own screen, so it can't be an active parent.
+ */
+static nk_bool nk_console_is_container(nk_console* widget) {
+    switch (widget->type) {
+        case NK_CONSOLE_ROW:
+        case NK_CONSOLE_TREE:
+        case NK_CONSOLE_TABS:
+        case NK_CONSOLE_TAB:
+            return nk_true;
+        default:
+            return nk_false;
+    }
+}
+
+/**
  * Free the given nk_console's data.
  */
 NK_API void nk_console_free(nk_console* console) {
@@ -1636,7 +1642,7 @@ NK_API void nk_console_free(nk_console* console) {
         for (nk_console* p = top_data->active_parent; p != NULL; p = p->parent) {
             if (p == console) {
                 nk_console* destination = parent;
-                while (destination != top && (destination->type == NK_CONSOLE_ROW || destination->type == NK_CONSOLE_TREE)) {
+                while (destination != top && nk_console_is_container(destination)) {
                     destination = destination->parent != NULL ? destination->parent : top;
                 }
                 nk_console_set_active_parent(destination);
@@ -1803,18 +1809,25 @@ NK_API void nk_console_navigate_back(nk_console* leaving_parent) {
         return;
     }
 
-    // Traverse up until we're not on a row or tree. Rows and trees can't act as
+    // Traverse up until we're not on a container, like a row, tree or tabs. Containers can't act as
     // active parents (their children render through the container, not directly),
     // so keep skipping them and let target track the direct child of the
     // destination, so focus lands on a navigable widget.
     nk_console* target = leaving_parent;
-    while (target != top && (target->type == NK_CONSOLE_ROW || target->type == NK_CONSOLE_TREE)) {
+    while (target != top && nk_console_is_container(target)) {
         target = (target->parent != NULL) ? target->parent : top;
+    }
+
+    // Leaving a container on the top-level console leaves the top.
+    if (target == top) {
+        nk_console_trigger_event(top, NK_CONSOLE_EVENT_BACK);
+        data->input_processed = nk_true;
+        return;
     }
 
     // Verify the destination, and find the target.
     nk_console* destination = (target->parent != NULL) ? target->parent : top;
-    while (destination != top && (destination->type == NK_CONSOLE_ROW || destination->type == NK_CONSOLE_TREE)) {
+    while (destination != top && nk_console_is_container(destination)) {
         target = destination;
         destination = (destination->parent != NULL) ? destination->parent : top;
     }
@@ -1990,21 +2003,6 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);
         return;
-    }
-
-    // If we are adding it to a TAB, insert child as a sibling of the tabs widget so navigation works naturally.
-    if (parent->type == NK_CONSOLE_TAB && parent->data != NULL && parent->parent != NULL && parent->parent->parent != NULL) {
-        nk_console* tabs = parent->parent;
-        int widget_index = nk_console_get_widget_index(tabs);
-        if (widget_index >= 0) {
-            // Insert position: immediately after the tabs widget and the children of all its tabs.
-            size_t insert_pos = (size_t)widget_index + (size_t)1 + nk_console_tabs_referenced_count(tabs);
-            insert_pos = NK_MIN(insert_pos, cvector_size(tabs->parent->children));
-            child->parent = tabs->parent;
-            cvector_insert(tabs->parent->children, insert_pos, child);
-            nk_console_tab_reference(parent, child);
-            return;
-        }
     }
 
     child->parent = parent;

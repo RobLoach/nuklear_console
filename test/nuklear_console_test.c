@@ -1437,176 +1437,154 @@ int main() {
 
     // nk_console_tabs()
     {
-        nk_console* screen = nk_console_button(console, "Tabs Screen");
-        nk_console* above = nk_console_button(screen, "Above");
+        // Use a console of its own, so that queued messages don't take the Back button.
+        nk_console* tabs_console = nk_console_init(console->ctx);
+        nk_console_set_gamepads(tabs_console, nk_console_get_gamepads(console));
+        nk_console* screen = nk_console_button(tabs_console, "Tabs Screen");
+        nk_console_label(screen, "Above");
         nk_console* tabs = nk_console_tabs(screen);
         assert(tabs != NULL);
         assert(tabs->type == NK_CONSOLE_TABS);
         assert(strcmp(nk_console_widget_type_name(NK_CONSOLE_TABS), "tabs") == 0);
+        assert(nk_console_tabs_get_selected_tab(tabs) == NULL);
+        assert(nk_console_tabs_selected_index(tabs) == -1);
         nk_console* tab_a = nk_console_tab(tabs, "A");
         nk_console* tab_b = nk_console_tab(tabs, "B");
         nk_console* tab_c = nk_console_tab(tabs, "C");
         assert(tab_a != NULL && tab_b != NULL && tab_c != NULL);
+
+        // The first tab starts out selected.
+        assert(nk_console_tabs_get_selected_tab(tabs) == tab_a);
+        assert(nk_console_tabs_selected(tab_a) && !nk_console_tabs_selected(tab_b));
         assert(nk_console_tabs_selected_index(tabs) == 0);
 
-        // Widgets are siblings of the tabs widget, and only the selected tab's are visible.
+        // A tab's widgets are its own children.
         nk_console* a1 = nk_console_button(tab_a, "A1");
         nk_console* a2 = nk_console_button(tab_a, "A2");
         nk_console* b1 = nk_console_button(tab_b, "B1");
         nk_console* c1 = nk_console_button(tab_c, "C1");
-        nk_console* below = nk_console_button(screen, "Below");
-        assert(a1->parent == screen && b1->parent == screen);
-        assert(cvector_size(screen->children) == 7);
-        assert(nk_console_get_widget_index(tabs) == 1);
-        assert(nk_console_get_widget_index(below) == 6);
-        assert(a1->visible && a2->visible && !b1->visible && !c1->visible && below->visible);
+        assert(a1->parent == tab_a && b1->parent == tab_b);
+        assert(cvector_size(screen->children) == 2);
+        assert(cvector_size(tab_a->children) == 2);
 
-        // Adding to an earlier tab keeps the tab's widgets before the widgets after the tabs.
-        nk_console* a3 = nk_console_button(tab_a, "A3");
-        assert(nk_console_get_widget_index(below) == 7);
-        assert(nk_console_get_widget_index(a3) < nk_console_get_widget_index(below));
-
-        // Selecting a tab shows its widgets and triggers the changed event.
+        // Selecting a tab triggers the changed event.
         int changed = 0;
         nk_console_add_event_handler(tabs, NK_CONSOLE_EVENT_CHANGED, &test_event_counter, &changed, NULL);
         nk_console_tabs_set_selected_index(tabs, 1);
-        assert(nk_console_tabs_selected_index(tabs) == 1);
-        assert(!a1->visible && b1->visible && !c1->visible);
+        assert(nk_console_tabs_get_selected_tab(tabs) == tab_b);
         assert(changed == 1);
         nk_console_tabs_set_selected_index(tabs, 1);
         nk_console_tabs_set_selected_index(tabs, 99);
         assert(nk_console_tabs_selected_index(tabs) == 1);
         assert(changed == 1);
-        nk_console_tabs_set_selected_index(tabs, 0);
-
-        // Tabs can be selected and checked directly.
-        assert(nk_console_tabs_get_selected_tab(tabs) == tab_a);
-        assert(nk_console_tabs_selected(tab_a) && !nk_console_tabs_selected(tab_c));
         nk_console_tabs_set_selected(tab_c);
-        assert(nk_console_tabs_selected(tab_c) && !nk_console_tabs_selected(tab_a));
-        assert(nk_console_tabs_selected_index(tabs) == 2);
-        assert(c1->visible && !a1->visible);
-        assert(changed == 3);
+        assert(nk_console_tabs_selected(tab_c));
+        assert(changed == 2);
         nk_console_tabs_set_selected(tab_a);
 
-        // LB/RB (Shift+Up/Down) switch tabs, wrapping around the ends, and focus follows into the tab.
+        // Only the selected tab's widgets render, with the first selectable one focused.
         nk_console_set_active_parent(screen);
-        nk_console_set_active_widget(a2);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        test_render_frame(tabs_console, NULL, NK_KEY_NONE);
+        assert(screen->activeWidget == tabs);
+        assert(tab_a->activeWidget == a1);
+
+        // Up/Down move within the tab.
+        test_tap_key(tabs_console, NK_KEY_DOWN, nk_false);
+        assert(tab_a->activeWidget == a2);
+
+        // LB/RB (Shift+Up/Down) switch tabs, wrapping around the ends.
+        test_tap_key(tabs_console, NK_KEY_DOWN, nk_true);
         assert(nk_console_tabs_selected_index(tabs) == 1);
-        assert(screen->activeWidget == b1);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        assert(tab_b->activeWidget == b1);
+        test_tap_key(tabs_console, NK_KEY_DOWN, nk_true);
         assert(nk_console_tabs_selected_index(tabs) == 2);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        test_tap_key(tabs_console, NK_KEY_DOWN, nk_true);
         assert(nk_console_tabs_selected_index(tabs) == 0);
 
-        // The last active widget in a tab is restored.
-        assert(screen->activeWidget == a2);
-        test_tap_key(console, NK_KEY_UP, nk_true);
+        // Each tab remembers its focused widget.
+        assert(tab_a->activeWidget == a2);
+        test_tap_key(tabs_console, NK_KEY_UP, nk_true);
         assert(nk_console_tabs_selected_index(tabs) == 2);
-        assert(screen->activeWidget == c1);
+        assert(tab_c->activeWidget == c1);
 
         // Disabled tabs are skipped.
         nk_console_set_disabled(tab_a, nk_true);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        test_tap_key(tabs_console, NK_KEY_DOWN, nk_true);
         assert(nk_console_tabs_selected_index(tabs) == 1);
         nk_console_set_disabled(tab_a, nk_false);
 
-        // LB/RB don't switch a disabled tabs widget, and don't page either.
-        nk_console_set_active_widget(b1);
+        // LB/RB don't switch a disabled tabs widget.
         nk_console_set_disabled(tabs, nk_true);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        test_tap_key(tabs_console, NK_KEY_DOWN, nk_true);
         assert(nk_console_tabs_selected_index(tabs) == 1);
-        assert(screen->activeWidget == b1);
         nk_console_set_disabled(tabs, nk_false);
 
-        // Left/Right switch tabs while the tab headers are focused, keeping focus on the headers.
-        nk_console_set_active_widget(tabs);
-        test_tap_key(console, NK_KEY_RIGHT, nk_false);
-        assert(nk_console_tabs_selected_index(tabs) == 2);
+        // A button with children in a tab opens its screen, and going back returns to the tab.
+        nk_console* sub = nk_console_button(tab_b, "Sub");
+        nk_console_button(sub, "Sub Child");
+        nk_console_set_active_widget(sub);
+        nk_console_set_active_parent(sub);
+        test_tap_key(tabs_console, NK_CONSOLE_KEY_BACK, nk_false);
+        assert(nk_console_active_parent(tabs_console) == screen);
         assert(screen->activeWidget == tabs);
-        test_tap_key(console, NK_KEY_LEFT, nk_false);
-        assert(nk_console_tabs_selected_index(tabs) == 1);
+        assert(tab_b->activeWidget == sub);
 
-        // LB/RB switch tabs while the tab headers are focused too.
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
-        assert(nk_console_tabs_selected_index(tabs) == 2);
-        assert(screen->activeWidget == tabs);
-        test_tap_key(console, NK_KEY_UP, nk_true);
-        assert(nk_console_tabs_selected_index(tabs) == 1);
+        // Back from within a tab leaves the tabs screen.
+        test_tap_key(tabs_console, NK_CONSOLE_KEY_BACK, nk_false);
+        assert(nk_console_active_parent(tabs_console) == tabs_console);
+        assert(tabs_console->activeWidget == screen);
 
-        // Outside of the tabs, LB/RB page rather than switching tabs.
-        nk_console_set_active_widget(above);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
-        assert(nk_console_tabs_selected_index(tabs) == 1);
-        assert(screen->activeWidget == below);
-        test_tap_key(console, NK_KEY_UP, nk_true);
-        assert(nk_console_tabs_selected_index(tabs) == 1);
-        assert(screen->activeWidget == above);
-
-        // Without tabs, LB/RB still page.
-        nk_console* no_tabs = nk_console_button(console, "No Tabs Screen");
-        nk_console* first = nk_console_button(no_tabs, "First");
-        nk_console* second = nk_console_button(no_tabs, "Second");
-        nk_console_set_active_parent(no_tabs);
-        nk_console_set_active_widget(first);
-        test_tap_key(console, NK_KEY_DOWN, nk_true);
-        assert(no_tabs->activeWidget == second);
-        nk_console_set_active_parent(screen);
-
-        nk_console_tabs_set_selected_index(tabs, 2);
-
-        // Freeing a widget within a tab removes it from the tab.
-        nk_console_free(a3);
-        assert(cvector_size(((nk_console_tab_data*)tab_a->data)->referenced_children) == 2);
-
-        // Freeing the selected tab frees its widgets, and selects the first remaining tab.
-        size_t before = cvector_size(screen->children);
-        nk_console_free(tab_c);
-        assert(cvector_size(screen->children) == before - 1);
-        test_render_frame(console, NULL, NK_KEY_NONE);
-        assert(nk_console_tabs_selected_index(tabs) == 0);
-        assert(a1->visible && !b1->visible);
-
-        // Freeing the tabs widget frees all its tabs' widgets.
-        nk_console_free(tabs);
-        assert(cvector_size(screen->children) == 2);
-        assert(screen->children[0] == above && screen->children[1] == below);
-        test_render_frame(console, NULL, NK_KEY_NONE);
+        // Trees within a tab work like on any screen.
+        nk_console* tree = nk_console_tree(tab_c, "Tree", nk_false);
+        nk_console* tree_child = nk_console_label(tree, "Tree Child");
+        assert(tree->parent == tab_c && tree_child->parent == tab_c);
+        assert(!tree_child->visible);
+        nk_console_tree_set_expanded(tree, nk_true);
+        assert(tree_child->visible);
 
         // Freeing an earlier tab keeps the same tab selected.
-        nk_console* free_screen = nk_console_button(console, "Tabs Free Screen");
-        nk_console* free_tabs = nk_console_tabs(free_screen);
-        nk_console* tab_x = nk_console_tab(free_tabs, "X");
-        nk_console* tab_y = nk_console_tab(free_tabs, "Y");
-        nk_console* tab_z = nk_console_tab(free_tabs, "Z");
-        nk_console_button(tab_x, "X1");
-        nk_console* y1 = nk_console_button(tab_y, "Y1");
-        nk_console* z1 = nk_console_button(tab_z, "Z1");
-        nk_console_tabs_set_selected_index(free_tabs, 1);
-        nk_console_free(tab_x);
-        assert(nk_console_tabs_selected_index(free_tabs) == 0);
-        assert(y1->visible && !z1->visible);
-        nk_console_set_active_parent(free_screen);
-        test_render_frame(console, NULL, NK_KEY_NONE);
-        assert(nk_console_tabs_selected_index(free_tabs) == 0);
-        assert(y1->visible && !z1->visible);
+        nk_console_free(tab_a);
+        assert(nk_console_tabs_get_selected_tab(tabs) == tab_b);
+        assert(nk_console_tabs_selected_index(tabs) == 0);
 
         // Freeing the selected tab selects the first remaining one.
-        nk_console_free(tab_y);
-        assert(nk_console_tabs_get_selected_tab(free_tabs) == tab_z);
-        assert(z1->visible);
-        nk_console_set_active_parent(console);
-        nk_console_free(free_screen);
+        nk_console_free(tab_b);
+        assert(nk_console_tabs_get_selected_tab(tabs) == tab_c);
+        nk_console_set_active_parent(screen);
+        test_render_frame(tabs_console, NULL, NK_KEY_NONE);
 
-        // Freeing a screen with tabs frees everything.
+        // Freeing the last tab leaves nothing selected.
+        nk_console_free(tab_c);
+        assert(nk_console_tabs_get_selected_tab(tabs) == NULL);
+        test_render_frame(tabs_console, NULL, NK_KEY_NONE);
+
+        // Freeing the tabs widget, and a screen with tabs.
+        nk_console_free(tabs);
+        assert(cvector_size(screen->children) == 1);
         nk_console* tabs2 = nk_console_tabs(screen);
         nk_console_button(nk_console_tab(tabs2, "X"), "X1");
-        nk_console_button(nk_console_tab(tabs2, "Y"), "Y1");
-        nk_console_set_active_parent(console);
+        nk_console_tree(nk_console_tab(tabs2, "Y"), "Y Tree", nk_true);
+        test_render_frame(tabs_console, NULL, NK_KEY_NONE);
+        nk_console_set_active_parent(tabs_console);
         nk_console_free(screen);
-        nk_console_free(no_tabs);
-        test_render_frame(console, NULL, NK_KEY_NONE);
+        test_render_frame(tabs_console, NULL, NK_KEY_NONE);
+        nk_console_free(tabs_console);
+    }
+
+    // nk_console_tabs() on the top-level console: Back from within a tab stays on the top.
+    {
+        nk_console* top_level = nk_console_init(console->ctx);
+        nk_console_set_gamepads(top_level, nk_console_get_gamepads(console));
+        nk_console* top_tabs = nk_console_tabs(top_level);
+        nk_console_button(nk_console_tab(top_tabs, "T"), "T1");
+        int back = 0;
+        nk_console_add_event_handler(top_level, NK_CONSOLE_EVENT_BACK, &test_event_counter, &back, NULL);
+        test_render_frame(top_level, NULL, NK_KEY_NONE);
+        test_tap_key(top_level, NK_CONSOLE_KEY_BACK, nk_false);
+        assert(back == 1);
+        assert(nk_console_active_parent(top_level) == top_level);
+        assert(top_level->activeWidget == top_tabs);
+        nk_console_free(top_level);
     }
 
     // nk_console_remove_event_handler()
