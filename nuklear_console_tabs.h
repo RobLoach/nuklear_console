@@ -3,7 +3,6 @@
 
 typedef struct nk_console_tabs_data {
     struct nk_console* selected; /** The selected tab, or NULL when there are no tabs. */
-    nk_bool shown; /** Whether the tabs widget was visible when the tabs' widgets were last shown or hidden. */
 } nk_console_tabs_data;
 
 typedef struct nk_console_tab_data {
@@ -20,6 +19,8 @@ extern "C" {
  *
  * Switch between tabs with LB/RB (Shift+Up/Down on keyboard) while the tab headers or a widget within the tabs is focused, with Left/Right when
  * the tab headers are focused, or by clicking a header. Elsewhere, LB/RB page up and down as usual.
+ *
+ * Trees and Tabs within a tab are not supported.
  *
  * @param parent The parent widget.
  *
@@ -124,7 +125,6 @@ static nk_bool nk_console_tab_references(nk_console* tab, nk_console* widget) {
  */
 static void nk_console_tabs_apply_selected(nk_console* tabs) {
     nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
-    data->shown = tabs->visible;
     for (int i = 0; i < (int)cvector_size(tabs->children); i++) {
         nk_console* tab = nk_console_tabs_get_tab(tabs, i);
         if (tab == NULL) {
@@ -132,25 +132,7 @@ static void nk_console_tabs_apply_selected(nk_console* tabs) {
         }
         nk_console_tab_data* tab_data = (nk_console_tab_data*)tab->data;
         for (size_t j = 0; j < cvector_size(tab_data->referenced_children); j++) {
-            tab_data->referenced_children[j]->visible = (data->shown && tab == data->selected) ? nk_true : nk_false;
-        }
-    }
-
-    // Trees within the selected tab only show their children when expanded.
-    nk_console* selected = data->selected;
-    if (selected != NULL && data->shown) {
-        nk_console_tab_data* tab_data = (nk_console_tab_data*)selected->data;
-        for (size_t i = 0; i < cvector_size(tab_data->referenced_children); i++) {
-            nk_console* tree = tab_data->referenced_children[i];
-            if (tree->type != NK_CONSOLE_TREE || tree->data == NULL) {
-                continue;
-            }
-            nk_console_tree_data* tree_data = (nk_console_tree_data*)tree->data;
-            for (size_t j = 0; j < cvector_size(tree_data->referenced_children); j++) {
-                if (tree_data->referenced_children[j] != NULL) {
-                    tree_data->referenced_children[j]->visible = tree->visible && nk_console_tree_expanded(tree);
-                }
-            }
+            tab_data->referenced_children[j]->visible = (tab == data->selected) ? nk_true : nk_false;
         }
     }
 
@@ -293,7 +275,7 @@ static void nk_console_tab_reference(nk_console* tab, nk_console* child) {
 
     // Only show the widget when its tab is selected.
     nk_console_tabs_data* tabs_data = (nk_console_tabs_data*)tab->parent->data;
-    if (tabs_data->selected != tab || !tabs_data->shown) {
+    if (tabs_data->selected != tab) {
         child->visible = nk_false;
     }
 }
@@ -338,11 +320,7 @@ static void nk_console_tab_event_destroyed(nk_console* tab, void* user_data) {
         cvector_erase(data->referenced_children, 0);
 
         // The tab is going away, so stop listening for the child being destroyed.
-        for (size_t i = 0; i < cvector_size(child->events); i++) {
-            if (child->events[i].callback == &nk_console_tab_child_destroyed && child->events[i].user_data == tab) {
-                child->events[i].callback = NULL;
-            }
-        }
+        nk_console_remove_event_handler(child, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tab_child_destroyed, tab);
 
         // When the parent is freeing all its children, they're already detached from it, and the parent frees them itself.
         if (nk_console_get_widget_index(child) >= 0) {
@@ -498,33 +476,6 @@ NK_API nk_console* nk_console_tab(nk_console* tabs, const char* label) {
     return tab;
 }
 
-/**
- * Show or hide the tabs' widgets along with the tabs widget, before the screen renders.
- */
-static void nk_console_tabs_event_pre_parent_render(nk_console* screen, void* user_data) {
-    NK_UNUSED(screen);
-    nk_console* tabs = (nk_console*)user_data;
-    nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
-    if (data->shown != tabs->visible) {
-        nk_console_tabs_apply_selected(tabs);
-    }
-}
-
-static void nk_console_tabs_event_destroyed(nk_console* tabs, void* user_data) {
-    NK_UNUSED(user_data);
-
-    // Stop listening for the screen rendering. When the screen is being freed, its events are already gone.
-    nk_console* screen = tabs->parent;
-    if (screen == NULL) {
-        return;
-    }
-    for (size_t i = 0; i < cvector_size(screen->events); i++) {
-        if (screen->events[i].callback == &nk_console_tabs_event_pre_parent_render && screen->events[i].user_data == tabs) {
-            screen->events[i].callback = NULL;
-        }
-    }
-}
-
 NK_API nk_console* nk_console_tabs(nk_console* parent) {
     NK_ASSERT(parent != NULL);
 
@@ -543,13 +494,6 @@ NK_API nk_console* nk_console_tabs(nk_console* parent) {
     tabs->data = (void*)data;
     tabs->selectable = nk_true;
     tabs->render = nk_console_tabs_render;
-    data->shown = nk_true;
-    nk_console_add_event(tabs, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tabs_event_destroyed);
-
-    // Hiding the tabs widget hides its tabs' widgets too. The tabs widget ends up as a sibling when added to a tree or tab.
-    if (tabs->parent != NULL) {
-        nk_console_add_event_handler(tabs->parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER, &nk_console_tabs_event_pre_parent_render, tabs, NULL);
-    }
 
     return tabs;
 }

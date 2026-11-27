@@ -371,6 +371,17 @@ NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type,
 NK_API void nk_console_add_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data, nk_console_event destructor);
 /** Unregister and free a specific event handler from @p widget. */
 NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_event_handler* handler);
+/**
+ * Remove the event handlers matching the given type, callback and user data from the widget, invoking their destructors.
+ *
+ * @param widget The widget to remove the event handlers from.
+ * @param type The type of event the handlers are for.
+ * @param callback The callback the handlers invoke.
+ * @param user_data The user data the handlers were added with.
+ *
+ * @see nk_console_add_event_handler()
+ */
+NK_API void nk_console_remove_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data);
 
 // Backwards compatibility
 #define nk_console_onchange(widget) nk_console_trigger_event(widget, NK_CONSOLE_EVENT_CHANGED)
@@ -702,6 +713,18 @@ NK_API void nk_console_event_handler_destroy(nk_console* widget, nk_console_even
         handler->destructor = NULL;
     }
     handler->callback = NULL;
+}
+
+NK_API void nk_console_remove_event_handler(nk_console* widget, nk_console_event_type type, nk_console_event callback, void* user_data) {
+    NK_ASSERT(widget != NULL);
+
+    // Disable the handlers rather than erasing them, so that removing one while events are being triggered is safe.
+    for (size_t i = 0; i < cvector_size(widget->events); i++) {
+        nk_console_event_handler* handler = &widget->events[i];
+        if (handler->type == type && handler->callback == callback && handler->user_data == user_data) {
+            nk_console_event_handler_destroy(widget, handler);
+        }
+    }
 }
 
 NK_API void nk_console_add_event(nk_console* widget, nk_console_event_type type, nk_console_event callback) {
@@ -1966,12 +1989,6 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         child->parent = parent->parent;
         cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);
-
-        // When the tree is within a tab, the tab shows its children too.
-        nk_console* tab = nk_console_tabs_find_tab_of(parent);
-        if (tab != NULL) {
-            nk_console_tab_reference(tab, child);
-        }
         return;
     }
 
