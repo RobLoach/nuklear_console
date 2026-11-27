@@ -80,6 +80,8 @@ typedef enum {
     NK_CONSOLE_TREE,
     NK_CONSOLE_LIST_VIEW,
     NK_CONSOLE_CHART,
+    NK_CONSOLE_TABS,
+    NK_CONSOLE_TAB,
 } nk_console_widget_type;
 
 #ifndef NK_CONSOLE_MESSAGE_MAX_LENGTH
@@ -470,6 +472,7 @@ NK_API nk_bool nk_console_navigate_to_path(nk_console* console, const char* path
 #include "nuklear_console_row.h"
 #include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_spacing.h"
+#include "nuklear_console_tabs.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_tree.h"
@@ -669,6 +672,7 @@ extern "C" {
 #include "nuklear_console_row.h"
 #include "nuklear_console_rule_horizontal.h"
 #include "nuklear_console_spacing.h"
+#include "nuklear_console_tabs.h"
 #include "nuklear_console_textedit.h"
 #include "nuklear_console_textedit_text.h"
 #include "nuklear_console_tree.h"
@@ -968,8 +972,14 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
 
     // Only process an active input once.
     if (data->input_processed == nk_false) {
+        // When there are tabs alongside the widget, LB/RB switch between them rather than paging.
+        nk_console* tabs = widget->parent != NULL ? nk_console_tabs_find(widget->parent) : NULL;
+        if (tabs != NULL && (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) || nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB))) {
+            nk_console_tabs_step(tabs, nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) ? -1 : 1);
+            data->input_processed = nk_true;
+        }
         // Page Up
-        if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
+        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
             int widgetIndex = nk_console_get_widget_index(widget);
             nk_console* target = NULL;
             int count = 0;
@@ -1122,6 +1132,8 @@ NK_API const char* nk_console_widget_type_name(nk_console_widget_type type) {
         case NK_CONSOLE_TREE: return "tree";
         case NK_CONSOLE_LIST_VIEW: return "list_view";
         case NK_CONSOLE_CHART: return "chart";
+        case NK_CONSOLE_TABS: return "tabs";
+        case NK_CONSOLE_TAB: return "tab";
         default: return "unknown";
     }
 }
@@ -1951,7 +1963,28 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         child->parent = parent->parent;
         cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);
+
+        // When the tree is within a tab, the tab shows its children too.
+        nk_console* tab = nk_console_tabs_find_tab_of(parent);
+        if (tab != NULL) {
+            nk_console_tab_reference(tab, child);
+        }
         return;
+    }
+
+    // If we are adding it to a TAB, insert child as a sibling of the tabs widget so navigation works naturally.
+    if (parent->type == NK_CONSOLE_TAB && parent->data != NULL && parent->parent != NULL && parent->parent->parent != NULL) {
+        nk_console* tabs = parent->parent;
+        int widget_index = nk_console_get_widget_index(tabs);
+        if (widget_index >= 0) {
+            // Insert position: immediately after the tabs widget and the children of all its tabs.
+            size_t insert_pos = (size_t)widget_index + (size_t)1 + nk_console_tabs_referenced_count(tabs);
+            insert_pos = NK_MIN(insert_pos, cvector_size(tabs->parent->children));
+            child->parent = tabs->parent;
+            cvector_insert(tabs->parent->children, insert_pos, child);
+            nk_console_tab_reference(parent, child);
+            return;
+        }
     }
 
     child->parent = parent;

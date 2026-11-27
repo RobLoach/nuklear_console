@@ -45,6 +45,12 @@ static int tree_option1 = 0;
 static int tree_option2 = 0;
 static int tree_option3 = 0;
 
+// Tabs
+static nk_bool tabs_fullscreen = nk_false;
+static nk_bool tabs_vsync = nk_true;
+static int tabs_volume = 80;
+static int tabs_difficulty = 1;
+
 // List View
 #define NK_CONSOLE_DEMO_LIST_VIEW_COUNT 200
 char list_view_labels[NK_CONSOLE_DEMO_LIST_VIEW_COUNT][32];
@@ -449,6 +455,27 @@ struct nk_console* nuklear_console_demo_init(struct nk_context* ctx, void* user_
             nk_console_label(tree3, "A label inside the Language tree");
 
             nk_console_button_onclick(tree_button, "Back", &nk_console_button_back);
+        }
+
+        // Tabs
+        struct nk_console* tabs_button = nk_console_button(widgets, "Tabs");
+        {
+            nk_console_label(tabs_button, "Press LB/RB to switch tabs");
+            struct nk_console* tabs = nk_console_tabs(tabs_button);
+
+            struct nk_console* video = nk_console_tab(tabs, "Video");
+            nk_console_checkbox(video, "Fullscreen", &tabs_fullscreen);
+            nk_console_checkbox(video, "VSync", &tabs_vsync);
+
+            struct nk_console* audio = nk_console_tab(tabs, "Audio");
+            nk_console_slider_int(audio, "Volume", 0, &tabs_volume, 100, 1);
+
+            struct nk_console* game = nk_console_tab(tabs, "Game");
+            nk_console_radio(game, "Easy", &tabs_difficulty);
+            nk_console_radio(game, "Medium", &tabs_difficulty);
+            nk_console_radio(game, "Hard", &tabs_difficulty);
+
+            nk_console_button_onclick(tabs_button, "Back", &nk_console_button_back);
         }
 
         // List View
