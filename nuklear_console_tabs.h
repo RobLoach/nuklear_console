@@ -18,7 +18,8 @@ extern "C" {
 /**
  * Create a Tabs widget, which displays a row of tab headers along with the widgets of the selected tab.
  *
- * Switch between tabs with LB/RB (Shift+Up/Down on keyboard), with Left/Right when the tab headers are focused, or by clicking a header.
+ * Switch between tabs with LB/RB (Shift+Up/Down on keyboard) while the tab headers or a widget within the tabs is focused, with Left/Right when
+ * the tab headers are focused, or by clicking a header. Elsewhere, LB/RB page up and down as usual.
  *
  * @param parent The parent widget.
  *
@@ -232,19 +233,6 @@ static nk_bool nk_console_tabs_step(nk_console* tabs, int direction) {
 }
 
 /**
- * Find the first visible Tabs widget within the given parent.
- */
-static nk_console* nk_console_tabs_find(nk_console* parent) {
-    for (size_t i = 0; i < cvector_size(parent->children); i++) {
-        nk_console* child = parent->children[i];
-        if (child != NULL && child->type == NK_CONSOLE_TABS && child->visible) {
-            return child;
-        }
-    }
-    return NULL;
-}
-
-/**
  * Find the tab that shows the given widget, or NULL if it isn't within a tab.
  */
 static nk_console* nk_console_tabs_find_tab_of(nk_console* widget) {
@@ -265,6 +253,17 @@ static nk_console* nk_console_tabs_find_tab_of(nk_console* widget) {
         }
     }
     return NULL;
+}
+
+/**
+ * Find the Tabs widget that LB/RB should switch for the given widget: the tabs widget itself, or the one whose tab shows the widget.
+ */
+static nk_console* nk_console_tabs_find_for(nk_console* widget) {
+    if (widget->type == NK_CONSOLE_TABS) {
+        return widget;
+    }
+    nk_console* tab = nk_console_tabs_find_tab_of(widget);
+    return tab != NULL ? tab->parent : NULL;
 }
 
 /**

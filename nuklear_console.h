@@ -975,8 +975,8 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
         nk_bool lb_pushed = nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB);
         nk_bool rb_pushed = nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB);
 
-        // When there are tabs alongside the widget, LB/RB switch between them rather than paging.
-        nk_console* tabs = (lb_pushed || rb_pushed) && widget->parent != NULL ? nk_console_tabs_find(widget->parent) : NULL;
+        // When the tab headers or a widget within the tabs is focused, LB/RB switch tabs rather than paging.
+        nk_console* tabs = (lb_pushed || rb_pushed) ? nk_console_tabs_find_for(widget) : NULL;
         if (tabs != NULL) {
             nk_console_tabs_step(tabs, lb_pushed ? -1 : 1);
             data->input_processed = nk_true;
