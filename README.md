@@ -91,14 +91,14 @@ nk_console* nk_console_slider_float(nk_console* parent, const char* label, float
 nk_console* nk_console_spacing(nk_console* parent, int cols);
 nk_console* nk_console_tabs(nk_console* parent);
 nk_console* nk_console_tab(nk_console* tabs, const char* label);
+int nk_console_tabs_selected(nk_console* tabs);
+void nk_console_tabs_set_selected(nk_console* tabs, int index);
 nk_console* nk_console_textedit(nk_console* parent, const char* label, char* buffer, int buffer_size);
 nk_console* nk_console_tree(nk_console* parent, const char* label, nk_bool expanded);
 
 // Utilities
 void nk_console_button_back(nk_console* button, void* user_data);
 nk_console* nk_console_get_top(nk_console* widget);
-int nk_console_tabs_selected(nk_console* tabs);
-void nk_console_tabs_set_selected(nk_console* tabs, int index);
 int nk_console_get_widget_index(nk_console* widget);
 int nk_console_height(nk_console* widget);
 void nk_console_set_height(nk_console* widget, int height);
