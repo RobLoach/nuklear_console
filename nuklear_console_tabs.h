@@ -3,6 +3,7 @@
 
 typedef struct nk_console_tabs_data {
     struct nk_console* selected; /** The selected tab, or NULL when there are no tabs. */
+    nk_bool shown; /** Whether the tabs widget was visible when the tabs' widgets were last shown or hidden. */
 } nk_console_tabs_data;
 
 typedef struct nk_console_tab_data {
@@ -38,13 +39,38 @@ NK_API nk_console* nk_console_tabs(nk_console* parent);
 NK_API nk_console* nk_console_tab(nk_console* tabs, const char* label);
 
 /**
+ * Get whether or not the given tab is the selected tab.
+ *
+ * @param tab The tab to check.
+ *
+ * @return True if the tab is selected, false otherwise.
+ */
+NK_API nk_bool nk_console_tabs_selected(nk_console* tab);
+
+/**
+ * Select the given tab.
+ *
+ * @param tab The tab to select.
+ */
+NK_API void nk_console_tabs_set_selected(nk_console* tab);
+
+/**
+ * Get the selected tab.
+ *
+ * @param tabs The Tabs widget.
+ *
+ * @return The selected tab, or NULL when there are no tabs.
+ */
+NK_API nk_console* nk_console_tabs_get_selected_tab(nk_console* tabs);
+
+/**
  * Get the index of the selected tab.
  *
  * @param tabs The Tabs widget.
  *
  * @return The index of the selected tab, or -1 when there are no tabs.
  */
-NK_API int nk_console_tabs_selected(nk_console* tabs);
+NK_API int nk_console_tabs_selected_index(nk_console* tabs);
 
 /**
  * Select the tab at the given index.
@@ -52,7 +78,7 @@ NK_API int nk_console_tabs_selected(nk_console* tabs);
  * @param tabs The Tabs widget.
  * @param index The index of the tab to select.
  */
-NK_API void nk_console_tabs_set_selected(nk_console* tabs, int index);
+NK_API void nk_console_tabs_set_selected_index(nk_console* tabs, int index);
 
 #if defined(__cplusplus)
 }
@@ -97,6 +123,7 @@ static nk_bool nk_console_tab_references(nk_console* tab, nk_console* widget) {
  */
 static void nk_console_tabs_apply_selected(nk_console* tabs) {
     nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
+    data->shown = tabs->visible;
     for (int i = 0; i < (int)cvector_size(tabs->children); i++) {
         nk_console* tab = nk_console_tabs_get_tab(tabs, i);
         if (tab == NULL) {
@@ -104,13 +131,13 @@ static void nk_console_tabs_apply_selected(nk_console* tabs) {
         }
         nk_console_tab_data* tab_data = (nk_console_tab_data*)tab->data;
         for (size_t j = 0; j < cvector_size(tab_data->referenced_children); j++) {
-            tab_data->referenced_children[j]->visible = (tab == data->selected) ? nk_true : nk_false;
+            tab_data->referenced_children[j]->visible = (data->shown && tab == data->selected) ? nk_true : nk_false;
         }
     }
 
     // Trees within the selected tab only show their children when expanded.
     nk_console* selected = data->selected;
-    if (selected != NULL) {
+    if (selected != NULL && data->shown) {
         nk_console_tab_data* tab_data = (nk_console_tab_data*)selected->data;
         for (size_t i = 0; i < cvector_size(tab_data->referenced_children); i++) {
             nk_console* tree = tab_data->referenced_children[i];
@@ -185,6 +212,9 @@ static void nk_console_tabs_switch(nk_console* tabs, nk_console* tab) {
  */
 static nk_bool nk_console_tabs_step(nk_console* tabs, int direction) {
     nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
+    if (tabs->disabled) {
+        return nk_false;
+    }
     int count = (int)cvector_size(tabs->children);
     int index = data->selected != NULL ? nk_console_get_widget_index(data->selected) : (direction > 0 ? -1 : 0);
     for (int i = 0; i < count; i++) {
@@ -263,7 +293,8 @@ static void nk_console_tab_reference(nk_console* tab, nk_console* child) {
     nk_console_add_event_handler(child, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tab_child_destroyed, tab, NULL);
 
     // Only show the widget when its tab is selected.
-    if (((nk_console_tabs_data*)tab->parent->data)->selected != tab) {
+    nk_console_tabs_data* tabs_data = (nk_console_tabs_data*)tab->parent->data;
+    if (tabs_data->selected != tab || !tabs_data->shown) {
         child->visible = nk_false;
     }
 }
@@ -289,10 +320,16 @@ static void nk_console_tab_event_destroyed(nk_console* tab, void* user_data) {
         return;
     }
 
-    // Deselect the tab. When the tabs widget itself is being freed, its data is already gone.
-    nk_console_tabs_data* tabs_data = tab->parent != NULL ? (nk_console_tabs_data*)tab->parent->data : NULL;
+    // When the selected tab is freed, select the first remaining one. When the tabs widget itself is
+    // being freed, its data is already gone. The tab is already detached from the tabs widget.
+    nk_console* tabs = tab->parent;
+    nk_console_tabs_data* tabs_data = tabs != NULL ? (nk_console_tabs_data*)tabs->data : NULL;
     if (tabs_data != NULL && tabs_data->selected == tab) {
         tabs_data->selected = NULL;
+        for (int i = 0; i < (int)cvector_size(tabs->children) && tabs_data->selected == NULL; i++) {
+            tabs_data->selected = nk_console_tabs_get_tab(tabs, i);
+        }
+        nk_console_tabs_apply_selected(tabs);
     }
 
     // Free all the referenced children, removing them from the parent. Freeing a tree also frees its
@@ -323,16 +360,6 @@ static struct nk_rect nk_console_tabs_render(nk_console* tabs) {
     NK_ASSERT(tabs->data != NULL);
     nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
     struct nk_context* ctx = tabs->ctx;
-
-    // Select the first tab when the selected one was freed.
-    if (data->selected == NULL) {
-        for (int i = 0; i < (int)cvector_size(tabs->children) && data->selected == NULL; i++) {
-            data->selected = nk_console_tabs_get_tab(tabs, i);
-        }
-        if (data->selected != NULL) {
-            nk_console_tabs_apply_selected(tabs);
-        }
-    }
 
     int visible_tabs = 0;
     for (int i = 0; i < (int)cvector_size(tabs->children); i++) {
@@ -410,15 +437,33 @@ static struct nk_rect nk_console_tabs_render(nk_console* tabs) {
     return widget_bounds;
 }
 
-NK_API int nk_console_tabs_selected(nk_console* tabs) {
+NK_API nk_console* nk_console_tabs_get_selected_tab(nk_console* tabs) {
     NK_ASSERT(tabs != NULL);
     NK_ASSERT(tabs->data != NULL);
     NK_ASSERT(tabs->type == NK_CONSOLE_TABS);
-    nk_console* selected = ((nk_console_tabs_data*)tabs->data)->selected;
+    return ((nk_console_tabs_data*)tabs->data)->selected;
+}
+
+NK_API nk_bool nk_console_tabs_selected(nk_console* tab) {
+    NK_ASSERT(tab != NULL);
+    NK_ASSERT(tab->type == NK_CONSOLE_TAB);
+    NK_ASSERT(tab->parent != NULL);
+    return nk_console_tabs_get_selected_tab(tab->parent) == tab;
+}
+
+NK_API void nk_console_tabs_set_selected(nk_console* tab) {
+    NK_ASSERT(tab != NULL);
+    NK_ASSERT(tab->type == NK_CONSOLE_TAB);
+    NK_ASSERT(tab->parent != NULL);
+    nk_console_tabs_switch(tab->parent, tab);
+}
+
+NK_API int nk_console_tabs_selected_index(nk_console* tabs) {
+    nk_console* selected = nk_console_tabs_get_selected_tab(tabs);
     return selected != NULL ? nk_console_get_widget_index(selected) : -1;
 }
 
-NK_API void nk_console_tabs_set_selected(nk_console* tabs, int index) {
+NK_API void nk_console_tabs_set_selected_index(nk_console* tabs, int index) {
     NK_ASSERT(tabs != NULL);
     NK_ASSERT(tabs->data != NULL);
     NK_ASSERT(tabs->type == NK_CONSOLE_TABS);
@@ -454,6 +499,33 @@ NK_API nk_console* nk_console_tab(nk_console* tabs, const char* label) {
     return tab;
 }
 
+/**
+ * Show or hide the tabs' widgets along with the tabs widget, before the screen renders.
+ */
+static void nk_console_tabs_event_pre_parent_render(nk_console* screen, void* user_data) {
+    NK_UNUSED(screen);
+    nk_console* tabs = (nk_console*)user_data;
+    nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
+    if (data->shown != tabs->visible) {
+        nk_console_tabs_apply_selected(tabs);
+    }
+}
+
+static void nk_console_tabs_event_destroyed(nk_console* tabs, void* user_data) {
+    NK_UNUSED(user_data);
+
+    // Stop listening for the screen rendering. When the screen is being freed, its events are already gone.
+    nk_console* screen = tabs->parent;
+    if (screen == NULL) {
+        return;
+    }
+    for (size_t i = 0; i < cvector_size(screen->events); i++) {
+        if (screen->events[i].callback == &nk_console_tabs_event_pre_parent_render && screen->events[i].user_data == tabs) {
+            screen->events[i].callback = NULL;
+        }
+    }
+}
+
 NK_API nk_console* nk_console_tabs(nk_console* parent) {
     NK_ASSERT(parent != NULL);
 
@@ -472,6 +544,13 @@ NK_API nk_console* nk_console_tabs(nk_console* parent) {
     tabs->data = (void*)data;
     tabs->selectable = nk_true;
     tabs->render = nk_console_tabs_render;
+    data->shown = nk_true;
+    nk_console_add_event(tabs, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tabs_event_destroyed);
+
+    // Hiding the tabs widget hides its tabs' widgets too. The tabs widget ends up as a sibling when added to a tree or tab.
+    if (tabs->parent != NULL) {
+        nk_console_add_event_handler(tabs->parent, NK_CONSOLE_EVENT_PRE_PARENT_RENDER, &nk_console_tabs_event_pre_parent_render, tabs, NULL);
+    }
 
     return tabs;
 }

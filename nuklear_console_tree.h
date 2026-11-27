@@ -70,11 +70,11 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
     data->button.symbol = expanded ? NK_SYMBOL_TRIANGLE_DOWN : NK_SYMBOL_TRIANGLE_RIGHT;
 
-    // Toggle visibility of the children for the tree.
+    // Toggle visibility of the children for the tree. A hidden tree, such as one in an unselected tab, keeps them hidden.
     nk_console** referenced_children = data->referenced_children;
     for (size_t i = 0; i < cvector_size(referenced_children); i++) {
         if (referenced_children[i] != NULL) {
-            referenced_children[i]->visible = expanded;
+            referenced_children[i]->visible = expanded && tree->visible;
         }
     }
 
