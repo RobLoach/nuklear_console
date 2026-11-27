@@ -1549,6 +1549,33 @@ int main() {
         assert(screen->children[0] == above && screen->children[1] == below);
         test_render_frame(console, NULL, NK_KEY_NONE);
 
+        // Freeing an earlier tab keeps the same tab selected.
+        nk_console* free_screen = nk_console_button(console, "Tabs Free Screen");
+        nk_console* free_tabs = nk_console_tabs(free_screen);
+        nk_console* tab_x = nk_console_tab(free_tabs, "X");
+        nk_console* tab_y = nk_console_tab(free_tabs, "Y");
+        nk_console* tab_z = nk_console_tab(free_tabs, "Z");
+        nk_console_button(tab_x, "X1");
+        nk_console* y1 = nk_console_button(tab_y, "Y1");
+        nk_console* z1 = nk_console_button(tab_z, "Z1");
+        nk_console_tabs_set_selected(free_tabs, 1);
+        nk_console_free(tab_x);
+        assert(nk_console_tabs_selected(free_tabs) == 0);
+        assert(y1->visible && !z1->visible);
+        nk_console_set_active_parent(free_screen);
+        test_render_frame(console, NULL, NK_KEY_NONE);
+        assert(nk_console_tabs_selected(free_tabs) == 0);
+        assert(y1->visible && !z1->visible);
+
+        // Freeing the selected tab selects the first remaining one.
+        nk_console_free(tab_y);
+        assert(nk_console_tabs_selected(free_tabs) == -1);
+        test_render_frame(console, NULL, NK_KEY_NONE);
+        assert(nk_console_tabs_selected(free_tabs) == 0);
+        assert(z1->visible);
+        nk_console_set_active_parent(console);
+        nk_console_free(free_screen);
+
         // Freeing a screen with tabs frees everything.
         nk_console* tabs2 = nk_console_tabs(screen);
         nk_console_button(nk_console_tab(tabs2, "X"), "X1");

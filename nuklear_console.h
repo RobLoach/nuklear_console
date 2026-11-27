@@ -972,14 +972,17 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
 
     // Only process an active input once.
     if (data->input_processed == nk_false) {
+        nk_bool lb_pushed = nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB);
+        nk_bool rb_pushed = nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB);
+
         // When there are tabs alongside the widget, LB/RB switch between them rather than paging.
-        nk_console* tabs = widget->parent != NULL ? nk_console_tabs_find(widget->parent) : NULL;
-        if (tabs != NULL && (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) || nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB))) {
-            nk_console_tabs_step(tabs, nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB) ? -1 : 1);
+        nk_console* tabs = (lb_pushed || rb_pushed) && widget->parent != NULL ? nk_console_tabs_find(widget->parent) : NULL;
+        if (tabs != NULL) {
+            nk_console_tabs_step(tabs, lb_pushed ? -1 : 1);
             data->input_processed = nk_true;
         }
         // Page Up
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_LB)) {
+        else if (lb_pushed) {
             int widgetIndex = nk_console_get_widget_index(widget);
             nk_console* target = NULL;
             int count = 0;
@@ -999,7 +1002,7 @@ NK_API void nk_console_check_up_down(nk_console* widget) {
             data->input_processed = nk_true;
         }
         // Page Down
-        else if (nk_console_button_pushed(top, NK_GAMEPAD_BUTTON_RB)) {
+        else if (rb_pushed) {
             int widgetIndex = nk_console_get_widget_index(widget);
             nk_console* target = NULL;
             int count = 0;
