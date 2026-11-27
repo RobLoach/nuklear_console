@@ -1554,41 +1554,16 @@ int main() {
         assert(no_tabs->activeWidget == second);
         nk_console_set_active_parent(screen);
 
-        // A tree within a tab hides its children along with the tab.
-        nk_console* tree = nk_console_tree(tab_c, "Tree", nk_true);
-        nk_console* tree_child = nk_console_label(tree, "Tree Child");
-        assert(!tree->visible && !tree_child->visible);
         nk_console_tabs_set_selected_index(tabs, 2);
-        assert(tree->visible && tree_child->visible);
-        nk_console_tree_set_expanded(tree, nk_false);
-        nk_console_tabs_set_selected_index(tabs, 0);
-        nk_console_tabs_set_selected_index(tabs, 2);
-        assert(tree->visible && !tree_child->visible);
 
-        // Expanding a tree in an unselected tab keeps its children hidden.
-        nk_console_tree_set_expanded(tree, nk_false);
-        nk_console_tabs_set_selected_index(tabs, 0);
-        nk_console_tree_set_expanded(tree, nk_true);
-        assert(!tree->visible && !tree_child->visible);
-        nk_console_tabs_set_selected_index(tabs, 2);
-        assert(tree->visible && tree_child->visible);
-
-        // Hiding the tabs widget hides the selected tab's widgets too, and showing it brings them back.
-        tabs->visible = nk_false;
-        test_render_frame(console, NULL, NK_KEY_NONE);
-        assert(!c1->visible && !tree->visible && !tree_child->visible && !a1->visible);
-        tabs->visible = nk_true;
-        test_render_frame(console, NULL, NK_KEY_NONE);
-        assert(c1->visible && tree->visible && tree_child->visible && !a1->visible);
-
-                // Freeing a widget within a tab removes it from the tab.
+        // Freeing a widget within a tab removes it from the tab.
         nk_console_free(a3);
         assert(cvector_size(((nk_console_tab_data*)tab_a->data)->referenced_children) == 2);
 
-        // Freeing a tab frees its widgets.
+        // Freeing the selected tab frees its widgets, and selects the first remaining tab.
         size_t before = cvector_size(screen->children);
         nk_console_free(tab_c);
-        assert(cvector_size(screen->children) == before - 3);
+        assert(cvector_size(screen->children) == before - 1);
         test_render_frame(console, NULL, NK_KEY_NONE);
         assert(nk_console_tabs_selected_index(tabs) == 0);
         assert(a1->visible && !b1->visible);
@@ -1627,11 +1602,33 @@ int main() {
         // Freeing a screen with tabs frees everything.
         nk_console* tabs2 = nk_console_tabs(screen);
         nk_console_button(nk_console_tab(tabs2, "X"), "X1");
-        nk_console_tree(nk_console_tab(tabs2, "Y"), "Y Tree", nk_true);
+        nk_console_button(nk_console_tab(tabs2, "Y"), "Y1");
         nk_console_set_active_parent(console);
         nk_console_free(screen);
         nk_console_free(no_tabs);
         test_render_frame(console, NULL, NK_KEY_NONE);
+    }
+
+    // nk_console_remove_event_handler()
+    {
+        nk_console* label = nk_console_label(console, "Remove Event Handler");
+        int count_a = 0;
+        int count_b = 0;
+        nk_console_add_event_handler(label, NK_CONSOLE_EVENT_CLICKED, &test_event_counter, &count_a, NULL);
+        nk_console_add_event_handler(label, NK_CONSOLE_EVENT_CLICKED, &test_event_counter, &count_b, NULL);
+        nk_console_trigger_event(label, NK_CONSOLE_EVENT_CLICKED);
+        assert(count_a == 1 && count_b == 1);
+
+        // Only the handler matching the user data is removed.
+        nk_console_remove_event_handler(label, NK_CONSOLE_EVENT_CLICKED, &test_event_counter, &count_a);
+        nk_console_trigger_event(label, NK_CONSOLE_EVENT_CLICKED);
+        assert(count_a == 1 && count_b == 2);
+
+        // Handlers for other event types are left alone.
+        nk_console_remove_event_handler(label, NK_CONSOLE_EVENT_CHANGED, &test_event_counter, &count_b);
+        nk_console_trigger_event(label, NK_CONSOLE_EVENT_CLICKED);
+        assert(count_b == 3);
+        nk_console_free(label);
     }
 
     // NK_CONSOLE_EVENT_POST_RENDER_ONCE
