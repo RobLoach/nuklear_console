@@ -1520,13 +1520,29 @@ int main() {
         assert(screen->activeWidget == b1);
         nk_console_set_disabled(tabs, nk_false);
 
-                // Left/Right switch tabs while the tab headers are focused, keeping focus on the headers.
+        // Left/Right switch tabs while the tab headers are focused, keeping focus on the headers.
         nk_console_set_active_widget(tabs);
         test_tap_key(console, NK_KEY_RIGHT, nk_false);
         assert(nk_console_tabs_selected_index(tabs) == 2);
         assert(screen->activeWidget == tabs);
         test_tap_key(console, NK_KEY_LEFT, nk_false);
         assert(nk_console_tabs_selected_index(tabs) == 1);
+
+        // LB/RB switch tabs while the tab headers are focused too.
+        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        assert(nk_console_tabs_selected_index(tabs) == 2);
+        assert(screen->activeWidget == tabs);
+        test_tap_key(console, NK_KEY_UP, nk_true);
+        assert(nk_console_tabs_selected_index(tabs) == 1);
+
+        // Outside of the tabs, LB/RB page rather than switching tabs.
+        nk_console_set_active_widget(above);
+        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        assert(nk_console_tabs_selected_index(tabs) == 1);
+        assert(screen->activeWidget == below);
+        test_tap_key(console, NK_KEY_UP, nk_true);
+        assert(nk_console_tabs_selected_index(tabs) == 1);
+        assert(screen->activeWidget == above);
 
         // Without tabs, LB/RB still page.
         nk_console* no_tabs = nk_console_button(console, "No Tabs Screen");
