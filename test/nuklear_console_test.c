@@ -65,6 +65,15 @@ static const char* list_view_get_label(struct nk_console* list_view, nk_uint ind
 }
 
 /**
+ * End a frame without drawing it. Building the commands resets the popup state that only nk_build() clears,
+ * so a stale tooltip from this window can't loop the next drawn frame's commands (#342).
+ */
+static void test_end_frame(struct nk_context* ctx) {
+    nk__begin(ctx);
+    nk_clear(ctx);
+}
+
+/**
  * Render one frame of the given console, typing the UTF-8 text and pressing the key.
  */
 static void test_render_frame(nk_console* console, const char* text, enum nk_keys key) {
@@ -86,7 +95,7 @@ static void test_render_frame(nk_console* console, const char* text, enum nk_key
     }
     nk_input_end(ctx);
     nk_console_render_window(console, "masked_test", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
-    nk_clear(ctx);
+    test_end_frame(ctx);
 
     // Release the key so the next frame doesn't see it pressed.
     if (key != NK_KEY_NONE) {
@@ -107,7 +116,7 @@ static void test_tap_key(nk_console* console, enum nk_keys key, nk_bool shift) {
     nk_input_key(ctx, key, nk_false);
     nk_input_end(ctx);
     nk_console_render_window(console, "tap_test", nk_rect(0, 0, 300, 800), NK_WINDOW_TITLE);
-    nk_clear(ctx);
+    test_end_frame(ctx);
     nk_input_begin(ctx);
     nk_input_key(ctx, NK_KEY_SHIFT, nk_false);
     nk_input_end(ctx);
@@ -943,6 +952,9 @@ int main() {
         assert(lv_data->search_buffer[0] == '\0');
         assert((int)cvector_size(console->children) == before);
     }
+
+    // A key-driven frame before the screenshot must not hang the draw (#342).
+    test_render_frame(console, NULL, NK_KEY_NONE);
 
     // nk_console_free() on a searchable list view also removes its search field.
     {
