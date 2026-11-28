@@ -106,6 +106,7 @@ nk_bool nk_console_get_style_inherits(nk_console* widget);
 void nk_console_set_style_inherits(nk_console* widget, nk_bool inherits);
 nk_bool nk_console_is_active_widget(nk_console* widget);
 nk_bool nk_console_selectable(nk_console* widget);
+nk_bool nk_console_is_visible(nk_console* widget);
 void nk_console_set_active_parent(nk_console* new_parent);
 void nk_console_set_active_widget(nk_console* widget);
 nk_console* nk_console_active_parent(nk_console* console);

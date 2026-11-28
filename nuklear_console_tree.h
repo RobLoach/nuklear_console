@@ -70,11 +70,11 @@ static void nk_console_tree_apply_expanded(nk_console* tree, nk_bool expanded) {
     nk_console_tree_data* data = (nk_console_tree_data*)tree->data;
     data->button.symbol = expanded ? NK_SYMBOL_TRIANGLE_DOWN : NK_SYMBOL_TRIANGLE_RIGHT;
 
-    // Toggle visibility of the children for the tree.
+    // Show or hide the children of the tree, leaving their own visible flag to the user.
     nk_console** referenced_children = data->referenced_children;
     for (size_t i = 0; i < cvector_size(referenced_children); i++) {
         if (referenced_children[i] != NULL) {
-            referenced_children[i]->visible = expanded;
+            referenced_children[i]->hidden = !expanded;
         }
     }
 
@@ -151,6 +151,7 @@ static void nk_console_tree_event_destroyed(nk_console* tree, void* user_data) {
         if (child == NULL) {
             continue;
         }
+        child->container = NULL;
 
         // Free it up, which also removes it from the parent. When the parent is freeing all
         // its children, they're already detached from it, and the parent frees them itself.

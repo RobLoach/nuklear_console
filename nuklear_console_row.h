@@ -273,7 +273,7 @@ NK_API struct nk_rect nk_console_row_render(nk_console* console) {
     // Render all the children
     for (int i = 0; i < numChildren; ++i) {
         nk_console* child = console->children[i];
-        if (child->render != NULL && child->visible == nk_true) {
+        if (child->render != NULL && nk_console_is_visible(child)) {
             // Children are rendered directly rather than through nk_console_render(),
             // so push any of their styles here.
             struct nk_style saved_style;
