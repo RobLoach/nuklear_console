@@ -20,8 +20,6 @@ extern "C" {
  * Switch between tabs with LB/RB (Shift+Up/Down on keyboard) while the tab headers or a widget within the tabs is focused, with Left/Right when
  * the tab headers are focused, or by clicking a header. Elsewhere, LB/RB page up and down as usual.
  *
- * Trees and Tabs within a tab are not supported.
- *
  * @param parent The parent widget.
  *
  * @return The created widget.
@@ -108,20 +106,7 @@ static nk_console* nk_console_tabs_get_tab(nk_console* tabs, int index) {
 }
 
 /**
- * Whether or not the given widget is shown by the tab.
- */
-static nk_bool nk_console_tab_references(nk_console* tab, nk_console* widget) {
-    nk_console_tab_data* data = (nk_console_tab_data*)tab->data;
-    for (size_t i = 0; i < cvector_size(data->referenced_children); i++) {
-        if (data->referenced_children[i] == widget) {
-            return nk_true;
-        }
-    }
-    return nk_false;
-}
-
-/**
- * Show the selected tab's widgets, and hide all the others.
+ * Show the selected tab's widgets, and hide all the others. Widgets within those, like a Tree's children, follow along.
  */
 static void nk_console_tabs_apply_selected(nk_console* tabs) {
     nk_console_tabs_data* data = (nk_console_tabs_data*)tabs->data;
@@ -132,7 +117,7 @@ static void nk_console_tabs_apply_selected(nk_console* tabs) {
         }
         nk_console_tab_data* tab_data = (nk_console_tab_data*)tab->data;
         for (size_t j = 0; j < cvector_size(tab_data->referenced_children); j++) {
-            tab_data->referenced_children[j]->visible = (tab == data->selected) ? nk_true : nk_false;
+            tab_data->referenced_children[j]->hidden = (tab == data->selected) ? nk_false : nk_true;
         }
     }
 
@@ -157,7 +142,7 @@ static void nk_console_tabs_switch(nk_console* tabs, nk_console* tab) {
     nk_console* active = screen != NULL ? screen->activeWidget : NULL;
     nk_console* previous = data->selected;
     nk_bool focus_within = nk_false;
-    if (previous != NULL && active != NULL && nk_console_tab_references(previous, active)) {
+    if (previous != NULL && active != NULL && nk_console_is_within(active, previous)) {
         ((nk_console_tab_data*)previous->data)->last_active = active;
         focus_within = nk_true;
     }
@@ -215,37 +200,15 @@ static nk_bool nk_console_tabs_step(nk_console* tabs, int direction) {
 }
 
 /**
- * Find the tab that shows the given widget, or NULL if it isn't within a tab.
+ * Find the Tabs widget that LB/RB should switch for the given widget: the tabs widget itself, or the closest one whose tab shows the widget.
  */
-static nk_console* nk_console_tabs_find_tab_of(nk_console* widget) {
-    nk_console* parent = widget->parent;
-    if (parent == NULL) {
-        return NULL;
-    }
-    for (size_t i = 0; i < cvector_size(parent->children); i++) {
-        nk_console* tabs = parent->children[i];
-        if (tabs == NULL || tabs->type != NK_CONSOLE_TABS) {
-            continue;
-        }
-        for (int j = 0; j < (int)cvector_size(tabs->children); j++) {
-            nk_console* tab = nk_console_tabs_get_tab(tabs, j);
-            if (tab != NULL && nk_console_tab_references(tab, widget)) {
-                return tab;
-            }
+static nk_console* nk_console_tabs_find_for(nk_console* widget) {
+    for (nk_console* w = widget; w != NULL; w = w->container) {
+        if (w->type == NK_CONSOLE_TABS) {
+            return w;
         }
     }
     return NULL;
-}
-
-/**
- * Find the Tabs widget that LB/RB should switch for the given widget: the tabs widget itself, or the one whose tab shows the widget.
- */
-static nk_console* nk_console_tabs_find_for(nk_console* widget) {
-    if (widget->type == NK_CONSOLE_TABS) {
-        return widget;
-    }
-    nk_console* tab = nk_console_tabs_find_tab_of(widget);
-    return tab != NULL ? tab->parent : NULL;
 }
 
 /**
@@ -275,23 +238,8 @@ static void nk_console_tab_reference(nk_console* tab, nk_console* child) {
 
     // Only show the widget when its tab is selected.
     nk_console_tabs_data* tabs_data = (nk_console_tabs_data*)tab->parent->data;
-    if (tabs_data->selected != tab) {
-        child->visible = nk_false;
-    }
-}
-
-/**
- * Get the number of widgets referenced by all tabs, which sit right after the tabs widget.
- */
-static size_t nk_console_tabs_referenced_count(nk_console* tabs) {
-    size_t count = 0;
-    for (int i = 0; i < (int)cvector_size(tabs->children); i++) {
-        nk_console* tab = nk_console_tabs_get_tab(tabs, i);
-        if (tab != NULL) {
-            count += cvector_size(((nk_console_tab_data*)tab->data)->referenced_children);
-        }
-    }
-    return count;
+    child->container = tab;
+    child->hidden = (tabs_data->selected == tab) ? nk_false : nk_true;
 }
 
 static void nk_console_tab_event_destroyed(nk_console* tab, void* user_data) {
@@ -318,6 +266,7 @@ static void nk_console_tab_event_destroyed(nk_console* tab, void* user_data) {
     while (cvector_size(data->referenced_children) > 0) {
         nk_console* child = data->referenced_children[0];
         cvector_erase(data->referenced_children, 0);
+        child->container = NULL;
 
         // The tab is going away, so stop listening for the child being destroyed.
         nk_console_remove_event_handler(child, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tab_child_destroyed, tab);
@@ -465,6 +414,7 @@ NK_API nk_console* nk_console_tab(nk_console* tabs, const char* label) {
     tab->type = NK_CONSOLE_TAB;
     tab->data = (void*)data;
     tab->render = NULL;
+    tab->container = tabs;
     nk_console_add_event(tab, NK_CONSOLE_EVENT_DESTROYED, &nk_console_tab_event_destroyed);
 
     // The first tab starts out selected.

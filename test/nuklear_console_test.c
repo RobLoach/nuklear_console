@@ -1459,7 +1459,7 @@ int main() {
         assert(cvector_size(screen->children) == 7);
         assert(nk_console_get_widget_index(tabs) == 1);
         assert(nk_console_get_widget_index(below) == 6);
-        assert(a1->visible && a2->visible && !b1->visible && !c1->visible && below->visible);
+        assert(nk_console_is_visible(a1) && nk_console_is_visible(a2) && !nk_console_is_visible(b1) && !nk_console_is_visible(c1) && nk_console_is_visible(below));
 
         // Adding to an earlier tab keeps the tab's widgets before the widgets after the tabs.
         nk_console* a3 = nk_console_button(tab_a, "A3");
@@ -1471,7 +1471,7 @@ int main() {
         nk_console_add_event_handler(tabs, NK_CONSOLE_EVENT_CHANGED, &test_event_counter, &changed, NULL);
         nk_console_tabs_set_selected_index(tabs, 1);
         assert(nk_console_tabs_selected_index(tabs) == 1);
-        assert(!a1->visible && b1->visible && !c1->visible);
+        assert(!nk_console_is_visible(a1) && nk_console_is_visible(b1) && !nk_console_is_visible(c1));
         assert(changed == 1);
         nk_console_tabs_set_selected_index(tabs, 1);
         nk_console_tabs_set_selected_index(tabs, 99);
@@ -1485,7 +1485,7 @@ int main() {
         nk_console_tabs_set_selected(tab_c);
         assert(nk_console_tabs_selected(tab_c) && !nk_console_tabs_selected(tab_a));
         assert(nk_console_tabs_selected_index(tabs) == 2);
-        assert(c1->visible && !a1->visible);
+        assert(nk_console_is_visible(c1) && !nk_console_is_visible(a1));
         assert(changed == 3);
         nk_console_tabs_set_selected(tab_a);
 
@@ -1566,7 +1566,7 @@ int main() {
         assert(cvector_size(screen->children) == before - 1);
         test_render_frame(console, NULL, NK_KEY_NONE);
         assert(nk_console_tabs_selected_index(tabs) == 0);
-        assert(a1->visible && !b1->visible);
+        assert(nk_console_is_visible(a1) && !nk_console_is_visible(b1));
 
         // Freeing the tabs widget frees all its tabs' widgets.
         nk_console_free(tabs);
@@ -1586,16 +1586,16 @@ int main() {
         nk_console_tabs_set_selected_index(free_tabs, 1);
         nk_console_free(tab_x);
         assert(nk_console_tabs_selected_index(free_tabs) == 0);
-        assert(y1->visible && !z1->visible);
+        assert(nk_console_is_visible(y1) && !nk_console_is_visible(z1));
         nk_console_set_active_parent(free_screen);
         test_render_frame(console, NULL, NK_KEY_NONE);
         assert(nk_console_tabs_selected_index(free_tabs) == 0);
-        assert(y1->visible && !z1->visible);
+        assert(nk_console_is_visible(y1) && !nk_console_is_visible(z1));
 
         // Freeing the selected tab selects the first remaining one.
         nk_console_free(tab_y);
         assert(nk_console_tabs_get_selected_tab(free_tabs) == tab_z);
-        assert(z1->visible);
+        assert(nk_console_is_visible(z1));
         nk_console_set_active_parent(console);
         nk_console_free(free_screen);
 
@@ -1607,6 +1607,112 @@ int main() {
         nk_console_free(screen);
         nk_console_free(no_tabs);
         test_render_frame(console, NULL, NK_KEY_NONE);
+    }
+
+    // Containers hide widgets without touching the user's visible flag.
+    {
+        nk_console* screen = nk_console_button(console, "Container Visibility Screen");
+        nk_console_set_active_parent(screen);
+
+        // A widget the user hid within a tab stays hidden through tab switches.
+        nk_console* tabs = nk_console_tabs(screen);
+        nk_console* tab_a = nk_console_tab(tabs, "A");
+        nk_console* tab_b = nk_console_tab(tabs, "B");
+        nk_console* a1 = nk_console_button(tab_a, "A1");
+        nk_console* a_hidden = nk_console_button(tab_a, "A Hidden");
+        nk_console* b1 = nk_console_button(tab_b, "B1");
+        a_hidden->visible = nk_false;
+        assert(b1->visible && !nk_console_is_visible(b1));
+        nk_console_tabs_set_selected_index(tabs, 1);
+        assert(a1->visible && !nk_console_is_visible(a1) && nk_console_is_visible(b1));
+        nk_console_tabs_set_selected_index(tabs, 0);
+        assert(nk_console_is_visible(a1) && !a_hidden->visible && !nk_console_is_visible(a_hidden));
+        assert(!nk_console_selectable(a_hidden));
+        a_hidden->visible = nk_true;
+        assert(nk_console_is_visible(a_hidden));
+
+        // A Tree within a tab hides its children along with the tab.
+        nk_console* tree = nk_console_tree(tab_b, "Tree", nk_true);
+        nk_console* tree_child = nk_console_button(tree, "Tree Child");
+        nk_console* tree_hidden = nk_console_button(tree, "Tree Hidden");
+        nk_console* b2 = nk_console_button(tab_b, "B2");
+        tree_hidden->visible = nk_false;
+        assert(!nk_console_is_visible(tree) && !nk_console_is_visible(tree_child));
+
+        // Widgets added to the tab after the tree sit after the tree's children.
+        assert(nk_console_get_widget_index(tree_child) == nk_console_get_widget_index(tree) + 1);
+        assert(nk_console_get_widget_index(b2) == nk_console_get_widget_index(tree) + 3);
+        nk_console_tabs_set_selected_index(tabs, 1);
+        assert(nk_console_is_visible(tree) && nk_console_is_visible(tree_child) && !nk_console_is_visible(tree_hidden));
+
+        // A collapsed tree keeps its children hidden when its tab is selected.
+        nk_console_tree_set_expanded(tree, nk_false);
+        assert(!nk_console_is_visible(tree_child) && tree_child->visible);
+        nk_console_tabs_set_selected_index(tabs, 0);
+        nk_console_tabs_set_selected_index(tabs, 1);
+        assert(nk_console_is_visible(tree) && !nk_console_is_visible(tree_child));
+
+        // Expanding a tree in an unselected tab keeps its children hidden, and a user-hidden child stays hidden.
+        nk_console_tabs_set_selected_index(tabs, 0);
+        nk_console_tree_set_expanded(tree, nk_true);
+        assert(!nk_console_is_visible(tree_child));
+        nk_console_tabs_set_selected_index(tabs, 1);
+        assert(nk_console_is_visible(tree_child) && !nk_console_is_visible(tree_hidden));
+        assert(!tree_hidden->visible);
+
+        // LB/RB from a tree child within a tab switch tabs, and focus returns to it.
+        nk_console_set_active_widget(tree_child);
+        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        assert(nk_console_tabs_selected_index(tabs) == 0);
+        assert(screen->activeWidget == a1);
+        test_tap_key(console, NK_KEY_DOWN, nk_true);
+        assert(nk_console_tabs_selected_index(tabs) == 1);
+        assert(screen->activeWidget == tree_child);
+
+        // Hiding the tree hides its children, and hiding the tabs widget hides all its tabs' widgets.
+        tree->visible = nk_false;
+        assert(!nk_console_is_visible(tree_child) && nk_console_is_visible(b2));
+        tree->visible = nk_true;
+        tabs->visible = nk_false;
+        assert(!nk_console_is_visible(b2) && !nk_console_is_visible(tree_child));
+        tabs->visible = nk_true;
+        assert(nk_console_is_visible(b2) && nk_console_is_visible(tree_child));
+
+        // A searchable List View within a tab shows its search field only along with the tab.
+        nk_console* list_view = nk_console_list_view(tab_a, "tab_list_view", 3, 5, list_view_get_label);
+        nk_console_list_view_set_searchable(list_view, nk_true);
+        nk_console* search = ((nk_console_list_view_data*)list_view->data)->search;
+        assert(search != NULL);
+        assert(nk_console_get_widget_index(search) == nk_console_get_widget_index(list_view) - 1);
+        assert(!nk_console_is_visible(list_view) && !nk_console_is_visible(search));
+        nk_console_tabs_set_selected_index(tabs, 0);
+        assert(nk_console_is_visible(list_view) && nk_console_is_visible(search));
+        test_render_frame(console, NULL, NK_KEY_NONE);
+
+        // Freeing the tab with the tree frees the tree's children too.
+        size_t before = cvector_size(screen->children);
+        nk_console_free(tab_b);
+        assert(cvector_size(screen->children) == before - 5);
+        test_render_frame(console, NULL, NK_KEY_NONE);
+
+        nk_console_set_active_parent(console);
+        nk_console_free(screen);
+        test_render_frame(console, NULL, NK_KEY_NONE);
+    }
+
+    // A widget the user hid within a tree stays hidden through expanding and collapsing.
+    {
+        nk_console* tree = nk_console_tree(console, "User Hidden Tree", nk_false);
+        nk_console* shown = nk_console_label(tree, "Shown");
+        nk_console* hidden = nk_console_label(tree, "Hidden");
+        hidden->visible = nk_false;
+        assert(shown->visible && !nk_console_is_visible(shown) && !nk_console_is_visible(hidden));
+        nk_console_tree_set_expanded(tree, nk_true);
+        assert(nk_console_is_visible(shown) && !nk_console_is_visible(hidden) && !hidden->visible);
+        nk_console_tree_set_expanded(tree, nk_false);
+        nk_console_tree_set_expanded(tree, nk_true);
+        assert(!nk_console_is_visible(hidden) && !hidden->visible);
+        nk_console_free(tree);
     }
 
     // nk_console_remove_event_handler()

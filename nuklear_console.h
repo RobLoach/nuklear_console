@@ -124,7 +124,9 @@ typedef struct nk_console {
 
     nk_bool selectable; /** Whether or not the widget can be selected. */
     nk_bool disabled; /** Whether or not the widget is currently disabled. */
-    nk_bool visible; /** When false, the widget will not be displayed. */
+    nk_bool visible; /** When false, the widget will not be displayed. Only ever set by the user. */
+    nk_bool hidden; /** Internal: set by the widget's container, like a Tab or Tree, when it hides the widget. */
+    struct nk_console* container; /** Internal: the widget that shows this widget, like a Tab, Tree or List View. The widget is hidden while its container is. */
     int columns; /** When set, will determine how many dynamic columns to set to for the active row. */
     int height; /** When set, will determine the height of the row. */
     const char* tooltip; /** Tooltip */
@@ -360,6 +362,15 @@ NK_API nk_bool nk_console_style_begin(nk_console* widget, struct nk_style* saved
 NK_API void nk_console_style_end(nk_console* widget, const struct nk_style* saved, nk_bool began);
 /** Return nk_true if @p widget can receive focus (is selectable). */
 NK_API nk_bool nk_console_selectable(nk_console* widget);
+/**
+ * Get whether or not the widget is displayed. A widget is hidden when its own `visible` flag is false, or when its
+ * container, like a collapsed Tree or an unselected Tab, hides it.
+ *
+ * @param widget The widget to check.
+ *
+ * @return True if the widget is displayed, false otherwise.
+ */
+NK_API nk_bool nk_console_is_visible(nk_console* widget);
 /** Return a human-readable name for @p type (e.g. "button"), or "unknown" for unrecognized values. */
 NK_API const char* nk_console_widget_type_name(nk_console_widget_type type);
 
@@ -661,6 +672,20 @@ static void* nk_console_cvector_memmove(void* dest, const void* src, nk_size cou
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * Whether or not the given widget is shown by the given container, directly or through nested containers.
+ *
+ * @internal
+ */
+static nk_bool nk_console_is_within(nk_console* widget, nk_console* container) {
+    for (nk_console* w = widget->container; w != NULL; w = w->container) {
+        if (w == container) {
+            return nk_true;
+        }
+    }
+    return nk_false;
+}
 
 #include "nuklear_console_button.h"
 #include "nuklear_console_chart.h"
@@ -1119,7 +1144,33 @@ static nk_console* nk_console_find_first_selectable(nk_console* parent) {
 NK_API nk_bool nk_console_selectable(nk_console* widget) {
     NK_ASSERT(widget != NULL);
 
-    return widget->selectable && widget->visible && !widget->disabled;
+    return widget->selectable && !widget->disabled && nk_console_is_visible(widget);
+}
+
+NK_API nk_bool nk_console_is_visible(nk_console* widget) {
+    NK_ASSERT(widget != NULL);
+
+    // The widget is hidden when it, or any of its containers, is hidden.
+    for (nk_console* w = widget; w != NULL; w = w->container) {
+        if (!w->visible || w->hidden) {
+            return nk_false;
+        }
+    }
+    return nk_true;
+}
+
+/**
+ * Get the index right after the given container and all the widgets it shows, which sit after it as its siblings.
+ *
+ * @internal
+ */
+static size_t nk_console_container_end(nk_console* container) {
+    nk_console** siblings = container->parent->children;
+    size_t index = (size_t)nk_console_get_widget_index(container) + 1;
+    while (index < cvector_size(siblings) && nk_console_is_within(siblings[index], container)) {
+        index++;
+    }
+    return index;
 }
 
 /**
@@ -1420,7 +1471,7 @@ static void nk_console_render_top(nk_console* console) {
 
 NK_API void nk_console_render(nk_console* console) {
     NK_ASSERT(console != NULL);
-    if (console->visible == nk_false) {
+    if (!nk_console_is_visible(console)) {
         return;
     }
 
@@ -1971,10 +2022,11 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
     if (parent->type == NK_CONSOLE_TREE && parent->parent != NULL && parent->data != NULL) {
         nk_console_tree_data* tree_data = (nk_console_tree_data*)parent->data;
 
-        // Set the visibility of the child based on whether the tree is expanded.
-        child->visible = nk_console_tree_expanded(parent);
+        // The tree shows the child only while it is expanded.
+        child->container = parent;
+        child->hidden = !nk_console_tree_expanded(parent);
 
-        // Insert position: immediately after the tree and any previously owned children.
+        // Insert position: immediately after the tree and all the widgets it shows.
         int widget_index = nk_console_get_widget_index(parent);
         if (widget_index < 0) {
             child->parent = parent;
@@ -1984,8 +2036,7 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         }
 
         // We are adding it to the middle of the parent, so insert accordingly.
-        size_t insert_pos = (size_t)widget_index + (size_t)1 + cvector_size(tree_data->referenced_children);
-        insert_pos = NK_MIN(insert_pos, cvector_size(parent->parent->children));
+        size_t insert_pos = nk_console_container_end(parent);
         child->parent = parent->parent;
         cvector_insert(parent->parent->children, insert_pos, child);
         cvector_push_back(tree_data->referenced_children, child);
@@ -1997,9 +2048,8 @@ NK_API void nk_console_add_child(nk_console* parent, nk_console* child) {
         nk_console* tabs = parent->parent;
         int widget_index = nk_console_get_widget_index(tabs);
         if (widget_index >= 0) {
-            // Insert position: immediately after the tabs widget and the children of all its tabs.
-            size_t insert_pos = (size_t)widget_index + (size_t)1 + nk_console_tabs_referenced_count(tabs);
-            insert_pos = NK_MIN(insert_pos, cvector_size(tabs->parent->children));
+            // Insert position: immediately after the tabs widget and all the widgets its tabs show.
+            size_t insert_pos = nk_console_container_end(tabs);
             child->parent = tabs->parent;
             cvector_insert(tabs->parent->children, insert_pos, child);
             nk_console_tab_reference(parent, child);

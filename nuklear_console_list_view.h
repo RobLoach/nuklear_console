@@ -676,6 +676,9 @@ NK_API void nk_console_list_view_set_searchable(nk_console* list_view, nk_bool s
                     cvector_insert(list_view->parent->children, (size_t)lv_idx, search);
                 }
                 data->search = search;
+
+                // The search field is only shown along with the list view, like when it is within a Tab or Tree.
+                search->container = list_view;
                 nk_console_add_event_handler(search, NK_CONSOLE_EVENT_DESTROYED, &nk_console_list_view_search_event_destroyed, list_view, NULL);
             }
         }
