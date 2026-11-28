@@ -42,6 +42,10 @@ target_link_libraries(nuklear_console_test PUBLIC
     pntr
     pntr_nuklear
 )
+if (NUKLEAR_CONSOLE_TINTED)
+    target_link_libraries(nuklear_console_test PUBLIC nuklear_tinted)
+    target_compile_definitions(nuklear_console_test PRIVATE NK_CONSOLE_TEST_THEME)
+endif()
 if (NUKLEAR_CONSOLE_GAMEPAD)
     target_link_libraries(nuklear_console_test PUBLIC nuklear_gamepad)
 else()

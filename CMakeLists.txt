@@ -46,6 +46,29 @@ else()
 endif()
 
 option(NUKLEAR_CONSOLE_BUILD_TESTS "Tests" ${NUKLEAR_CONSOLE_IS_MAIN})
+option(NUKLEAR_CONSOLE_TINTED "Fetch nuklear_tinted for the theme widget (nuklear_console_theme.h)" ${NUKLEAR_CONSOLE_IS_MAIN})
+
+# nuklear_tinted, an optional dependency only nuklear_console_theme.h uses
+if (NUKLEAR_CONSOLE_TINTED)
+    find_package(nuklear_tinted QUIET)
+    if (NOT nuklear_tinted_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            nuklear_tinted
+            GIT_REPOSITORY https://github.com/RobLoach/nuklear_tinted.git
+            GIT_TAG master
+            GIT_SUBMODULES vendor/tinted-c
+        )
+        FetchContent_GetProperties(nuklear_tinted)
+        if (NOT nuklear_tinted_POPULATED)
+            set(FETCHCONTENT_QUIET NO)
+            FetchContent_Populate(nuklear_tinted)
+            add_subdirectory(${nuklear_tinted_SOURCE_DIR} ${nuklear_tinted_BINARY_DIR})
+        endif()
+        # The tinted-c scheme headers
+        target_include_directories(nuklear_tinted INTERFACE ${nuklear_tinted_SOURCE_DIR}/vendor/tinted-c/include)
+    endif()
+endif()
 
 # Examples
 if (NUKLEAR_CONSOLE_BUILD_TESTS)
