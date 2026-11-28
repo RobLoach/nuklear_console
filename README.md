@@ -44,7 +44,25 @@ int main() {
 
 ## Widgets
 
-Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Input (Gamepad, Keyboard, Mouse), Labels, Properties, Sliders, Knobs, Radio Options, Images, Rows, Spacing, Tabs, TextEdit, Tree, Rule Horizontal, List View, Messages.
+Buttons, Checkboxes, Color Select, Comboboxes, Files, Directories, Input (Gamepad, Keyboard, Mouse), Labels, Properties, Sliders, Knobs, Radio Options, Images, Rows, Spacing, Tabs, TextEdit, Tree, Rule Horizontal, List View, Messages, Themes.
+
+### Themes
+
+`nuklear_console_theme.h` adds a combobox that applies [Base16 and Base24](https://github.com/tinted-theming/home) color schemes through [nuklear_tinted](https://github.com/RobLoach/nuklear_tinted). It's optional, and only needs nuklear_tinted when you include it. With CMake, `NUKLEAR_CONSOLE_TINTED=ON` fetches nuklear_tinted.
+
+``` c
+#define NK_TINTED_IMPLEMENTATION
+#include "nuklear_tinted.h"
+#define TINTED_IMPLEMENTATION
+#include "base16-dracula.h"
+#include "base16-catppuccin-latte.h"
+#include "nuklear_console_theme.h"
+
+// A NULL scheme applies Nuklear's default style.
+static const tinted_scheme* const schemes[] = {&base16_dracula, &base16_catppuccin_latte, NULL};
+static int theme = 0;
+nk_console_theme(console, "Theme", schemes, 3, &theme);
+```
 
 ## API
 
@@ -130,6 +148,7 @@ void nk_console_check_up_down(nk_console* widget);
 - [Nuklear](https://github.com/Immediate-Mode-UI/Nuklear)
 - [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad)
 - [c-vector](https://github.com/eteran/c-vector/)
+- [nuklear_tinted](https://github.com/RobLoach/nuklear_tinted) (optional, for `nuklear_console_theme.h`)
 
 ## Configuration
 
@@ -155,6 +174,7 @@ void nk_console_check_up_down(nk_console* widget);
 - `NK_CONSOLE_MESSAGE_SCROLL_PAUSE`: Seconds to pause at the start and end of a scrolling message
 - `NK_CONSOLE_FILE_SDL_NATIVE_DIALOG`: In SDL3, will enable file widgets to use native file dialogs. Widgets activated with a gamepad, or whose dialog fails to open, use the built-in file browser instead
 - `NK_CONSOLE_GAMEPAD`: Defined automatically when [nuklear_gamepad](https://github.com/robloach/nuklear_gamepad) is included before nuklear_console; enables gamepad input support
+- `NK_CONSOLE_THEME_DEFAULT_LABEL`: The theme widget's label for a NULL scheme, which applies Nuklear's default style. Defaults to `"Default"`.
 - `NK_CONSOLE_NO_GAMEPAD`: Define to force-disable gamepad support even when nuklear_gamepad is present; corresponds to CMake option `NUKLEAR_CONSOLE_GAMEPAD=OFF`
 
 ## Development

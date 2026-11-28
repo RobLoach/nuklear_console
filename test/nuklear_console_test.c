@@ -28,6 +28,19 @@
 #define NK_CONSOLE_IMPLEMENTATION
 #include "nuklear_console.h"
 
+#ifdef NK_CONSOLE_TEST_THEME
+#define NK_TINTED_IMPLEMENTATION
+#include "nuklear_tinted.h"
+#define TINTED_IMPLEMENTATION
+#include "base16-dracula.h"
+#include "base16-catppuccin-latte.h"
+#include "nuklear_console_theme.h"
+
+static nk_bool test_color_is(struct nk_color color, tinted_color expected) {
+    return color.r == expected.r && color.g == expected.g && color.b == expected.b;
+}
+#endif
+
 static void test_event_counter(nk_console* widget, void* user_data) {
     (void)widget;
     if (user_data != NULL) {
@@ -1765,6 +1778,57 @@ int main() {
         assert(data.callback_count == 1);
         assert(data.destructor_count == 1);
     }
+
+    #ifdef NK_CONSOLE_TEST_THEME
+    // nk_console_theme()
+    {
+        static const tinted_scheme* const schemes[] = {&base16_dracula, &base16_catppuccin_latte, NULL};
+        static int selected = 1;
+        static int changed = 0;
+        nk_console* theme = nk_console_theme(console, "Theme", schemes, 3, &selected);
+        assert(theme != NULL);
+
+        // Back, then one option per scheme, named after it.
+        assert(cvector_size(theme->children) == 4);
+        assert(theme->children[1]->label == base16_dracula.name);
+        assert(nk_strlen(theme->children[3]->label) == nk_strlen(NK_CONSOLE_THEME_DEFAULT_LABEL));
+
+        // The given selection is kept, and applies right away.
+        assert(selected == 1);
+        assert(theme->label == base16_catppuccin_latte.name);
+        assert(test_color_is(console->ctx->style.window.background, base16_catppuccin_latte.base[0]));
+
+        // Choosing another scheme applies it before the caller's handlers run.
+        nk_console_add_event_handler(theme, NK_CONSOLE_EVENT_CHANGED, test_event_counter, &changed, NULL);
+        nk_console_set_active_parent(theme);
+        nk_console_trigger_event(theme->children[1], NK_CONSOLE_EVENT_CLICKED);
+        assert(selected == 0);
+        assert(changed == 1);
+        assert(test_color_is(console->ctx->style.window.background, base16_dracula.base[0]));
+
+        // NULL applies Nuklear's default style.
+        nk_console_set_active_parent(theme);
+        nk_console_trigger_event(theme->children[3], NK_CONSOLE_EVENT_CLICKED);
+        assert(selected == 2);
+        assert(changed == 2);
+        struct nk_color window = console->ctx->style.window.background;
+        assert(window.r == nk_default_color_style[NK_COLOR_WINDOW].r && window.g == nk_default_color_style[NK_COLOR_WINDOW].g && window.b == nk_default_color_style[NK_COLOR_WINDOW].b);
+
+        // An out of range selection is clamped.
+        static int out_of_range = 99;
+        assert(nk_console_theme(console, "Clamped", schemes, 3, &out_of_range) != NULL);
+        assert(out_of_range == 2);
+        out_of_range = -5;
+        assert(nk_console_theme(console, "Clamped Low", schemes, 3, &out_of_range) != NULL);
+        assert(out_of_range == 0);
+
+        // Without a selection pointer, nothing is chosen, so nothing applies.
+        assert(nk_console_theme(console, "Unselected", schemes, 3, NULL) != NULL);
+        assert(test_color_is(console->ctx->style.window.background, base16_dracula.base[0]));
+
+        nk_style_default(console->ctx);
+    }
+    #endif
 
     // Unload
     nk_console_free(console);
